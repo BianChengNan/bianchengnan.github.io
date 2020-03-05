@@ -92,30 +92,30 @@
 <meta name="keywords" content="原,总结,UEFI,GPT,VHD">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[原]UEFI+GPT启动VHD">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="1. 缘起最近因为不小心中招了(一直在裸奔)，又面临着重装系统的尴尬，虽然之前有备份，但是时间已经很久了，而且恢复一次跟重装一遍差不多，没有多大优势。之前同事帮我弄过从vhd文件启动系统，很是方便，可以备份vhd文件即可。借此机会，决定好好研究下来龙去脉。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531746737127.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531747066183.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531747183984.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531747356975.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531747431865.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531747504303.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531747942112.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531748094256.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531748300388.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531748371867.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531748794883.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531749737993.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531749979049.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531750374864.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531748960458.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531746737127.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531747066183.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531747183984.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531747356975.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531747431865.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531747504303.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531747942112.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531748094256.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531748300388.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531748371867.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531748794883.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531749737993.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531749979049.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531750374864.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531748960458.png">
 <meta property="og:updated_time" content="2020-01-15T08:09:12.932Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[原]UEFI+GPT启动VHD">
 <meta name="twitter:description" content="1. 缘起最近因为不小心中招了(一直在裸奔)，又面临着重装系统的尴尬，虽然之前有备份，但是时间已经很久了，而且恢复一次跟重装一遍差不多，没有多大优势。之前同事帮我弄过从vhd文件启动系统，很是方便，可以备份vhd文件即可。借此机会，决定好好研究下来龙去脉。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/1531746737127.png">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/1531746737127.png">
 
 
 
@@ -145,7 +145,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -322,7 +322,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -556,7 +556,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/" title="[原]UEFI+GPT启动VHD">https://bianchengnan.gitee.io/articles/UEFI-GPT-boot-VHD/</a>
+    <a href="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/" title="[原]UEFI+GPT启动VHD">https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>

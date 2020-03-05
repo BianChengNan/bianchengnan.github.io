@@ -92,22 +92,22 @@
 <meta name="keywords" content="原,debug,调试,windbg,死锁,deadlock">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[原]调试实战——使用windbg调试excel启动时死锁">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="前言这是几年前在项目中遇到的一个死锁问题，在博客园发布过。我对之前的笔记进行了整理重新发布于此。本文假设小伙伴们知道一些基本概念，比如什么是.dump文件（转储文件，进程在某一时刻的快照），什么是windbg（windows下的调试利器），windbg的基本用法，调用栈，调用约定，等等。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/switch-to-ui-thread.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/show-call-stack.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/cs-command.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/tid-command.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/switch-and-show-call-stack.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/uf-GetCurrentThread.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/cs-l-command.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/switch-to-ui-thread.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/show-call-stack.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/cs-command.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/tid-command.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/switch-and-show-call-stack.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/uf-GetCurrentThread.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/cs-l-command.png">
 <meta property="og:updated_time" content="2019-10-18T11:31:42.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[原]调试实战——使用windbg调试excel启动时死锁">
 <meta name="twitter:description" content="前言这是几年前在项目中遇到的一个死锁问题，在博客园发布过。我对之前的笔记进行了整理重新发布于此。本文假设小伙伴们知道一些基本概念，比如什么是.dump文件（转储文件，进程在某一时刻的快照），什么是windbg（windows下的调试利器），windbg的基本用法，调用栈，调用约定，等等。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/switch-to-ui-thread.png">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/switch-to-ui-thread.png">
 
 
 
@@ -137,7 +137,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -314,7 +314,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -510,7 +510,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/" title="[原]调试实战——使用windbg调试excel启动时死锁">https://bianchengnan.gitee.io/articles/debugging-deadlock-during-excel-startup/</a>
+    <a href="https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/" title="[原]调试实战——使用windbg调试excel启动时死锁">https://bianchengnan.github.io/articles/debugging-deadlock-during-excel-startup/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>

@@ -92,21 +92,21 @@
 <meta name="keywords" content="原,debug,调试,windbg,process explorer,hang">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[原]调试实战——程序CPU占用率飙升，你知道如何快速定位吗？">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="前言如果我们自己的程序的CPU Usage（CPU占用率）飙升，并且居高不下，很有可能陷入了死循环。你知道怎么快速定位并解决吗？今天跟大家分享几种定位方法，希望对你有所帮助。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/infinite-loop.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/ttime.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/show-all-tid-ttime.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/id.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/windbg-runaway.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/vs-parallel-stack.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/infinite-loop.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/ttime.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/show-all-tid-ttime.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/id.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/windbg-runaway.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/vs-parallel-stack.gif">
 <meta property="og:updated_time" content="2019-12-14T15:06:27.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[原]调试实战——程序CPU占用率飙升，你知道如何快速定位吗？">
 <meta name="twitter:description" content="前言如果我们自己的程序的CPU Usage（CPU占用率）飙升，并且居高不下，很有可能陷入了死循环。你知道怎么快速定位并解决吗？今天跟大家分享几种定位方法，希望对你有所帮助。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/infinite-loop.gif">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/infinite-loop.gif">
 
 
 
@@ -136,7 +136,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -313,7 +313,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -481,7 +481,7 @@
   <div class="note info"><p><strong>注意：</strong> 很多死循环都是<code>busy</code>类型的，如果是<code>idle</code>类型的死循环，上面的方法不适用。</p></div>
 
 <p>下面介绍几个我经常使用的工具，可以比较便捷的排查此类的问题。</p>
-<h2 id="1-process-explorer"><a href="#1-process-explorer" class="headerlink" title="1. process explorer"></a>1. process explorer</h2><p>在前面的文章里跟大家介绍过，使用<code>process explorer</code>可以查看线程的<code>调用栈</code>及<code>CPU占用率</code>。如果程序里的某个功能迟迟不能完成，我的第一反应是，按<code>Ctrl + Shift + Esc</code>打开任务管理器（我已经使用<code>process explorer</code>替换了系统自带的任务管理器，所以启动的是<code>process explorer</code>。如何使用<code>process explorer</code>替换系统自带的任务管理器，请参考文章<a href="https://bianchengnan.gitee.io/articles/replace-task-manager-with-process-explorer/">排错实战——使用process explorer替换任务管理器</a>）。</p>
+<h2 id="1-process-explorer"><a href="#1-process-explorer" class="headerlink" title="1. process explorer"></a>1. process explorer</h2><p>在前面的文章里跟大家介绍过，使用<code>process explorer</code>可以查看线程的<code>调用栈</code>及<code>CPU占用率</code>。如果程序里的某个功能迟迟不能完成，我的第一反应是，按<code>Ctrl + Shift + Esc</code>打开任务管理器（我已经使用<code>process explorer</code>替换了系统自带的任务管理器，所以启动的是<code>process explorer</code>。如何使用<code>process explorer</code>替换系统自带的任务管理器，请参考文章<a href="https://bianchengnan.gitee.io/articles/replace-task-manager-with-process-explorer/" target="_blank" rel="noopener">排错实战——使用process explorer替换任务管理器</a>）。</p>
 <p>启动<code>process explorer</code>后，双击我们关心的进程，切换到<code>Thread</code>页，在这里我们可以看到当前进程中的所有线程。双击某个线程就可以查看调用栈，在弹出的调用栈界面，点击左下角的<code>Refresh</code>按钮可以刷新。</p>
 <p>如果每次刷新都能看到某个函数，很有可能是在这个函数中出现了死循环。对照源码，也许能直接能看出原因。</p>
 <p><img src="/articles/troubleshoot-CPU-100/infinite-loop.gif" alt="使用process explorer"></p>
@@ -572,7 +572,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/" title="[原]调试实战——程序CPU占用率飙升，你知道如何快速定位吗？">https://bianchengnan.gitee.io/articles/troubleshoot-CPU-100/</a>
+    <a href="https://bianchengnan.github.io/articles/troubleshoot-CPU-100/" title="[原]调试实战——程序CPU占用率飙升，你知道如何快速定位吗？">https://bianchengnan.github.io/articles/troubleshoot-CPU-100/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>

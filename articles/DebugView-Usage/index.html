@@ -92,29 +92,29 @@
 <meta name="keywords" content="原,总结,process monitor,sysinternals,注册表,process explorer,debugview">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[原]你知道怎么使用DebugView查看内核调试信息吗？">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/DebugView-Usage/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="简介DebugView是sysinternals工具集中的一款用来查看调试信息的工具。不管你是内核开发人员还是应用程序开发人员，都会用到这款神器。先简单看看DebugView可以干什么吧。  可以查看应用程序输出的调试信息。 可以查看驱动程序输出的调试信息。 可以查看本地机器的调试信息。 可以查看远程机器的调试信息。 可以根据规则高亮显示。 可以根据关键字过滤。 可以根据关键字搜索。 可以自动显示">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/basic-demo.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/switch-clocktime.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/highlight-filter.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/connect-remote-machine.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/help.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/output-to-debugger.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/capture-options.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/Demo.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/administrator-previlege-required.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/enable-debug-filter-registry-setting.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/OSR-Explain.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/unable-to-access-dbgv.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/dbgview-createfile-failed-event.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/no-search-result-of-dbgv.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/basic-demo.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/switch-clocktime.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/highlight-filter.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/connect-remote-machine.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/help.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/output-to-debugger.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/capture-options.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/Demo.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/administrator-previlege-required.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/enable-debug-filter-registry-setting.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/OSR-Explain.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/unable-to-access-dbgv.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/dbgview-createfile-failed-event.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/no-search-result-of-dbgv.png">
 <meta property="og:updated_time" content="2019-12-12T14:11:53.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[原]你知道怎么使用DebugView查看内核调试信息吗？">
 <meta name="twitter:description" content="简介DebugView是sysinternals工具集中的一款用来查看调试信息的工具。不管你是内核开发人员还是应用程序开发人员，都会用到这款神器。先简单看看DebugView可以干什么吧。  可以查看应用程序输出的调试信息。 可以查看驱动程序输出的调试信息。 可以查看本地机器的调试信息。 可以查看远程机器的调试信息。 可以根据规则高亮显示。 可以根据关键字过滤。 可以根据关键字搜索。 可以自动显示">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/DebugView-Usage/basic-demo.png">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/DebugView-Usage/basic-demo.png">
 
 
 
@@ -144,7 +144,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/DebugView-Usage/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/DebugView-Usage/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -321,7 +321,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/DebugView-Usage/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/DebugView-Usage/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -630,7 +630,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/DebugView-Usage/" title="[原]你知道怎么使用DebugView查看内核调试信息吗？">https://bianchengnan.gitee.io/articles/DebugView-Usage/</a>
+    <a href="https://bianchengnan.github.io/articles/DebugView-Usage/" title="[原]你知道怎么使用DebugView查看内核调试信息吗？">https://bianchengnan.github.io/articles/DebugView-Usage/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>

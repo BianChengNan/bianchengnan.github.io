@@ -92,20 +92,20 @@
 <meta name="keywords" content="原,调试,IDA,排错,troubleshoot,symbols,pdb,sysinternal,process monitor">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[原]排错实战——解救加载调试符号失败的IDA">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/config-symbols-for-ida/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="缘起最近想借助IDA逆向一个函数。在windows下，调试器（比如vs, windbg）可以通过调试符号（PDB）把地址与符号名对应起来，为我们提供更可读的信息。IDA应该也支持加载PDB，通过查看IDA安装目录下的idahelp.chm（打开后搜索PDB即可找到相关说明）发现还真支持。但是当我加载符号的时候，却失败了。本文记录了整个调查过程。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/function-names-without-pdb-loaded.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/function-names-with-pdb-loaded.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/load-pdb.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/load-pdb-error.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/load-pdb-fail-investigation.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/config-symbols-for-ida/function-names-without-pdb-loaded.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/config-symbols-for-ida/function-names-with-pdb-loaded.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/config-symbols-for-ida/load-pdb.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/config-symbols-for-ida/load-pdb-error.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/config-symbols-for-ida/load-pdb-fail-investigation.gif">
 <meta property="og:updated_time" content="2019-11-06T23:51:42.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[原]排错实战——解救加载调试符号失败的IDA">
 <meta name="twitter:description" content="缘起最近想借助IDA逆向一个函数。在windows下，调试器（比如vs, windbg）可以通过调试符号（PDB）把地址与符号名对应起来，为我们提供更可读的信息。IDA应该也支持加载PDB，通过查看IDA安装目录下的idahelp.chm（打开后搜索PDB即可找到相关说明）发现还真支持。但是当我加载符号的时候，却失败了。本文记录了整个调查过程。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/function-names-without-pdb-loaded.png">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/config-symbols-for-ida/function-names-without-pdb-loaded.png">
 
 
 
@@ -135,7 +135,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/config-symbols-for-ida/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -312,7 +312,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/config-symbols-for-ida/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -521,7 +521,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/config-symbols-for-ida/" title="[原]排错实战——解救加载调试符号失败的IDA">https://bianchengnan.gitee.io/articles/config-symbols-for-ida/</a>
+    <a href="https://bianchengnan.github.io/articles/config-symbols-for-ida/" title="[原]排错实战——解救加载调试符号失败的IDA">https://bianchengnan.github.io/articles/config-symbols-for-ida/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>

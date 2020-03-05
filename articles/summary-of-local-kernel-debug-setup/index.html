@@ -92,26 +92,26 @@
 <meta name="keywords" content="原,总结,debug,调试,windbg,kernel debug,bcdedit,SysReq">
 <meta property="og:type" content="article">
 <meta property="og:title" content="本地内核调试">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="前言内核调试默认是关闭的，需要手动开启。本文将简单介绍如何在 Vista 及后续版本的系统中开启本地内核调试，并简要介绍使用 windbg 连接内核的方法。在 xp 系统中，对应的设置保存在 boot.ini 中，感兴趣的小伙伴儿请自行搜索设置方法。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/windbg-kernel-debug-setting-dialog.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/windbg-kernel-debug-fail-dialog.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/local-kernel-debug.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/bcdedit-debug-on.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/turn-on-local-kernel-debug-failed.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/security-boot-enable-status.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/bcdedit-debug-on.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/bcdedit-basic-usage.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/msconfig-setting.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/PrtSc-SysRq.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/advdbg.org-forumn-post-screen-record.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/windbg-kernel-debug-setting-dialog.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/windbg-kernel-debug-fail-dialog.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/local-kernel-debug.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/bcdedit-debug-on.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/turn-on-local-kernel-debug-failed.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/security-boot-enable-status.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/bcdedit-debug-on.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/bcdedit-basic-usage.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/msconfig-setting.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/PrtSc-SysRq.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/advdbg.org-forumn-post-screen-record.png">
 <meta property="og:updated_time" content="2020-03-05T12:11:34.118Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="本地内核调试">
 <meta name="twitter:description" content="前言内核调试默认是关闭的，需要手动开启。本文将简单介绍如何在 Vista 及后续版本的系统中开启本地内核调试，并简要介绍使用 windbg 连接内核的方法。在 xp 系统中，对应的设置保存在 boot.ini 中，感兴趣的小伙伴儿请自行搜索设置方法。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/windbg-kernel-debug-setting-dialog.png">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/windbg-kernel-debug-setting-dialog.png">
 
 
 
@@ -141,7 +141,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -318,7 +318,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -572,7 +572,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/" title="本地内核调试">https://bianchengnan.gitee.io/articles/summary-of-local-kernel-debug-setup/</a>
+    <a href="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/" title="本地内核调试">https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -709,13 +709,13 @@
     
       
 
-      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
+      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
     
   
     
       
 
-      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
     
   
     

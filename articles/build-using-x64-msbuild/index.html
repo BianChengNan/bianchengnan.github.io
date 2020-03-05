@@ -92,21 +92,21 @@
 <meta name="keywords" content="原,总结,vs,msbuild,how-to">
 <meta property="og:type" content="article">
 <meta property="og:title" content="[原]使用64位的编译工具进行编译">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/build-using-x64-msbuild/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="缘起最近在编译项目的时候总是报虚拟内存不足（项目中使用了大量的模板）。一般情况下，vs会使用32位的编译工具进行编译，用64位的编译工具应该能解决类似的问题。本以为是一件挺简单的事，但是没想到遇到不少坑，本文记录了折腾的过程，希望对有类似需求的小伙伴有所帮助。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/Use-64-bit-hosted-developer-command-prompt.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/check-cl-link-bit.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/build-with-PreferredToolArchitecture-x64.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/choose-build-tool-architecture.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/Bv-option.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/build-with-Bv.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/build-using-x64-msbuild/Use-64-bit-hosted-developer-command-prompt.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/build-using-x64-msbuild/check-cl-link-bit.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/build-using-x64-msbuild/build-with-PreferredToolArchitecture-x64.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/build-using-x64-msbuild/choose-build-tool-architecture.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/build-using-x64-msbuild/Bv-option.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/build-using-x64-msbuild/build-with-Bv.png">
 <meta property="og:updated_time" content="2019-10-11T04:29:04.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="[原]使用64位的编译工具进行编译">
 <meta name="twitter:description" content="缘起最近在编译项目的时候总是报虚拟内存不足（项目中使用了大量的模板）。一般情况下，vs会使用32位的编译工具进行编译，用64位的编译工具应该能解决类似的问题。本以为是一件挺简单的事，但是没想到遇到不少坑，本文记录了折腾的过程，希望对有类似需求的小伙伴有所帮助。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/Use-64-bit-hosted-developer-command-prompt.gif">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/build-using-x64-msbuild/Use-64-bit-hosted-developer-command-prompt.gif">
 
 
 
@@ -136,7 +136,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/build-using-x64-msbuild/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -313,7 +313,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/build-using-x64-msbuild/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -533,7 +533,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/" title="[原]使用64位的编译工具进行编译">https://bianchengnan.gitee.io/articles/build-using-x64-msbuild/</a>
+    <a href="https://bianchengnan.github.io/articles/build-using-x64-msbuild/" title="[原]使用64位的编译工具进行编译">https://bianchengnan.github.io/articles/build-using-x64-msbuild/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>

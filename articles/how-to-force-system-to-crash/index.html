@@ -92,28 +92,28 @@
 <meta name="keywords" content="原,总结,debug,调试,kernel debug,BSOD,蓝屏,win10">
 <meta property="og:type" content="article">
 <meta property="og:title" content="系统蓝屏的几种姿势，确定不了解下么？">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="前言在 蓝屏（BSOD）转储设置，看本文就够了！ 这篇文章里比较详细的介绍了蓝屏转储设置。做好设置后，我们就可以在需要的时候使系统蓝屏了。这样我们就可以拿到一份系统转储，供我们分析问题了。本文介绍几种可以使系统蓝屏的办法。当然肯定还有其它办法，如果哪位小伙伴儿知道比较实用的方法，欢迎留言分享。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/NotMyFault.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/NotMyFaultC-Usage.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/kill-csrss-bsod-screen-record.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/can-not-terminate-csrss-on-win10.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/critical-process-died-bsod-screen-record.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/device-manager-keyboard.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/control-panel-device-manager.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/101-102-keyboard-PS2-scan-code.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/part-of-scancode-translation-table.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/scancode-translation-table-note.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/manually-bsod-screen-record.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/windbg-analyze-user-manually-bsod-dump.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/windbg-open-memory-dump-failed.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/NotMyFault.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/NotMyFaultC-Usage.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/kill-csrss-bsod-screen-record.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/can-not-terminate-csrss-on-win10.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/critical-process-died-bsod-screen-record.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/device-manager-keyboard.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/control-panel-device-manager.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/101-102-keyboard-PS2-scan-code.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/part-of-scancode-translation-table.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/scancode-translation-table-note.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/manually-bsod-screen-record.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/windbg-analyze-user-manually-bsod-dump.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/windbg-open-memory-dump-failed.png">
 <meta property="og:updated_time" content="2020-03-05T06:48:14.549Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="系统蓝屏的几种姿势，确定不了解下么？">
 <meta name="twitter:description" content="前言在 蓝屏（BSOD）转储设置，看本文就够了！ 这篇文章里比较详细的介绍了蓝屏转储设置。做好设置后，我们就可以在需要的时候使系统蓝屏了。这样我们就可以拿到一份系统转储，供我们分析问题了。本文介绍几种可以使系统蓝屏的办法。当然肯定还有其它办法，如果哪位小伙伴儿知道比较实用的方法，欢迎留言分享。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/NotMyFault.png">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/NotMyFault.png">
 
 
 
@@ -143,7 +143,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -320,7 +320,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -458,7 +458,7 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 <a href="https://bianchengnan.gitee.io/articles/kernel-memory-dump-setting/">蓝屏（BSOD）转储设置，看本文就够了！</a> 这篇文章里比较详细的介绍了蓝屏转储设置。做好设置后，我们就可以在需要的时候使系统蓝屏了。这样我们就可以拿到一份系统转储，供我们分析问题了。本文介绍几种可以使系统蓝屏的办法。当然肯定还有其它办法，如果哪位小伙伴儿知道比较实用的方法，欢迎留言分享。</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 <a href="https://bianchengnan.gitee.io/articles/kernel-memory-dump-setting/" target="_blank" rel="noopener">蓝屏（BSOD）转储设置，看本文就够了！</a> 这篇文章里比较详细的介绍了蓝屏转储设置。做好设置后，我们就可以在需要的时候使系统蓝屏了。这样我们就可以拿到一份系统转储，供我们分析问题了。本文介绍几种可以使系统蓝屏的办法。当然肯定还有其它办法，如果哪位小伙伴儿知道比较实用的方法，欢迎留言分享。</p>
 <a id="more"></a>
 
 
@@ -656,7 +656,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/" title="系统蓝屏的几种姿势，确定不了解下么？">https://bianchengnan.gitee.io/articles/how-to-force-system-to-crash/</a>
+    <a href="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/" title="系统蓝屏的几种姿势，确定不了解下么？">https://bianchengnan.github.io/articles/how-to-force-system-to-crash/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -797,13 +797,13 @@
     
       
 
-      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
+      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
     
   
     
       
 
-      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
     
   
     

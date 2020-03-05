@@ -92,25 +92,25 @@
 <meta name="keywords" content="原,总结,debug,调试,dump,转储文件,procdump,windbg,注册表">
 <meta property="og:type" content="article">
 <meta property="og:title" content="你需要知道的 N 种抓取 dump 的工具">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="前言今天，向大家介绍几种可以抓取应用程序转储文件的工具及基本使用方法。更详细的用法，请参考每个工具对应的帮助文档。如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— 转储文件知多少。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/taskmanager-dump.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/how-to-open-temp-folder.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/process-explorer-dump.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/vs-dump-screen-record.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/windbg-dump-screen-record.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/windbg-dump-m-option-help-msdn.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/procdump-help.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/procdump-example.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/mp-option-explain.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/procdump-demos.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/taskmanager-dump.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/how-to-open-temp-folder.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/process-explorer-dump.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/vs-dump-screen-record.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/windbg-dump-screen-record.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/windbg-dump-m-option-help-msdn.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/procdump-help.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/procdump-example.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/mp-option-explain.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/procdump-demos.gif">
 <meta property="og:updated_time" content="2020-01-01T13:43:53.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="你需要知道的 N 种抓取 dump 的工具">
 <meta name="twitter:description" content="前言今天，向大家介绍几种可以抓取应用程序转储文件的工具及基本使用方法。更详细的用法，请参考每个工具对应的帮助文档。如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— 转储文件知多少。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/taskmanager-dump.jpg">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/taskmanager-dump.jpg">
 
 
 
@@ -140,7 +140,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -317,7 +317,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -455,7 +455,7 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>今天，向大家介绍几种可以抓取应用程序转储文件的工具及基本使用方法。更详细的用法，请参考每个工具对应的帮助文档。如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— <a href="https://bianchengnan.gitee.io/articles/something-you-should-know-about-process-dump/">转储文件知多少</a>。</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>今天，向大家介绍几种可以抓取应用程序转储文件的工具及基本使用方法。更详细的用法，请参考每个工具对应的帮助文档。如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— <a href="https://bianchengnan.gitee.io/articles/something-you-should-know-about-process-dump/" target="_blank" rel="noopener">转储文件知多少</a>。</p>
 <a id="more"></a>
 
 
@@ -471,7 +471,7 @@
 <p>   <img src="/articles/process-dump-tools-you-should-know/how-to-open-temp-folder.gif" alt="how-to-open-temp-folder"></p>
 <ol start="2">
 <li><p>process explorer</p>
-<p><code>process explorer</code> 比系统自带的资源管理器更强大，之前写过一篇文章介绍怎么<a href="https://bianchengnan.gitee.io/articles/replace-task-manager-with-process-explorer/">使用 process explorer 替换系统自带的资源管理器</a>的文章。感兴趣的小伙伴儿可以看一看。打开 <code>process explorer</code>，在需要转储的进程上，<code>右键</code> -&gt; <code>Create Dump</code> -&gt; <code>Create Full Dump...</code> 就可以保存转储文件了。（ <code>Create Minidump...</code> 抓取的信息少，但抓取的转储文件小，适合网络传输，请根据自己的需要选择）</p>
+<p><code>process explorer</code> 比系统自带的资源管理器更强大，之前写过一篇文章介绍怎么<a href="https://bianchengnan.gitee.io/articles/replace-task-manager-with-process-explorer/" target="_blank" rel="noopener">使用 process explorer 替换系统自带的资源管理器</a>的文章。感兴趣的小伙伴儿可以看一看。打开 <code>process explorer</code>，在需要转储的进程上，<code>右键</code> -&gt; <code>Create Dump</code> -&gt; <code>Create Full Dump...</code> 就可以保存转储文件了。（ <code>Create Minidump...</code> 抓取的信息少，但抓取的转储文件小，适合网络传输，请根据自己的需要选择）</p>
 <p><img src="/articles/process-dump-tools-you-should-know/process-explorer-dump.jpg" alt="使用 process explorer 抓取 dump 截图"></p>
 </li>
 </ol>
@@ -622,7 +622,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/" title="你需要知道的 N 种抓取 dump 的工具">https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/</a>
+    <a href="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/" title="你需要知道的 N 种抓取 dump 的工具">https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -761,13 +761,13 @@
     
       
 
-      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
+      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
     
   
     
       
 
-      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
     
   
     

@@ -92,22 +92,22 @@
 <meta name="keywords" content="原,总结,调试,sysinternal,livekd">
 <meta property="og:type" content="article">
 <meta property="og:title" content="你知道怎么用livekd本地内核调试吗？">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="前言有时候我们非常想知道当前系统内核的一些状态，比如查看当前系统加载了哪些驱动，查看某个进程外 COM 调用卡在哪里了，等等。如果我们可以调试系统内核，或者抓取一个系统转储来做事后调试，该多好啊。 我们有如下选择：  本地内核调试（需要配置系统以调试模式启动） 双机内核调试（需要另外一台机器来做双机调试） 让系统崩溃（可以使用 sysinternals中的 notmyfault 或者使用快捷键让系">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/livekd-help-message.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/livekd-need-elevate.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/livekd-promote-symbol.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/livekd-cant-find-kd.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/livekd-fail-to-load-kd.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/livekd-fail-to-load-kd-troubleshooting.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/livekd-success.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/livekd-help-message.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/livekd-need-elevate.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/livekd-promote-symbol.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/livekd-cant-find-kd.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/livekd-fail-to-load-kd.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/livekd-fail-to-load-kd-troubleshooting.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/livekd-success.png">
 <meta property="og:updated_time" content="2019-09-18T04:44:04.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="你知道怎么用livekd本地内核调试吗？">
 <meta name="twitter:description" content="前言有时候我们非常想知道当前系统内核的一些状态，比如查看当前系统加载了哪些驱动，查看某个进程外 COM 调用卡在哪里了，等等。如果我们可以调试系统内核，或者抓取一个系统转储来做事后调试，该多好啊。 我们有如下选择：  本地内核调试（需要配置系统以调试模式启动） 双机内核调试（需要另外一台机器来做双机调试） 让系统崩溃（可以使用 sysinternals中的 notmyfault 或者使用快捷键让系">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/livekd-help-message.png">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/livekd-help-message.png">
 
 
 
@@ -137,7 +137,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -314,7 +314,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -568,7 +568,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/" title="你知道怎么用livekd本地内核调试吗？">https://bianchengnan.gitee.io/articles/local-kernel-debug-with-livekd/</a>
+    <a href="https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/" title="你知道怎么用livekd本地内核调试吗？">https://bianchengnan.github.io/articles/local-kernel-debug-with-livekd/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>

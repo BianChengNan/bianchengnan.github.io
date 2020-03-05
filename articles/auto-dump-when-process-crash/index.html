@@ -92,21 +92,21 @@
 <meta name="keywords" content="原,总结,debug,调试,dump,转储文件,procdump,windbg,JIT Debugger">
 <meta property="og:type" content="article">
 <meta property="og:title" content="你需要了解的JIT Debugging">
-<meta property="og:url" content="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— 转储文件知多少。 前言我在 你需要知道的 N 种抓取 dump 的工具 这篇文章里，向大家介绍了几款可以抓取转储文件的工具及其简单用法。不知道大家是否还记得，以管理员权限运行 procdump -i 可以注册 procdump 为事后调试器。大家是否了解其实现原理？今天让我们一起揭开其神秘面纱。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/procdump-i.gif">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/procdump-install-filter-event.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/procdump-i.jpg">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/jdinfo-comment.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/jdinfo-result.png">
-<meta property="og:image" content="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/Raymond-Chen-explain-AE.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/procdump-i.gif">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/procdump-install-filter-event.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/procdump-i.jpg">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/jdinfo-comment.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/jdinfo-result.png">
+<meta property="og:image" content="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/Raymond-Chen-explain-AE.png">
 <meta property="og:updated_time" content="2020-01-04T13:43:53.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="你需要了解的JIT Debugging">
 <meta name="twitter:description" content="如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— 转储文件知多少。 前言我在 你需要知道的 N 种抓取 dump 的工具 这篇文章里，向大家介绍了几款可以抓取转储文件的工具及其简单用法。不知道大家是否还记得，以管理员权限运行 procdump -i 可以注册 procdump 为事后调试器。大家是否了解其实现原理？今天让我们一起揭开其神秘面纱。">
-<meta name="twitter:image" content="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/procdump-i.gif">
+<meta name="twitter:image" content="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/procdump-i.gif">
 
 
 
@@ -136,7 +136,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/">
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -313,7 +313,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="BianChengNan">
@@ -451,8 +451,8 @@
       
 
       
-        <p>如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— <a href="https://bianchengnan.gitee.io/articles/something-you-should-know-about-process-dump/">转储文件知多少</a>。</p>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我在 <a href="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/">你需要知道的 N 种抓取 dump 的工具</a> 这篇文章里，向大家介绍了几款可以抓取转储文件的工具及其简单用法。不知道大家是否还记得，以<strong>管理员权限</strong>运行 <code>procdump -i</code> 可以注册 <code>procdump</code> 为事后调试器。大家是否了解其实现原理？今天让我们一起揭开其神秘面纱。</p>
+        <p>如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— <a href="https://bianchengnan.gitee.io/articles/something-you-should-know-about-process-dump/" target="_blank" rel="noopener">转储文件知多少</a>。</p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我在 <a href="https://bianchengnan.gitee.io/articles/process-dump-tools-you-should-know/" target="_blank" rel="noopener">你需要知道的 N 种抓取 dump 的工具</a> 这篇文章里，向大家介绍了几款可以抓取转储文件的工具及其简单用法。不知道大家是否还记得，以<strong>管理员权限</strong>运行 <code>procdump -i</code> 可以注册 <code>procdump</code> 为事后调试器。大家是否了解其实现原理？今天让我们一起揭开其神秘面纱。</p>
 <a id="more"></a>
 
 
@@ -581,7 +581,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">https://bianchengnan.gitee.io/articles/auto-dump-when-process-crash/</a>
+    <a href="https://bianchengnan.github.io/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">https://bianchengnan.github.io/articles/auto-dump-when-process-crash/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>
@@ -722,11 +722,11 @@
     
   
     
-  
-    
       
 
       <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+    
+  
     
   
     
