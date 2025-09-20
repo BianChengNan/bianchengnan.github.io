@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,总结,调试,windbg,转储,stack,vmmap,">
+  <meta name="keywords" content="原,总结,调试,转储,windbg,stack,vmmap,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="缘起很早之前，我遇到过几个与栈相关的问题，当时总结过几篇关于线程栈的文章，分别是 《栈大小可以怎么改？》、《栈局部变量优化探究，意外发现了 vs 的一个 bug ？》、《栈又溢出了》、《有趣的异常》。在这几篇总结中，简单的总结了栈溢出的原因，设置线程栈大小的方法。但是还有一点没弄清楚：操作系统是怎么知道一个线程的栈大小的？一定记录在某个位置了，否则就不能正确的在栈溢出的时候抛出异常了。不能根据 P">
-<meta name="keywords" content="原,总结,调试,windbg,转储,stack,vmmap">
+<meta name="keywords" content="原,总结,调试,转储,windbg,stack,vmmap">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何确定线程栈的基址？">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/how-to-check-thread-stack-base/index.html">
@@ -103,7 +103,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/how-to-check-thread-stack-base/MiCheckForUserStackOverflow-description.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/how-to-check-thread-stack-base/MiCheckForUserStackOverflow-key-flow.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/how-to-check-thread-stack-base/view-stack-base-and-stack-size.png">
-<meta property="og:updated_time" content="2024-12-21T04:02:50.226Z">
+<meta property="og:updated_time" content="2025-09-20T01:19:00.676Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="如何确定线程栈的基址？">
 <meta name="twitter:description" content="缘起很早之前，我遇到过几个与栈相关的问题，当时总结过几篇关于线程栈的文章，分别是 《栈大小可以怎么改？》、《栈局部变量优化探究，意外发现了 vs 的一个 bug ？》、《栈又溢出了》、《有趣的异常》。在这几篇总结中，简单的总结了栈溢出的原因，设置线程栈大小的方法。但是还有一点没弄清楚：操作系统是怎么知道一个线程的栈大小的？一定记录在某个位置了，否则就不能正确的在栈溢出的时候抛出异常了。不能根据 P">
@@ -360,8 +360,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2024-12-21T12:02:50+08:00">
-                2024-12-21
+              <time title="更新于" itemprop="dateModified" datetime="2025-09-20T09:19:00+08:00">
+                2025-09-20
               </time>
             
           </span>
@@ -565,9 +565,9 @@
           
             <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
-          
             <a href="/tags/转储/" rel="tag"><i class="fa fa-tag"></i> 转储</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/stack/" rel="tag"><i class="fa fa-tag"></i> stack</a>
           
@@ -1094,7 +1094,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2024</span>
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

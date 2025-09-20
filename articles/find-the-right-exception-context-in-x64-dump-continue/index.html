@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="调试,异常,debug,windbg,dump,wow64,32,EXCEPTION_RECORD,">
+  <meta name="keywords" content="调试,异常,debug,dump,windbg,wow64,32,EXCEPTION_RECORD,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="前言在上一篇文章中介绍了如何在 64 位进程的转储文件中查找异常上下文的方法 —— KiUserExceptionDispatcher() 函数对应栈帧的 Child-SP 的值保存了异常发生时的线程上下文。 本文将介绍如何在 32 位进程及 wow64 进程的转储文件中查找异常上下文的方法，并且会先介绍几个跟异常分发相关的函数和结构体。如果忘记了结论，可以根据函数参数手动逆向查找验证。">
-<meta name="keywords" content="调试,异常,debug,windbg,dump,wow64,32,EXCEPTION_RECORD">
+<meta name="keywords" content="调试,异常,debug,dump,windbg,wow64,32,EXCEPTION_RECORD">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何快速从 32 位转储文件中找到异常发生时的线程上下文">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/find-the-right-exception-context-in-x64-dump-continue/index.html">
@@ -100,7 +100,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump-continue/verify-exception-info-32.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump-continue/view-exception-callstack-wow64.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump-continue/verify-exception-info-wow64.png">
-<meta property="og:updated_time" content="2024-12-21T04:02:50.123Z">
+<meta property="og:updated_time" content="2025-09-20T01:19:00.645Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="如何快速从 32 位转储文件中找到异常发生时的线程上下文">
 <meta name="twitter:description" content="前言在上一篇文章中介绍了如何在 64 位进程的转储文件中查找异常上下文的方法 —— KiUserExceptionDispatcher() 函数对应栈帧的 Child-SP 的值保存了异常发生时的线程上下文。 本文将介绍如何在 32 位进程及 wow64 进程的转储文件中查找异常上下文的方法，并且会先介绍几个跟异常分发相关的函数和结构体。如果忘记了结论，可以根据函数参数手动逆向查找验证。">
@@ -357,8 +357,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2024-12-21T12:02:50+08:00">
-                2024-12-21
+              <time title="更新于" itemprop="dateModified" datetime="2025-09-20T09:19:00+08:00">
+                2025-09-20
               </time>
             
           </span>
@@ -560,9 +560,9 @@
           
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
           
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
-          
             <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/wow64/" rel="tag"><i class="fa fa-tag"></i> wow64</a>
           
@@ -1267,7 +1267,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2024</span>
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

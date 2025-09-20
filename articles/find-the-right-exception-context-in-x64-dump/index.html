@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="调试,debug,windbg,dump,x64,">
+  <meta name="keywords" content="调试,debug,dump,windbg,x64,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="前言经常做调试的朋友可能会遇到在 windbg 里通过 k 系列命令得到的调用栈没有太大参考意义。一般是由于线程上下文不对导致的。这时候可以通过 !analyze -v 让 windbg 自动帮我们分析出正确的调用栈及异常发生时的线程上下文。有了上下文信息，就可以执行 .cxr address_to_context 命令切换上下文，这时候再通过 k 命令查看调用栈，一般可以得到一个有意义的调用栈。">
-<meta name="keywords" content="调试,debug,windbg,dump,x64">
+<meta name="keywords" content="调试,debug,dump,windbg,x64">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何快速从 64 位转储文件中找到异常发生时的线程上下文">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/find-the-right-exception-context-in-x64-dump/index.html">
@@ -103,7 +103,8 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump/verify-exception-record.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump/change-context-and-view-callstack.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump/view-address-page-information.png">
-<meta property="og:updated_time" content="2024-12-21T04:02:50.130Z">
+<meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump/u-UnhandledExceptionFilter.png">
+<meta property="og:updated_time" content="2025-09-20T01:19:00.661Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="如何快速从 64 位转储文件中找到异常发生时的线程上下文">
 <meta name="twitter:description" content="前言经常做调试的朋友可能会遇到在 windbg 里通过 k 系列命令得到的调用栈没有太大参考意义。一般是由于线程上下文不对导致的。这时候可以通过 !analyze -v 让 windbg 自动帮我们分析出正确的调用栈及异常发生时的线程上下文。有了上下文信息，就可以执行 .cxr address_to_context 命令切换上下文，这时候再通过 k 命令查看调用栈，一般可以得到一个有意义的调用栈。">
@@ -360,8 +361,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2024-12-21T12:02:50+08:00">
-                2024-12-21
+              <time title="更新于" itemprop="dateModified" datetime="2025-09-20T09:19:00+08:00">
+                2025-09-20
               </time>
             
           </span>
@@ -507,8 +508,12 @@
 <blockquote>
 <p><strong>疑问：</strong> <code>windbg</code> 调用栈中给出的名字是 <code>ntdll!KiUserExceptionDispatch</code>，少了 <code>er</code>（好像也可以用 <code>ntdll!KiUserExceptionDispatcher</code>），在 <code>IDA</code> 中对应的函数名字是 <code>ntdll!KiUserExceptionDispatcher</code>。</p>
 </blockquote>
+<h2 id="更新-UnhandledExceptionFilter"><a href="#更新-UnhandledExceptionFilter" class="headerlink" title="更新 UnhandledExceptionFilter"></a>更新 UnhandledExceptionFilter</h2><p>有时候调用栈中没有 <code>KiUserExceptionDispatcher</code>，但是有 <code>KERNELBASE!UnhandledExceptionFilter</code>，只能通过 <code>KERNELBASE!UnhandledExceptionFilter</code> 进行查看。<code>KERNELBASE!UnhandledExceptionFilter</code> 只有一个参数，类型是 <code>_EXCEPTION_POINTERS *</code>。<code>64</code> 位程序的第一个参数会存储到 <code>RCX</code> 中，需要查看 <code>KERNELBASE!UnhandledExceptionFilter</code> 用到的 <code>RCX</code> 寄存器的值。通过 <code>u</code> 命令查看 <code>KERNELBASE!UnhandledExceptionFilter</code> 的反汇编代码。很幸运，<code>rcx</code> 的值保存到栈上 <code>rsp+0x60</code> 偏移处。</p>
+<p><img src="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump/u-UnhandledExceptionFilter.png" alt="u-UnhandledExceptionFilter"></p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li><p><code>64</code> 位程序中 <code>KiUserExceptionDispatch()</code> 对应栈帧的 <code>Child-SP</code> 保存了 <code>_CONTEXT</code> 参数，<code>rsp+4f0</code> 处保存了 <code>_EXCEPTION_RECORD</code> 参数，可以根据这个规律直接找到异常发生时的线程上下文信息及异常信息。</p>
+</li>
+<li><p><code>64</code> 位程序中  <code>KERNELBASE!UnhandledExceptionFilter</code> 对应栈帧的 <code>Child-SP+0x60</code> 的地方保存了 <code>_EXCEPTION_POINTERS</code> 的指针。   </p>
 </li>
 <li><p>当直接通过 <code>k</code> 命令得到的调用栈不符合预期时，可以通过 <code>.cxr context</code> 切换到 <code>context</code> 指定的线程上下文后再次尝试。</p>
 </li>
@@ -577,9 +582,9 @@
           
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
           
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
-          
             <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/x64/" rel="tag"><i class="fa fa-tag"></i> x64</a>
           
@@ -1260,7 +1265,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#analyze-v"><span class="nav-number">2.</span> <span class="nav-text">!analyze -v</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看反汇编"><span class="nav-number">3.</span> <span class="nav-text">查看反汇编</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小心求证"><span class="nav-number">4.</span> <span class="nav-text">小心求证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#尝试破案"><span class="nav-number">5.</span> <span class="nav-text">尝试破案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#KiUserExceptionDispatcher-伪代码"><span class="nav-number">6.</span> <span class="nav-text">KiUserExceptionDispatcher 伪代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">8.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#More"><span class="nav-number">9.</span> <span class="nav-text">More</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#analyze-v"><span class="nav-number">2.</span> <span class="nav-text">!analyze -v</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看反汇编"><span class="nav-number">3.</span> <span class="nav-text">查看反汇编</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小心求证"><span class="nav-number">4.</span> <span class="nav-text">小心求证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#尝试破案"><span class="nav-number">5.</span> <span class="nav-text">尝试破案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#KiUserExceptionDispatcher-伪代码"><span class="nav-number">6.</span> <span class="nav-text">KiUserExceptionDispatcher 伪代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#更新-UnhandledExceptionFilter"><span class="nav-number">7.</span> <span class="nav-text">更新 UnhandledExceptionFilter</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">9.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#More"><span class="nav-number">10.</span> <span class="nav-text">More</span></a></li></ol></div>
             
 
           </div>
@@ -1280,7 +1285,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2024</span>
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
