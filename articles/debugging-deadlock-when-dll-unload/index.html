@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,调试,debug,windbg,死锁,deadlock,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言最近我们的程序在退出时会卡住，调查发现是在卸载dll时死锁了。大概流程是这样的：我们的dll在加载的时候会创建一个工作线程，在卸载的时候，会设置退出标志并等待之前开启的工作线程结束。为了研究这个经典的死锁问题，写了一个模拟程序，用到的dump文件及示例代码参考附件。">
+<meta name="keywords" content="原,调试,debug,windbg,死锁,deadlock">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言最近我们的程序在退出时会卡住，调查发现是在卸载dll时死锁了。大概流程是这样的：我们的dll在加载的时候会创建一个工作线程，在卸载的时候，会设置退出标志并等待之前开启的工作线程结束。为了研究这个经典的死锁问题，写了一个模拟程序，用到的dump文件及示例代码参考附件。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-11-02T01:09:17.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">
+<meta name="twitter:description" content="前言最近我们的程序在退出时会卡住，调查发现是在卸载dll时死锁了。大概流程是这样的：我们的dll在加载的时候会创建一个工作线程，在卸载的时候，会设置退出标志并等待之前开启的工作线程结束。为了研究这个经典的死锁问题，写了一个模拟程序，用到的dump文件及示例代码参考附件。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试实战 | 使用 windbg 调试 DLL 卸载时的死锁 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-02T09:09:17+08:00">
+                2019-11-02
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2019-11-02T09:09:17+08:00">
+                2019-11-02
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/调试案例/" itemprop="url" rel="index">
+                    <span itemprop="name">调试案例</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近我们的程序在退出时会卡住，调查发现是在卸载<code>dll</code>时死锁了。大概流程是这样的：我们的<code>dll</code>在加载的时候会创建一个工作线程，在卸载的时候，会设置退出标志并等待之前开启的工作线程结束。为了研究这个经典的死锁问题，写了一个模拟程序，用到的<code>dump</code>文件及示例代码参考附件。</p>
+<a id="more"></a>
+
+
+
+<div class="note info"><p>这也是几年前在项目中遇到的一个问题，我对之前的笔记进行了整理重新发布于此。</p></div> 
+
+
+
+<h2 id="关键代码"><a href="#关键代码" class="headerlink" title="关键代码"></a>关键代码</h2><p>主程序 <code>WaitDllUnloadExe</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//WaitDllUnloadExe.cpp</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"stdafx.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"windows.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> _tmain(<span class="keyword">int</span> argc, _TCHAR* argv[])</span><br><span class="line">&#123;</span><br><span class="line">  HMODULE <span class="keyword">module</span> = LoadLibraryA(<span class="string">".\\DllUnload.dll"</span>);</span><br><span class="line"></span><br><span class="line">  Sleep(<span class="number">5000</span>);</span><br><span class="line"></span><br><span class="line">  FreeLibrary(<span class="keyword">module</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>DLL程序 <code>DllUnload</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// dllmain.cpp</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"stdafx.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"process.h"</span></span></span><br><span class="line">HANDLE g_hThread;</span><br><span class="line"><span class="keyword">bool</span> g_quit = <span class="literal">false</span>;</span><br><span class="line"><span class="keyword">unsigned</span> __<span class="function">stdcall <span class="title">procThread</span><span class="params">(<span class="keyword">void</span> *)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">while</span> ( !g_quit )</span><br><span class="line">  &#123;</span><br><span class="line">    OutputDebugStringA(<span class="string">"procThread running.\n"</span>);</span><br><span class="line">    Sleep(<span class="number">100</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  OutputDebugStringA(<span class="string">"==========================procThread quitting.\n"</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">unsigned</span> __<span class="function">stdcall <span class="title">quitDemoProc</span><span class="params">(<span class="keyword">void</span> *)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> idx = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">while</span> ( idx++ &lt; <span class="number">5</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    OutputDebugStringA(<span class="string">"quitDemoProc running!!!!!!!!.\n"</span>);</span><br><span class="line">    Sleep(<span class="number">100</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  OutputDebugStringA(<span class="string">"--------------------------------------------------quitDemoProc quitting.\n"</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function">BOOL APIENTRY <span class="title">DllMain</span><span class="params">( HMODULE hModule,</span></span></span><br><span class="line"><span class="function"><span class="params">                       DWORD  ul_reason_for_call,</span></span></span><br><span class="line"><span class="function"><span class="params">                       LPVOID lpReserved</span></span></span><br><span class="line"><span class="function"><span class="params">					 )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">switch</span> (ul_reason_for_call)</span><br><span class="line">  &#123;</span><br><span class="line">  <span class="keyword">case</span> DLL_PROCESS_ATTACH:</span><br><span class="line">    &#123;</span><br><span class="line">      g_hThread = (HANDLE)_beginthreadex(<span class="literal">NULL</span>, <span class="number">0</span>, &amp;procThread, <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line">      CloseHandle((HANDLE)_beginthreadex(<span class="literal">NULL</span>, <span class="number">0</span>, &amp;quitDemoProc, <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>));</span><br><span class="line">    &#125;		</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  <span class="keyword">case</span> DLL_THREAD_ATTACH:</span><br><span class="line">  <span class="keyword">case</span> DLL_THREAD_DETACH:</span><br><span class="line">    &#123;</span><br><span class="line">      OutputDebugStringA(<span class="string">"------------DLL_THREAD_DETACH called.\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  <span class="keyword">case</span> DLL_PROCESS_DETACH:</span><br><span class="line">    &#123;</span><br><span class="line">      OutputDebugStringA(<span class="string">"------------DLL_PROCESS_DETACH begin wait...\n"</span>);</span><br><span class="line">      g_quit = <span class="literal">true</span>;</span><br><span class="line">      WaitForSingleObject(g_hThread, INFINITE);</span><br><span class="line">      OutputDebugStringA(<span class="string">"------------DLL_PROCESS_DETACH end wait...\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><a href="/downloads/debug-deadlock-when-dll-unload-Demo-WaitDllUnloadExe.zip">点我下载测试工程</a> </p>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>使用<code>windbg</code>打开<code>dump</code>文件。然后使用<code>~kvn</code> 列出所有线程的调用栈。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">0  Id: 1918.1924 Suspend: 1 Teb: 7efdd000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr  Args to Child              </span><br><span class="line">00 004af6f4 76150816 00000038 00000000 00000000 ntdll!NtWaitForSingleObject+0x15 (FPO: [3,0,0])</span><br><span class="line">01 004af760 76781194 00000038 ffffffff 00000000 KERNELBASE!WaitForSingleObjectEx+0x98 (FPO: [Non-Fpo])</span><br><span class="line">02 004af778 76781148 00000038 ffffffff 00000000 kernel32!WaitForSingleObjectExImplementation+0x75 (FPO: [Non-Fpo])</span><br><span class="line">*** WARNING: Unable to verify checksum for DllUnload.dll</span><br><span class="line">03 004af78c 6d0c15eb 00000038 ffffffff 00000000 kernel32!WaitForSingleObject+0x12 (FPO: [Non-Fpo])</span><br><span class="line">04 004af86c 6d0c1e2b 6d0b0000 00000000 00000000 DllUnload!DllMain+0xdb (FPO: [Non-Fpo]) (CONV: stdcall) [c:\users\bianchengnan\documents\visual studio 2012\projects\waitdllunloadexe\dllunload\dllmain.cpp @ 55]</span><br><span class="line">05 004af8b0 6d0c1d4f 6d0b0000 00000000 00000000 DllUnload!__DllMainCRTStartup+0xcb (FPO: [Non-Fpo]) (CONV: cdecl) [f:\dd\vctools\crt_bld\self_x86\crt\src\crtdll.c @ 508]</span><br><span class="line">06 004af8c4 77139930 6d0b0000 00000000 00000000 DllUnload!_DllMainCRTStartup+0x1f (FPO: [Non-Fpo]) (CONV: stdcall) [f:\dd\vctools\crt_bld\self_x86\crt\src\crtdll.c @ 472]</span><br><span class="line">07 004af8e4 77160000 6d0c10f0 6d0b0000 00000000 ntdll!LdrpCallInitRoutine+0x14</span><br><span class="line">08 004af96c 77141221 6d0b0000 004af990 750227be ntdll!LdrpUnloadDll+0x375 (FPO: [Non-Fpo])</span><br><span class="line">09 004af9b0 76151da7 6d0b0000 7efde000 004afaa4 ntdll!LdrUnloadDll+0x4a (FPO: [Non-Fpo])</span><br><span class="line">*** WARNING: Unable to verify checksum for WaitDllUnloadExe.exe</span><br><span class="line">0a 004af9c0 003a1425 6d0b0000 00000000 00000000 KERNELBASE!FreeLibrary+0x15 (FPO: [Non-Fpo])</span><br><span class="line">0b 004afaa4 003a1989 00000001 0059a650 0059cf30 WaitDllUnloadExe!wmain+0x55 (FPO: [Non-Fpo]) (CONV: cdecl) [c:\users\bianchengnan\documents\visual studio 2012\projects\waitdllunloadexe\waitdllunloadexe\waitdllunloadexe.cpp @ 13]</span><br><span class="line">0c 004afaf4 003a1b7d 004afb08 767833ca 7efde000 WaitDllUnloadExe!__tmainCRTStartup+0x199 (FPO: [Non-Fpo]) (CONV: cdecl) [f:\dd\vctools\crt_bld\self_x86\crt\src\crtexe.c @ 533]</span><br><span class="line">0d 004afafc 767833ca 7efde000 004afb48 77139ed2 WaitDllUnloadExe!wmainCRTStartup+0xd (FPO: [Non-Fpo]) (CONV: cdecl) [f:\dd\vctools\crt_bld\self_x86\crt\src\crtexe.c @ 377]</span><br><span class="line">0e 004afb08 77139ed2 7efde000 75022546 00000000 kernel32!BaseThreadInitThunk+0xe (FPO: [Non-Fpo])</span><br><span class="line">0f 004afb48 77139ea5 003a107d 7efde000 00000000 ntdll!__RtlUserThreadStart+0x70 (FPO: [Non-Fpo])</span><br><span class="line">10 004afb60 00000000 003a107d 7efde000 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   1  Id: 1918.594 Suspend: 1 Teb: 7efda000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr  Args to Child              </span><br><span class="line">00 0090fc68 77138dd4 00000040 00000000 00000000 ntdll!NtWaitForSingleObject+0x15 (FPO: [3,0,0])</span><br><span class="line">01 0090fccc 77138cb8 00000000 00000000 0059c5b8 ntdll!RtlpWaitOnCriticalSection+0x13e (FPO: [Non-Fpo])</span><br><span class="line">02 0090fcf4 7715d349 772020c0 75d82382 00000000 ntdll!RtlEnterCriticalSection+0x150 (FPO: [Non-Fpo])</span><br><span class="line">03 0090fd8c 7715d5c2 00000000 00000000 0090fdac ntdll!LdrShutdownThread+0x50 (FPO: [Non-Fpo])</span><br><span class="line">04 0090fd9c 0f78e099 00000000 0059ec48 0090fde8 ntdll!RtlExitUserThread+0x2a (FPO: [Non-Fpo])</span><br><span class="line">05 0090fdac 0f78e007 00000000 d910e7ee 00000000 MSVCR110D!_endthreadex+0x39 (FPO: [Non-Fpo])</span><br><span class="line">06 0090fde8 0f78e1d1 0059ec48 0090fe00 767833ca MSVCR110D!_beginthreadex+0x1a7 (FPO: [Non-Fpo])</span><br><span class="line">07 0090fdf4 767833ca 0059ec48 0090fe40 77139ed2 MSVCR110D!_endthreadex+0x171 (FPO: [Non-Fpo])</span><br><span class="line">08 0090fe00 77139ed2 0059c5b8 75d8204e 00000000 kernel32!BaseThreadInitThunk+0xe (FPO: [Non-Fpo])</span><br><span class="line">09 0090fe40 77139ea5 0f78e120 0059c5b8 00000000 ntdll!__RtlUserThreadStart+0x70 (FPO: [Non-Fpo])</span><br><span class="line">0a 0090fe58 00000000 0f78e120 0059c5b8 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">#  2  Id: 1918.1960 Suspend: 1 Teb: 7efd7000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr  Args to Child              </span><br><span class="line">00 00a4f904 7719f826 75ec273a 00000000 00000000 ntdll!DbgBreakPoint (FPO: [0,0,0])</span><br><span class="line">01 00a4f934 767833ca 00000000 00a4f980 77139ed2 ntdll!DbgUiRemoteBreakin+0x3c (FPO: [Non-Fpo])</span><br><span class="line">02 00a4f940 77139ed2 00000000 75ec278e 00000000 kernel32!BaseThreadInitThunk+0xe (FPO: [Non-Fpo])</span><br><span class="line">03 00a4f980 77139ea5 7719f7ea 00000000 00000000 ntdll!__RtlUserThreadStart+0x70 (FPO: [Non-Fpo])</span><br><span class="line">04 00a4f998 00000000 7719f7ea 00000000 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br></pre></td></tr></table></figure>
+
+<p><code>0号线程</code>是主线程（<code>线程id</code>为<code>1924</code>），<code>1号线程</code>是子线程（<code>线程id</code>为<code>594</code>），<code>2号线程</code>（<code>线程id</code>为<code>1960</code>）是<code>windbg</code>插入的远程线程，用来中断到调试器。</p>
+<p><code>0号线程</code>在调用<code>WaitForSingleObject</code>时陷入了等待，我们来看它等什么。输入<code>!handle 0x38 f</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">!handle 0x38 f </span><br><span class="line">Handle 00000038</span><br><span class="line">  Type         Thread</span><br><span class="line">  Attributes   0</span><br><span class="line">  GrantedAccess 0x1fffff:</span><br><span class="line">         Delete,ReadControl,WriteDac,WriteOwner,Synch</span><br><span class="line">         Terminate,Suspend,Alert,GetContext,SetContext,SetInfo,QueryInfo,SetToken,Impersonate,DirectImpersonate</span><br><span class="line">  HandleCount   5</span><br><span class="line">  PointerCount 8</span><br><span class="line">  Name         &lt;none&gt;</span><br><span class="line">  Object specific information</span><br><span class="line">    Thread Id   1918.594</span><br><span class="line">    Priority    10</span><br><span class="line">    Base Priority 0</span><br></pre></td></tr></table></figure>
+
+<p>  原来<code>0号线程</code>在等<code>线程id</code>为<code>594</code>的线程 。我们代码里确实有<code>WaitForSingleObject(g_hThread, INFINITE);</code>  ，我们再来看看<code>1号线程</code>。从调用栈看来，<code>1号线程</code>已经在调用<code>_endthreadex()</code>准备关闭了，在关闭的过程中进入了一个关键段，并调用<code>ntdll!NtWaitForSingleObject()</code>进入等待。等待的句柄为<code>0x40</code>。输入<code>!handle 0x40 f</code>查看句柄的相关信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">0:002&gt; !handle 0x40 f </span><br><span class="line">Handle 00000040</span><br><span class="line">  Type          Event</span><br><span class="line">  Attributes    0</span><br><span class="line">  GrantedAccess 0x100003:</span><br><span class="line">         Synch</span><br><span class="line">         QueryState,ModifyState</span><br><span class="line">  HandleCount   2</span><br><span class="line">  PointerCount  4</span><br><span class="line">  Name          &lt;none&gt;</span><br><span class="line">  Object specific information</span><br><span class="line">    Event Type Auto Reset</span><br><span class="line">    Event is Waiting</span><br></pre></td></tr></table></figure>
+
+<p>我们发现句柄<code>0x40</code>对应的对象是<code>Event</code>，暂时先不管。使用万能死锁调试命令<code>!cs -l</code>看看（因为从调用堆栈来看<code>1号线程</code>是调用<code>RtlEnterCriticalSection</code>而死锁的。）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">0:002&gt; !cs -l</span><br><span class="line">-----------------------------------------</span><br><span class="line">DebugInfo          = 0x77204360</span><br><span class="line">Critical section   = 0x772020c0 (ntdll!LdrpLoaderLock+0x0)</span><br><span class="line">LOCKED</span><br><span class="line">LockCount          = 0x1</span><br><span class="line">WaiterWoken        = No</span><br><span class="line">OwningThread       = 0x00001924</span><br><span class="line">RecursionCount     = 0x1</span><br><span class="line">LockSemaphore      = 0x40</span><br><span class="line">SpinCount          = 0x00000000</span><br></pre></td></tr></table></figure>
+
+<p>从输出结果可知，有一个锁住的关键段，被<code>0号线程</code>（<code>线程id</code>为<code>0x00001924</code>）拥有。而且这个死锁的关键段的成员<code>LockSemaphore</code>正是<code>1号线程</code>正在等待的句柄值。突然想起来《windows核心编程》上讲过关键段的结构，其中的<code>LockSemaphore</code>为<code>Event</code>类型的，具体参考第八章8.4节。</p>
+<p>至此，终于真相大白了，<code>0号线程</code>在<code>DllMain()</code>内（<code>ul_reason_for_call</code>为<code>DLL_PROCESS_DETACH</code>）等待<code>1号线程</code>结束，而<code>1号线程</code>在结束的时候同样要调用<code>DllMain()</code>，并且<code>ul_reason_for_call</code>参数为<code>DLL_THREAD_DETACH</code>。由于对<code>DllMain()</code>的调用需要序列化，需要等待<code>0号线程</code>释放锁后，其它线程才能调用。而<code>0号线程</code>又在无限等待<code>1号线程</code>结束，故死锁。</p>
+<div class="note warning"><p>注意：即使在<code>DllMain()</code>里调用<code>DisableThreadLibraryCalls(hModule);</code>也不管用，具体参考《windows核心编程》中的相关分析。</p></div> 
+
+
+
+<p>在<code>winnt.h</code>里找到了<code>CriticalSection</code>的定义，如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">RTL_CRITICAL_SECTION</span> &#123;</span></span><br><span class="line">    PRTL_CRITICAL_SECTION_DEBUG DebugInfo;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">//  The following three fields control entering and exiting the critical</span></span><br><span class="line">    <span class="comment">//  section for the resource</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line"></span><br><span class="line">    LONG LockCount;</span><br><span class="line">    LONG RecursionCount;</span><br><span class="line">    HANDLE OwningThread;        <span class="comment">// from the thread's ClientId-&gt;UniqueThread</span></span><br><span class="line">    HANDLE LockSemaphore;</span><br><span class="line">    ULONG_PTR SpinCount;        <span class="comment">// force size on 64-bit systems when packed</span></span><br><span class="line">&#125; RTL_CRITICAL_SECTION, *PRTL_CRITICAL_SECTION;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>不要在<code>DllMain()</code>里等待线程结束。</p>
+</li>
+<li><p>使用<code>!cs -l</code>调试关键段死锁，真香。</p>
+</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li>《格蠹汇编》</li>
+<li>《windows核心编程》第八章（<code>CriticalSection</code>相关知识，尤其是<code>8.4.1</code>节） 第二十章（<code>dll</code>相关知识，尤其是<code>20.2.5</code>节）的相关内容。</li>
+<li><a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn633971(v=vs.85).aspx" target="_blank" rel="noopener">Dynamic-Link Library Best Practices (Windows)</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/死锁/" rel="tag"><i class="fa fa-tag"></i> 死锁</a>
+          
+            <a href="/tags/deadlock/" rel="tag"><i class="fa fa-tag"></i> deadlock</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/debugging-deadlock-caused-by-TerminateThread/" rel="next" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">
+                <i class="fa fa-chevron-left"></i> 调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/config-symbols-for-ida/" rel="prev" title="排错实战 | 解救加载调试符号失败的IDA">
+                排错实战 | 解救加载调试符号失败的IDA <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">调试实战 | dll 加载失败之 Debug Release 争锋篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">调试技巧 | 你很可能需要知道这个调试小技巧</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">调试实战 | 从转储文件找出抛出的异常 —— 理论</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关键代码"><span class="nav-number">2.</span> <span class="nav-text">关键代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析"><span class="nav-number">3.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

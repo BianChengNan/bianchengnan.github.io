@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,github,工具,调试,排错,rc,冲突,git,multiple rc,gdb,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言在前面两篇文章 记一次曲折的多资源文件拆分折腾过程（1） 和 记一次曲折的多资源文件拆分折腾过程（2） 中，已经把折腾过程中遇到的问题都弄清楚了。因为对这个问题印象太深刻了，而且 git 又是开源的，于是特地翻看了 git 的源码，并且在 windows 上用 gdb 简单调试了一波。  说明： 本篇文章适合 geek 阅读，全是一些源码查看及编译环境+调试的总结。">
+<meta name="keywords" content="原,总结,github,工具,调试,排错,rc,冲突,git,multiple rc,gdb">
+<meta property="og:type" content="article">
+<meta property="og:title" content="排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言在前面两篇文章 记一次曲折的多资源文件拆分折腾过程（1） 和 记一次曲折的多资源文件拆分折腾过程（2） 中，已经把折腾过程中遇到的问题都弄清楚了。因为对这个问题印象太深刻了，而且 git 又是开源的，于是特地翻看了 git 的源码，并且在 windows 上用 gdb 简单调试了一波。  说明： 本篇文章适合 geek 阅读，全是一些源码查看及编译环境+调试的总结。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/download-git-zip-from-github.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/git-add-warning-and-fail.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/validate_encoding.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/has_prohibited_utf_bom.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/show-rc-bom-header.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/lookup-references.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/reencode_string_len.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/search-gdb-in-disk.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/no-symbol-table-load.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/install-and-init-sdk.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/successful-installed-src-folder.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/open-sdk-cd-to-usr-src-git-and-make-install.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/build-success.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/start-git-under-usr-src-git-failed.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/newly-built-exe-with-debug-info.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/prepare-for-debugging-git-add.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/gdb-debug-git-add.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/set-breakpoint-on-validate_encoding-and-run.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/help-x-and-view-data.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/view-callstack-of-git-add.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/init-repository.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/set-breakpoint-and-run.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/checkout_call_stack.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/view-out-str.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/view-file-content-with-hex-editor.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/switch-frame-and-view-source-using-line-command.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.789Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git">
+<meta name="twitter:description" content="前言在前面两篇文章 记一次曲折的多资源文件拆分折腾过程（1） 和 记一次曲折的多资源文件拆分折腾过程（2） 中，已经把折腾过程中遇到的问题都弄清楚了。因为对这个问题印象太深刻了，而且 git 又是开源的，于是特地翻看了 git 的源码，并且在 windows 上用 gdb 简单调试了一波。  说明： 本篇文章适合 geek 阅读，全是一些源码查看及编译环境+调试的总结。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/download-git-zip-from-github.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-10-30T10:25:21+08:00">
+                2021-10-30
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/排错/" itemprop="url" rel="index">
+                    <span itemprop="name">排错</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在前面两篇文章 <a href="https://bianchengnan.github.io/articles/troubleshoot-error-RC1020-unexpected-endif-using-multiple-rc-in-one-project-and-stop-git-treating-rc-as-binary/">记一次曲折的多资源文件拆分折腾过程（1）</a> 和 <a href="https://bianchengnan.github.io/articles/troubleshoot-error-RC1020-unexpected-endif-using-multiple-rc-in-one-project-and-stop-git-treating-rc-as-binary-part2/">记一次曲折的多资源文件拆分折腾过程（2）</a> 中，已经把折腾过程中遇到的问题都弄清楚了。因为对这个问题印象太深刻了，而且 <code>git</code> 又是开源的，于是特地翻看了 <code>git</code> 的源码，并且在 <code>windows</code> 上用 <code>gdb</code> 简单调试了一波。</p>
+<blockquote>
+<p><strong>说明：</strong> 本篇文章适合 <code>geek</code> 阅读，全是一些源码查看及编译环境+调试的总结。</p>
+</blockquote>
+<a id="more"></a>
+
+
+
+<h2 id="git-源码下载"><a href="#git-源码下载" class="headerlink" title="git 源码下载"></a>git 源码下载</h2><p>在 <code>github</code> 上找到 <code>git for windows</code> 的仓库，<a href="https://github.com/git-for-windows/git，使用如下命令克隆下来即可。" target="_blank" rel="noopener">https://github.com/git-for-windows/git，使用如下命令克隆下来即可。</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 说明：可能需要科学上网才能正常克隆</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 如果只想获得最新的提交可以使用下面的命令</span></span><br><span class="line">git clone --depth 1 https://github.com/git-for-windows/git.git</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 如果想克隆所有提交集，执行下面的命令</span></span><br><span class="line">git clone https://github.com/git-for-windows/git.git</span><br></pre></td></tr></table></figure>
+
+<p>当然，也可以直接下载压缩包。在 <code>git</code> 仓库的主页的右上侧有一个名为 <code>Code</code> 的按钮，点击后，会弹出一个悬浮框，里面有几个选项，其中一个是 <code>Download ZIP</code> 按钮，点击此按钮即可下载压缩好的代码。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/download-git-zip-from-github.png" alt="download-git-zip-from-github"></p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p><code>git-for-windows/git</code>  <code>fork</code> 自 <code>git/git</code> ，也可以从 <a href="https://github.com/git/git" target="_blank" rel="noopener">https://github.com/git/git</a> 下载。</p>
+<p>如果仅仅想查看代码的话，可以通过此方式下载。如果想调试 <code>git</code> 的话，不必在这里手动下载，可以通过后面介绍的 <code>sdk init git</code> 进行下载。</p>
+</blockquote>
+<h2 id="明确目标"><a href="#明确目标" class="headerlink" title="明确目标"></a>明确目标</h2><p>主要有两点疑惑需要解答。</p>
+<ol>
+<li>为什么在 <code>.gitattributes</code> 中把 <code>.rc</code>  的 <code>working-tree-mode</code> 设置成 <code>UTF-16LE</code> 后，在执行 <code>git add</code> 的时候会报错，提示设置成 <code>UTF-16</code>？<br><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/git-add-warning-and-fail.png" alt="git-add-warning-and-fail"></li>
+<li>执行 <code>git checkout .</code> 的时候，是否会把 <code>utf8</code> 编码的内容转换成 <code>working-tree-encoding</code> 中指定的编码格式吗？</li>
+</ol>
+<h2 id="查看代码"><a href="#查看代码" class="headerlink" title="查看代码"></a>查看代码</h2><p>本以为很简单就能找到关键代码，但是代码复杂度远超过最初的预想。不过好在整个代码组织结构还是非常清楚规范的 —— 基本上每个子命令都有一个对应的 <code>.c</code> 文件，比如 <code>add</code> 对应的文件是 <code>builtin\add.c</code>。对应的功能入口函数名以 <code>cmd_</code>  开头，加上命令名，比如 <code>add</code> 命令对应的入口函数是 <code>cmd_add</code>。</p>
+<ol>
+<li><p>查看 <code>git add</code> 对应的代码执行流程，确认在哪里做的检查，并报的警告。</p>
+<p><code>git add</code> 命令对应的入口函数是 <code>builtin/add.c</code> 中的 <code>cmd_add</code>。</p>
+<p>刚开始查看的时候，是从 <code>cmd_add</code> 看起的，因为这个是 <code>git add</code> 对应的入口函数。由于对 <code>git</code> 源码不熟悉，花费了很长时间，于是转换思路，从报错信息往回找。搜索提示中的关键字 <code>contains a byte order mark (BOM).</code>，很快就搜到了关键函数——<code>convert.c</code> 中的 <code>static int validate_encoding(const char *path, const char *enc, const char *data, size_t len, int die_on_error)</code></p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/validate_encoding.png" alt="validate_encoding"></p>
+<p>从代码上看，是进入到了 <code>has_prohibited_utf_bom(enc, data, len)</code> 对应的分支中。按住 <code>ctrl</code>，用鼠标点击对应的函数，就跳转到了对应函数的实现。对应的实现在 <code>utf8.c</code> 中。摘录如下：</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/has_prohibited_utf_bom.png" alt="has_prohibited_utf_bom"></p>
+<p>大概意思是，如果指定了 <code>UTF-16BE</code> 或者 <code>UTF-16LE</code> （另外一个分支是 <code>UTF-32BE</code> <code>UTF-32LE</code>）并且在文件中检测到了对应的 <code>BOM</code> 头，就报错。对应的 <code>BOM</code> 头定义如下：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">static const char utf16_be_bom[] = &#123;'\xFE', '\xFF'&#125;;</span><br><span class="line">static const char utf16_le_bom[] = &#123;'\xFF', '\xFE'&#125;;</span><br><span class="line">static const char utf32_be_bom[] = &#123;'\0', '\0', '\xFE', '\xFF'&#125;;</span><br><span class="line">static const char utf32_le_bom[] = &#123;'\xFF', '\xFE', '\0', '\0'&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>.rc</code> 文件中确实有 <code>utf16_be_bom</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/show-rc-bom-header.png" alt="show-rc-bom-header"></p>
+<p>看来，如果 <code>working-tree-encoding</code> 指定为 <code>UTF-16LE</code> 或 <code>UTF-16BE</code>，那么文件中不能包含 <code>BOM</code> 头。也就是说 <code>UTF-16LE/BE</code> 对应的文件应该是不包含 <code>BOM</code> 头的。</p>
+<p>值得注意的是，<code>validate_encoding()</code> 函数中还做了另外一个判断，也就是 <code>is_missing_required_utf_bom()</code>。如果 <code>working-tree-encoding</code> 指定为 <code>UTF-16</code>, 那么必须指定 <code>UTF-16LE</code> 或者 <code>UTF-16BE</code>。</p>
+</li>
+</ol>
+<p>   找到了最关键的函数，向上找一找谁调用了这个函数，可以在 <code>validate_encoding()</code> 上，右键，选择 <code>Lookup References...</code> 就可以查看所有引用此函数的地方了，后面会多次用到这个方法，这里放一张动态图，后面就不赘述了。</p>
+<p>   <img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/lookup-references.gif" alt="lookup-references"></p>
+<blockquote>
+<p><strong>说明：</strong>如果已经有了搜索结果，<code>Source Insight</code> 会提示<strong>追加</strong>还是<strong>覆盖</strong>。我一般选的是追加。</p>
+</blockquote>
+<p>   因为调用链比较长，我挑选了一条可能的调用链，如下：</p>
+   <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">cmd_add() <span class="comment">// builtin/add.c</span></span><br><span class="line">    -&gt; add_files() <span class="comment">// builtin/add.c</span></span><br><span class="line">     -&gt; add_file_to_index() <span class="comment">// read-cache.c</span></span><br><span class="line">      -&gt; add_to_index() <span class="comment">// read-cache.c</span></span><br><span class="line">       -&gt; index_path() <span class="comment">// object-file.c</span></span><br><span class="line">        -&gt; index_fd() <span class="comment">// object-file.c</span></span><br><span class="line">         -&gt; index_stream_convert_blob() <span class="comment">// object-file.c</span></span><br><span class="line">          -&gt; convert_to_git_filter_fd() <span class="comment">// convert.c</span></span><br><span class="line">           -&gt; encode_to_git() <span class="comment">// convert.c</span></span><br><span class="line">            -&gt; validate_encoding() <span class="comment">// convert.c</span></span><br></pre></td></tr></table></figure>
+
+
+<p>   整个过程是使用 <code>Lookup References...</code> 从下向上查找的。</p>
+<p>   至此，<code>git add .</code> 对应的调用栈就整理出来了。接下来，需要确定的是：在执行 <code>git checkout .</code> 时，是否会像文档中描述的那样执行编码转换工作？</p>
+<ol start="2">
+<li><p>查看 <code>git checkout .</code> 的执行流程，确认是否有编码转换相关调用。</p>
+<p>与 <code>add</code> 一样，<code>checkout</code> 命令对应的入口函数也在 <code>builtin</code>目录下，对应的文件名是 <code>checkout.c</code>，对应的入口函数是 <code>cmd_checkout</code>。<code>git restore</code> 和 <code>git switch</code> 对应的入口函数的实现也在这个文件中，而且都调用了 <code>checkout_main</code>。</p>
+<p>查找调用函数的过程中，发现在 <code>entry.c</code> 中的 <code>write_entry()</code> 函数中有如下代码片段</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">* Convert from git internal format to working tree format</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">if</span> (dco &amp;&amp; dco-&gt;state != CE_NO_DELAY) &#123;</span><br><span class="line">  ret = async_convert_to_working_tree_ca(ca, ce-&gt;name, new_blob, size, &amp;buf, &amp;meta, dco);</span><br><span class="line">  <span class="keyword">if</span> (ret &amp;&amp; string_list_has_string(&amp;dco-&gt;paths, ce-&gt;name)) &#123;</span><br><span class="line">    <span class="built_in">free</span>(new_blob);</span><br><span class="line">    <span class="keyword">goto</span> delayed;</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  ret = convert_to_working_tree_ca(ca, ce-&gt;name, new_blob, size, &amp;buf, &amp;meta);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据注释可以猜测，这个是把内部存储格式转换成工作目录所需的格式。</p>
+<p>最后一个函数是 <code>reencode_string_len()</code>，对应的实现如下：</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/reencode_string_len.png" alt="reencode_string_len"></p>
+<p>可以很明显的发现，<code>reencode_string_len()</code> 在处理 <code>out_encoding</code> 是 <code>UTF-16</code> 的时候，直接按大端进行转换。这就是为什么 <code>.rc</code> 文件的 <code>working_tree_encoding</code> 设置为 <code>UTF-16</code> 时，执行 <code>git checkout .</code> 后，文件编码变成 <code>UTF-16BE BOM</code> 的原因了。</p>
+</li>
+</ol>
+<p>   手动整理的调用链如下：</p>
+   <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cmd_checkout() <span class="comment">// builtin/checkout.c</span></span><br><span class="line">-&gt; checkout_main() <span class="comment">// builtin/checkout.c</span></span><br><span class="line"> -&gt; checkout_paths() <span class="comment">// builtin/checkout.c</span></span><br><span class="line">  -&gt; checkout_worktree() <span class="comment">// builtin/checkout.c</span></span><br><span class="line">   -&gt; checkout_entry() <span class="comment">// builtin/checkout.c</span></span><br><span class="line">    -&gt; checkout_entry_ca() <span class="comment">// builtin/checkout.c</span></span><br><span class="line">     -&gt; write_entry() <span class="comment">// entry.c</span></span><br><span class="line">      -&gt; convert_to_working_tree_ca() <span class="comment">// entry.c</span></span><br><span class="line">       -&gt; convert_to_working_tree_ca_internal() <span class="comment">// entry.c</span></span><br><span class="line">        -&gt; encode_to_worktree() <span class="comment">// convert.c</span></span><br><span class="line">         -&gt; reencode_string_len() <span class="comment">// utf8.c</span></span><br></pre></td></tr></table></figure>
+
+<p>代码看完了，准确的说应该是猜完了。但是 <code>git</code> 在实际运行的时候是按照上面的流程执行的吗？万一猜错了呢？为了进一步落实打破沙锅问到底的精神，而且作为一个调试爱好者，不通过调试手段确认一下，总觉得是不踏实。而且有源码，不调试一波，实在是浪费。于是，花了半天左右的时间，根据官方文档的提示，趟出了一条调试 <code>git</code> 的路，验证了自己的猜想，踏实！这下能睡个安稳觉了。</p>
+<h2 id="调试环境搭建-amp-编译"><a href="#调试环境搭建-amp-编译" class="headerlink" title="调试环境搭建 &amp; 编译"></a>调试环境搭建 &amp; 编译</h2><ol>
+<li><p><code>windows</code>并没有自带 <code>gdb</code> 调试工具。安装好 <code>git sdk</code> 后，可以在安装目录下找到 <code>gdb.exe</code>。能在 <code>windows</code>下用 <code>linux</code> 调试神器，真香！</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/search-gdb-in-disk.png" alt="search-gdb-in-disk"></p>
+</li>
+<li><p>从 <a href="https://github.com/git-for-windows/git/releases/download/v2.33.0.windows.2/Git-2.33.0.2-64-bit.exe" target="_blank" rel="noopener">网上</a>下载的 <code>git</code> 应该是 <code>release</code> 版，不带调试符号。如果直接调试设置断点的话，<code>gdb</code> 会报错，提示找不到符号表。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/no-symbol-table-load.png" alt="no-symbol-table-load"></p>
+</li>
+</ol>
+<p>整个环境搭建过程参照 <a href="https://github.com/git-for-windows/git/wiki/Technical-overview" target="_blank" rel="noopener">https://github.com/git-for-windows/git/wiki/Technical-overview</a> 和 <a href="https://github.com/git-for-windows/git/wiki/Debugging-Git" target="_blank" rel="noopener">https://github.com/git-for-windows/git/wiki/Debugging-Git</a> 进行。</p>
+<p>我把整个过程整理如下：</p>
+<ol>
+<li><p>先到<a href="https://gitforwindows.org/#download-sdk" target="_blank" rel="noopener">下载页面</a>下载 <code>git sdk</code>，我下载的是 <a href="https://github.com/git-for-windows/build-extra/releases/download/git-sdk-1.0.8/git-sdk-installer-1.0.8-64.7z.exe" target="_blank" rel="noopener">64 位</a> 的 <code>git-sdk-installer-1.0.8-64.7z.exe</code>。</p>
+</li>
+<li><p>下载好 <code>git sdk</code> 安装包后，以<strong>管理员权限</strong>运行。</p>
+</li>
+<li><p>运行成功后，执行 <code>sdk init git</code>（执行此命令可以帮我们下载 <code>git</code> 源码，就可以省去手动下载源码的步骤了）。</p>
+</li>
+</ol>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/install-and-init-sdk.png" alt="install-and-init-sdk"></p>
+<blockquote>
+<p><strong>说明：</strong>在执行 <code>sdk init git</code> 之前，目录 <code>C:\git-sdk-64\usr\src\git\</code> 里面没有源码，执行完 <code>sdk init git</code> ，这个目录下包含了 <code>git</code> 的源码文件（带完整历史记录）。如下图：<img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/successful-installed-src-folder.png" alt="successful-installed-src-folder"></p>
+</blockquote>
+<ol start="4">
+<li><p>修改 <code>C:\git-sdk-64\usr\src\git\config.mak</code> 文件的文件内容为如下形式：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">DEVELOPER=1</span><br><span class="line"><span class="keyword">ifndef</span> NDEBUG</span><br><span class="line">CFLAGS := <span class="variable">$(<span class="built_in">filter</span>-out -O2,<span class="variable">$(CFLAGS)</span>)</span></span><br><span class="line">ASLR_OPTION := -Wl,--dynamicbase</span><br><span class="line">BASIC_LDFLAGS := <span class="variable">$(<span class="built_in">filter</span>-out <span class="variable">$(ASLR_OPTION)</span>,<span class="variable">$(BASIC_LDFLAGS)</span>)</span></span><br><span class="line"><span class="keyword">endif</span></span><br></pre></td></tr></table></figure>
+
+<p>默认下载完之后的内容如下，如果在后续步骤执行 <code>cd usr/src/git &amp;&amp; make install</code> 的时候什么也没干就结束了的话，可以删除第二行，再试。</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">DEVELOPER=1</span><br><span class="line">SKIP_DASHED_BUILT_INS=YesPlease</span><br><span class="line"><span class="keyword">ifndef</span> NDEBUG</span><br><span class="line">CFLAGS := <span class="variable">$(<span class="built_in">filter</span>-out -O2,<span class="variable">$(CFLAGS)</span>)</span></span><br><span class="line">ASLR_OPTION := -Wl,--dynamicbase</span><br><span class="line">BASIC_LDFLAGS := <span class="variable">$(<span class="built_in">filter</span>-out <span class="variable">$(ASLR_OPTION)</span>,<span class="variable">$(BASIC_LDFLAGS)</span>)</span></span><br><span class="line"><span class="keyword">endif</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>双击 <code>C:\git-sdk-64\</code> 下的 <code>git-bash.exe</code>，然后执行 <code>cd usr/src/git</code> 切换到 <code>git</code> 目录。</p>
+<blockquote>
+<p><strong>注意：</strong> 输入的是 <code>linux</code> 中的路径分隔符 <code>/</code> 而不是 <code>windows</code> 中的路径分隔符 <code>\</code>。</p>
+</blockquote>
+</li>
+<li><p>执行 <code>make install</code>，就可以开始编译了。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/open-sdk-cd-to-usr-src-git-and-make-install.png" alt="open-sdk-cd-to-usr-src-git-and-make-install"></p>
+</li>
+<li><p>编译结束后，如果一切正常就生成了带符号的 <code>git.exe</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/build-success.png" alt="build-success"></p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<ol>
+<li><p>虽然生成的是 <code>.exe</code> 文件，但是并不会同时生成一个 <code>git.pdb</code> 文件。</p>
+</li>
+<li><p>生成的文件会在 <code>C:\git-sdk-64\usr\src\git</code> 下，但是并不能直接执行此目录下的文件，如果直接执行会报错。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/start-git-under-usr-src-git-failed.png" alt="start-git-under-usr-src-git-failed"></p>
+<ol start="3">
+<li>生成的 <code>git.exe</code> 及几个其它 <code>.exe</code> 文件会被自动拷贝到 <code>C:\git-sdk-64\mingw64\bin\</code> 目录下，还会拷贝一些其它文件到对应目录下。可以通过 <code>git status</code> 查看。</li>
+</ol>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/newly-built-exe-with-debug-info.png" alt="newly-built-exe-with-debug-info"></p>
+</li>
+</ol>
+</blockquote>
+</li>
+</ol>
+<ol start="8">
+<li><p>使用 <code>gdb</code> 调试 <code>git</code>。大体用法如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> debug git checkout .</span></span><br><span class="line">C:/git-sdk-64/mingw64/bin/gdb.exe --args C:/git-sdk-64/mingw64/bin/git.exe git_cmd options</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<p>至此，调试环境已经完全搭建好了，可以开心的调试了。</p>
+<p>首先，查看 <code>git add .</code> 的调用过程，明确关键检查逻辑。</p>
+<h2 id="明确-git-add-逻辑"><a href="#明确-git-add-逻辑" class="headerlink" title="明确 git add 逻辑"></a>明确 git add 逻辑</h2><p>在调试之前，先建立一个简单的测试环境。建立一个 <code>UTF-16LE BOM</code> 编码的文件 <code>utf-l6le-bom.txt</code>，并编辑其内容为 <code>test</code>。设置 <code>.gitattributes</code> 的 <code>working-tree-encoding</code> 为 <code>UTF-16LE</code>，然后执行 <code>git init</code> 初始化仓库，然后就可以使用 <code>gdb</code> 调试 <code>git add .</code> 了。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/prepare-for-debugging-git-add.png" alt="prepare-for-debugging-git-add"></p>
+<p>在打开的 <code>shell</code> 终端中输入如下命令 <code>C:/git-sdk-64/mingw64/bin/gdb.exe --args C:/git-sdk-64/mingw64/bin/git.exe add .</code> 。如果成功，会像下图这样。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/gdb-debug-git-add.png" alt="gdb-debug-git-add"></p>
+<p>接着为函数 <code>validate_encoding</code> 设置断点，在 <code>gdb</code> 中输入 <code>b validate_encoding</code>（<code>b</code> 是 <code>break</code> 的缩写），提示设置成功后，输入 <code>r</code> （<code>run</code>）使程序重新运行起来。这时候程序应该中断下来了。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/set-breakpoint-on-validate_encoding-and-run.png" alt="set-breakpoint-on-validate_encoding-and-run"></p>
+<p>从上图可知，<code>path</code> 的值是 <code>utf16-le-bom.txt</code>，是需要 <code>add</code> 的文件，<code>enc</code> 的值是 <code>UTF16-LE</code>，是 <code>working-tree-encoding</code> 中指定的值。<code>data</code> 应该指向了 <code>utf16-le-bom.txt</code> 中的内容，<code>len</code> 指的是 <code>data</code> 的长度。查看一下 <code>data</code> 的具体内容。</p>
+<p>在 <code>gdb</code> 中可以使用 <code>x</code> 命令可以查看内存中的数据（如果对 <code>gdb</code> 命令不不熟悉，可以输入 <code>help cmd</code>，即可查看对应命令的帮助了），输入 <code>x/10bx data</code>  即可查看从 <code>data</code> 开始的 <code>10</code> 个字节的内容了。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/help-x-and-view-data.png" alt="help-x-and-view-data"></p>
+<p>可以看到，文件内容是 <code>UTF-16LE BOM</code> 存储的，与磁盘上的文件内容一致。最后，看一下调用栈与之前查看源码时猜测的调用栈是否一样。输入 <code>bt</code>（<code>backtrace</code>）即可查看调用栈。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/view-callstack-of-git-add.png" alt="view-callstack-of-git-add"></p>
+<p>中间一些执行不太一样，不过也差不多，通过源码猜的调用栈应该是在其它情况下运行的。至此，执行 <code>git add</code> 时所做的编码格式检查就检查完了。</p>
+<p>接下来，要明确的是执行 <code>git checkout .</code> 的时候是否会调用到编码转换的函数中去，具体传递的参数是什么？</p>
+<h2 id="明确-git-checkout-逻辑"><a href="#明确-git-checkout-逻辑" class="headerlink" title="明确 git checkout 逻辑"></a>明确 git checkout 逻辑</h2><p>首先，建立一个 <code>UTF-16LE BOM</code> 编码的文件 <code>utf-l6le-bom.txt</code>，并编辑其内容为 <code>test</code>。设置 <code>.gitattributes</code> 的 <code>working-tree-encoding</code> 为 <code>UTF-16</code>，然后执行 <code>git init &amp;&amp; git add . &amp;&amp; git commit -m &quot;init&quot;</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/init-repository.png" alt="init-repository"></p>
+<p>然后修改 <code>utf-16le-bom.txt</code> 的内容为 <code>test1</code>，然后就可以使用 <code>gdb</code> 调试 <code>git checkout .</code> 命令了。</p>
+<p>在打开的 <code>shell</code> 终端中输入如下命令</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C:/git-sdk-64/mingw64/bin/gdb.exe --args C:/git-sdk-64/mingw64/bin/git.exe checkout .</span><br></pre></td></tr></table></figure>
+
+<p>这里就不贴图了，具体参考上面调试 <code>git add</code> 命令时的贴图。</p>
+<p>接着为函数 <code>reencode_string_len</code> 设置断点，在 <code>gdb</code> 中输入 <code>b reencode_string_len</code>，提示设置成功后，输入 <code>r</code> 使程序重新运行起来。这时候程序应该中断下来了。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/set-breakpoint-and-run.png" alt="set-breakpoint-and-run"></p>
+<p>从图中高亮部分可知，关键参数和我们想的一样。<code>in</code> 是 <code>test</code>，也就是第一次提交的内容。<code>insz</code> 是 <code>4</code>，表示传入字符串的长度。<code>out_encoding</code> 是 <code>UTF-16</code>（<code>working-tree-encoding</code> 中指定的编码，写文件到磁盘上的编码）。<code>in_encoding</code> 是 <code>UTF-8</code>（ <code>git</code> 内部存储数据时使用的编码）。<code>outsz</code> 保存了传出字符串的长度。结果字符串通过返回值返回。</p>
+<p>输入 <code>bt</code>  查看调用栈，如下：</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/checkout_call_stack.png" alt="checkout_call_stack"></p>
+<p>跟之前通过查看源码猜测的完全一样！（我这里只高亮了函数名，在每帧的结尾处，<code>gdb</code> 为我们列出了该函数所在的文件及对应的行数）。</p>
+<p>输入 <code>fi</code> (<code>finish</code>) 结束当前函数的运行，观察返回值（返回值保存了转码后的字符串）。有汇编基础的小伙伴儿都知道，一般返回值是放在 <code>rax</code> 中的。输入 <code>x/10x $rax</code> 即可按十六进制显示从 <code>$rax</code> 开始的 <code>10</code> 个字节了，如下图： </p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/view-out-str.png" alt="view-out-str"></p>
+<p>可以看到，前两个字节是大端 <code>BOM</code> 头（<code>0xFE 0xFF</code>，小端 <code>BOM</code> 头是 <code>0xFF 0xFE</code>）。执行完命令后，使用十六进制查看器观察到的文件内容与调试时看到的一样，说明把编码转换后的内容写入到了磁盘中。<code>checkout</code> 后，磁盘文件内容下图所示：</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/view-file-content-with-hex-editor.png" alt="view-file-content-with-hex-editor"></p>
+<p>如果在调试过程中想查看相关源码，可以输入 <code>l</code> (<code>list</code>) 进行查看。下图是执行 <code>f 0</code> (<code>frame 0</code>) 切换到 <code>0</code> 号栈帧后，再通过 <code>l</code> 命令查看源码的截图。</p>
+<p><img src="http://resources.bianchengnan.tech/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/switch-frame-and-view-source-using-line-command.png" alt="switch-frame-and-view-source-using-line-command"></p>
+<p>至此，这两个疑惑都得到了圆满的解答！</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://github.com/git-for-windows/git/wiki/Technical-overview" target="_blank" rel="noopener">https://github.com/git-for-windows/git/wiki/Technical-overview</a></p>
+<p><a href="https://github.com/git-for-windows/git/wiki/Debugging-Git" target="_blank" rel="noopener">https://github.com/git-for-windows/git/wiki/Debugging-Git</a></p>
+<p><a href="https://blog.csdn.net/qq_28351609/article/details/114855630" target="_blank" rel="noopener">https://blog.csdn.net/qq_28351609/article/details/114855630</a></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>可以通过 <code>git clone --depth 1 git_repository_url</code> 下载最新一次提交，可以节省下载时间。也可以在 <code>github</code> 上通过  <code>Download ZIP</code> 按钮下载打好包的源码。</li>
+<li><code>Source Insight</code> 真是查看代码的神器，尤其是 <code>Lookup References...</code>（快捷键是 <code>ctrl + /</code>），可以非常方便的查看引用。按住 <code>ctrl</code> 后，鼠标点击函数可以跳转到函数定义的地方。</li>
+<li><code>gdb</code> 是 <code>linux</code> 调试神器。使用 <code>b</code> 可以设置断点， <code>bt</code> 可以查看调用栈，<code>f N</code> 可以切换到 <code>N</code> 号栈帧，<code>x</code> 可以查看内存中的数据，<code>i</code> 可以查看一些信息，<code>r</code> 可以让程序重新运行起来（类似于 <code>windbg</code> 中的 <code>g</code> 或者 <code>F5</code>），<code>l</code> 可以列出相关的源码。</li>
+<li><code>working-tree-encoding</code> 与文件编码的对应关系我总结到下面的表格中了，供大家参考。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>working-tree-encoding</th>
+<th>签出时的文件编码</th>
+<th>git add 时支持的编码</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>UTF-16LE</td>
+<td>UTF-16 Little Endian (No BOM)</td>
+<td>UTF-16 Little Endian (No BOM)</td>
+<td>文件不能带 BOM</td>
+</tr>
+<tr>
+<td>UTF-16BE</td>
+<td>UTF-16 Big Endian (No BOM)</td>
+<td>UTF-16 Big Endian (No BOM)</td>
+<td>文件不能带 BOM</td>
+</tr>
+<tr>
+<td>UTF-16LE-BOM</td>
+<td>UTF-16 Little Endian (With BOM)</td>
+<td>UTF-16 Little Endian (With BOM)</td>
+<td>需要带 BOM</td>
+</tr>
+<tr>
+<td>UTF-16BE-BOM</td>
+<td>UTF-16 Big Endian (With BOM)</td>
+<td>UTF-16 Big Endian (With BOM)</td>
+<td>需要带 BOM</td>
+</tr>
+<tr>
+<td>UTF-16</td>
+<td>UTF-16 Big Endian (With BOM)</td>
+<td>UTF-16 Big(Little) Endian (With BOM)</td>
+<td>需要带 BOM。虽然接受 UTF-16 Little Endian，但是签出时会按 UTF-16 Big Endian处理！会导致编码改变。</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git">https://bianchengnan.github.io/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/github/" rel="tag"><i class="fa fa-tag"></i> github</a>
+          
+            <a href="/tags/工具/" rel="tag"><i class="fa fa-tag"></i> 工具</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/排错/" rel="tag"><i class="fa fa-tag"></i> 排错</a>
+          
+            <a href="/tags/rc/" rel="tag"><i class="fa fa-tag"></i> rc</a>
+          
+            <a href="/tags/冲突/" rel="tag"><i class="fa fa-tag"></i> 冲突</a>
+          
+            <a href="/tags/git/" rel="tag"><i class="fa fa-tag"></i> git</a>
+          
+            <a href="/tags/multiple-rc/" rel="tag"><i class="fa fa-tag"></i> multiple rc</a>
+          
+            <a href="/tags/gdb/" rel="tag"><i class="fa fa-tag"></i> gdb</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part2-findout-why-rc-encoding-changed/" rel="next" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（2）">
+                <i class="fa fa-chevron-left"></i> 排错实战 | 记一次曲折的多资源文件拆分折腾过程（2）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/speedup-my-tfs-parse-tool-part2-findout-why-dot-net-regex-so-show/" rel="prev" title="性能优化 | 记一次 .NET 程序的性能优化实战（2）—— 使用 perfview 找出 Regex 慢的根本原因">
+                性能优化 | 记一次 .NET 程序的性能优化实战（2）—— 使用 perfview 找出 Regex 慢的根本原因 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/replace-task-manager-with-process-explorer/" title="排错实战 | 使用process explorer替换任务管理器">排错实战 | 使用process explorer替换任务管理器</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/config-symbols-for-ida/" title="排错实战 | 解救加载调试符号失败的IDA">排错实战 | 解救加载调试符号失败的IDA</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-tekla-plugin-install-failure/" title="排错实战 | 解决 Tekla 通过 .tsep 安装插件失败的问题">排错实战 | 解决 Tekla 通过 .tsep 安装插件失败的问题</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-malfunction-using-sysinternals/" title="排错实战 | 通过对比分析 sysinternals 事件修复程序功能异常">排错实战 | 通过对比分析 sysinternals 事件修复程序功能异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vs-clear-recent-projects/" title="排错实战 | VS清空最近打开的工程记录">排错实战 | VS清空最近打开的工程记录</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/drag-full-windows-setting/" title="排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？">排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/DebugView-Usage/" title="神兵利器 | 你知道怎么使用 DebugView 查看内核调试信息吗？">神兵利器 | 你知道怎么使用 DebugView 查看内核调试信息吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-autoruns-can-not-showup/" title="排错实战 | 1 分钟解救 run 不出来的 Autoruns">排错实战 | 1 分钟解救 run 不出来的 Autoruns</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vs-error-list-and-output-tricks/" title="排错实战 | 善用 vs 中的错误列表和输出窗口，高效查找 C++ 多工程编译错误">排错实战 | 善用 vs 中的错误列表和输出窗口，高效查找 C++ 多工程编译错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/" title="排错实战 | 解决 c++ 工程编译错： error C2059 'string' illegal token on right side of xxx">排错实战 | 解决 c++ 工程编译错： error C2059 'string' illegal token on right side of xxx</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-error-msb8037-missing-sdk/" title="排错实战 | 帮 vs2019 找回丢失的 SDK">排错实战 | 帮 vs2019 找回丢失的 SDK</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/where-does-the-unset-_DEBUG-macro-come-from/" title="排错实战 | 神秘的 _DEBUG 宏从何处来？">排错实战 | 神秘的 _DEBUG 宏从何处来？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-different-DEBUG-macro-in-different-cpp/" title="排错实战 | 使用 pragma message 查找多变的 DEBUG 宏">排错实战 | 使用 pragma message 查找多变的 DEBUG 宏</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/fix-corrupted-vs-project-include-settings/" title="排错实战 | 修复被破坏的 vs 工程设置">排错实战 | 修复被破坏的 vs 工程设置</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-high-cpu-on-server-caused-by-malware/" title="排错实战 | 一次简单的服务器 cpu 占用率高的快速排查实战">排错实战 | 一次简单的服务器 cpu 占用率高的快速排查实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/fix-corrupted-vs-project-include-settings-continue/" title="排错实战 | 修复被破坏的 vs 工程设置（续）">排错实战 | 修复被破坏的 vs 工程设置（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/what-commit-command-actually-do-in-tortoisegit/" title="排错实战 | 在 tortoisegit 执行 commit 会跳过暂存区直接提交到仓库中吗？">排错实战 | 在 tortoisegit 执行 commit 会跳过暂存区直接提交到仓库中吗？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/where-does-WindowsSdkDir-come-from/" title="排错实战 | WindowsSdkDir 从何处来？">排错实战 | WindowsSdkDir 从何处来？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-lost-process-name-column-in-process-explorer-back-by-hand/" title="排错实战 | 徒手帮 process explorer 找回丢失的进程列">排错实战 | 徒手帮 process explorer 找回丢失的进程列</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part1-troubleshoot-error-RC1020-unexpected-endif/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（1）">排错实战 | 记一次曲折的多资源文件拆分折腾过程（1）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part2-findout-why-rc-encoding-changed/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（2）">排错实战 | 记一次曲折的多资源文件拆分折腾过程（2）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-a-way-to-modify-bimbase-activation-pc-name/" title="排错实战 | 授权码不知道被谁占用了？不可能的，这辈子都是不可能的">排错实战 | 授权码不知道被谁占用了？不可能的，这辈子都是不可能的</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/findout-which-window-is-focused/" title="排错实战 | 记一次有教益的焦点窗口查找过程">排错实战 | 记一次有教益的焦点窗口查找过程</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-another-compile-error/" title="排错实战 | 当编译器" 吃掉"函数声明：一次由宏冲突引发的离奇编译错误">排错实战 | 当编译器"吃掉"函数声明：一次由宏冲突引发的离奇编译错误</a></li>
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#git-源码下载"><span class="nav-number">2.</span> <span class="nav-text">git 源码下载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#明确目标"><span class="nav-number">3.</span> <span class="nav-text">明确目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看代码"><span class="nav-number">4.</span> <span class="nav-text">查看代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调试环境搭建-amp-编译"><span class="nav-number">5.</span> <span class="nav-text">调试环境搭建 &amp; 编译</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#明确-git-add-逻辑"><span class="nav-number">6.</span> <span class="nav-text">明确 git add 逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#明确-git-checkout-逻辑"><span class="nav-number">7.</span> <span class="nav-text">明确 git checkout 逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">8.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">9.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

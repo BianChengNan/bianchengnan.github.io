@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,调试,debug,dump,转储文件,procdump,windbg,注册表,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言今天，向大家介绍几种可以抓取应用程序转储文件的工具及基本使用方法。更详细的用法，请参考每个工具对应的帮助文档。如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— 转储文件知多少。">
+<meta name="keywords" content="原,总结,调试,debug,dump,转储文件,procdump,windbg,注册表">
+<meta property="og:type" content="article">
+<meta property="og:title" content="你需要知道的 N 种抓取 dump 的工具">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言今天，向大家介绍几种可以抓取应用程序转储文件的工具及基本使用方法。更详细的用法，请参考每个工具对应的帮助文档。如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— 转储文件知多少。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/taskmanager-dump.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/how-to-open-temp-folder.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/process-explorer-dump.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/vs-dump-screen-record.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/windbg-dump-screen-record.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/windbg-dump-m-option-help-msdn.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/procdump-help.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/procdump-example.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/mp-option-explain.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/procdump-demos.gif">
+<meta property="og:updated_time" content="2020-01-01T13:43:53.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="你需要知道的 N 种抓取 dump 的工具">
+<meta name="twitter:description" content="前言今天，向大家介绍几种可以抓取应用程序转储文件的工具及基本使用方法。更详细的用法，请参考每个工具对应的帮助文档。如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— 转储文件知多少。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/taskmanager-dump.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>你需要知道的 N 种抓取 dump 的工具 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">你需要知道的 N 种抓取 dump 的工具</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-01T21:43:53+08:00">
+                2020-01-01
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2020-01-01T21:43:53+08:00">
+                2020-01-01
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/转储/" itemprop="url" rel="index">
+                    <span itemprop="name">转储</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>今天，向大家介绍几种可以抓取应用程序转储文件的工具及基本使用方法。更详细的用法，请参考每个工具对应的帮助文档。如果你还不清楚什么是转储文件，不知道什么时候需要转储文件，请参考转储文件系列文章的第一篇 —— <a href="https://bianchengnan.github.io/articles/something-you-should-know-about-process-dump/">转储文件知多少</a>。</p>
+<a id="more"></a>
+
+
+
+<h3 id="各种抓取转储文件的工具"><a href="#各种抓取转储文件的工具" class="headerlink" title="各种抓取转储文件的工具"></a>各种抓取转储文件的工具</h3><p>有很多工具都可以抓取转储文件。我列举几个常用的工具并简单介绍使用方法。</p>
+<ol>
+<li><p>任务管理器</p>
+<p>任务管理器是唾手可得的抓取转储文件的工具。按住 <code>Ctrl + Shift + Esc</code> 即可打开。打开任务管理器后，在需要转储的进程上<code>右键</code> -&gt; <code>创建转储文件(C)</code>，即可自动保存转储文件到 <code>%tmp%</code> 目录下。</p>
+<p><img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/taskmanager-dump.jpg" alt="使用 taskmanager 抓取 dump 截图"></p>
+</li>
+</ol>
+<p>   <strong>提示：</strong> 创建成功后，会弹出对话框提示转储文件保存的位置。一般保存在系统临时目录下。在文件管理器地址栏输入 <code>%temp%</code> 即可快速打开临时目录，对 <code>%appdata%</code> 等其它目录同样有效。</p>
+<p>   <img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/how-to-open-temp-folder.gif" alt="how-to-open-temp-folder"></p>
+<ol start="2">
+<li><p>process explorer</p>
+<p><code>process explorer</code> 比系统自带的资源管理器更强大，之前写过一篇文章介绍怎么<a href="https://bianchengnan.github.io/articles/replace-task-manager-with-process-explorer/">使用 process explorer 替换系统自带的资源管理器</a>的文章。感兴趣的小伙伴儿可以看一看。打开 <code>process explorer</code>，在需要转储的进程上，<code>右键</code> -&gt; <code>Create Dump</code> -&gt; <code>Create Full Dump...</code> 就可以保存转储文件了。（ <code>Create Minidump...</code> 抓取的信息少，但抓取的转储文件小，适合网络传输，请根据自己的需要选择）</p>
+<p><img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/process-explorer-dump.jpg" alt="使用 process explorer 抓取 dump 截图"></p>
+</li>
+</ol>
+<ol start="3">
+<li><p>visual studio</p>
+<p><code>visual studio</code> 简称 <code>vs</code>，大家应该对 <code>vs</code> 应该非常熟悉了，我就不多介绍了。打开 <code>vs</code>，附加到需要转储的进程上，点击 <code>Break All</code> 按钮（或者按快捷键 <code>Ctrl + Alt + Break</code>）暂停目标进程。然后点击 <code>Debug</code> -&gt; <code>Save Dump As...</code> 就可以保存转储文件了。如果不暂停目标进程，<code>Save Dump As...</code> 按钮是置灰的。</p>
+</li>
+</ol>
+<p><img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/vs-dump-screen-record.gif" alt="使用 vs 抓取 dump 录屏"></p>
+<div class="note info"><p><strong>提示：</strong> 可以使用 <code>Ctrl + Alt + P</code> 快速打开 <code>Attach to Process</code> 界面，选择要附加的进程。</p></div>
+
+
+
+<ol start="4">
+<li><p>windbg</p>
+<p><code>windbg</code> 是 <code>windows</code>系统上非常强大的调试器，基本上我只用 <code>windbg</code> 分析转储文件。能分析转储文件，当然能保存转储文件了。打开 <code>windbg</code>，附加到需要转储的进程上，执行 <code>.dump [Options] path/to/save/dump.dmp</code></p>
+<p><img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/windbg-dump-screen-record.gif" alt="使用 windbg 抓取 dump 录屏"></p>
+</li>
+</ol>
+<p>   可以使用 <code>.hh .dump</code> 查看 <code>.dump</code> 命令的帮助文档。其中的 <code>/m[MiniOptions]</code> 会直接影响生成的转储文件的内容和尺寸。我们有必要了解每个选项的意义。因为我实在是太懒了，就贴一张 <code>MSDN</code> 上的截图吧。<br>   <img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/windbg-dump-m-option-help-msdn.png" alt=".dump命令帮助 截自MSDN"></p>
+  <div class="note info"><p><strong>注意：</strong> </p>
+<p>最好用 <code>32</code> 位的 <code>windbg</code> 附加到 <code>32</code> 位进程中，<code>64</code>位的 <code>windbg</code> 附加到 <code>64</code> 位进程中。如果用 <code>64</code> 位的 <code>windbg</code> 附加到 <code>32</code> 位进程后，直接执行<code>.dump</code> 命令生成的转储文件会 “有问题”。</p></div>
+
+
+
+<ol start="5">
+<li><p>procdump</p>
+<p>终于，要介绍我最喜欢的 <code>procdump</code> 了。<code>procdump</code> 是我用过的最好用的抓取转储文件的工具了。强烈建议你也试试。这里只简单介绍一些基本用法，因为用法实在是太多了，要完整介绍的话恐怕单独写一篇文章都介绍不完，而且很多高级用法我也不熟悉，都是用到了再去查帮助文档。如果你想了解更多高级用法，请参考<a href="https://docs.microsoft.com/en-us/sysinternals/downloads/procdump" target="_blank" rel="noopener">官方文档</a> 或《Windows Sysinternals 实战指南》中介绍 <code>procdump</code> 的章节。</p>
+</li>
+</ol>
+<ul>
+<li><p>直接运行 <code>procdump</code>查看用法。</p>
+<p> <img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/procdump-help.png" alt="procdump 帮助"></p>
+</li>
+<li><p>运行 <code>procdump -? -e</code> 查看使用范例。</p>
+<p><img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/procdump-example.png" alt="procdump 用例"></p>
+</li>
+</ul>
+<ul>
+<li><p>为指定进程 <code>ID</code> 的进程生成转储文件。</p>
+<p> <code>procdump [-mp] process_id [path/to/save/dump]</code></p>
+</li>
+<li><p>为指定进程名的进程生成转储文件（注意：如果系统中存在多个名为<code>process_name</code>的进程，会报错）</p>
+<p> <code>procdump [-mp] process_name [path/to/save/dump]</code></p>
+</li>
+</ul>
+<ul>
+<li><p><code>-x</code> 选项，启动一个新进程并监视。</p>
+<p>启动的进程退出就保存转储文件。<br><code>procdump -x path/to/save/dump process_to_start process_parameters</code></p>
+<p>启动的进程有异常的时候才保存转储文件。<br><code>procdump -e -x path/to/save/dump process_to_start process_parameters</code></p>
+<div class="note info"><p><strong>注意：</strong><br><code>-x</code>选项必须在最后。<code>-x</code> 后面必须跟着转储文件的保存路径。</p></div>
+</li>
+<li><p><code>-w</code> 选项，等待进程启动。<code>w</code> 是 <code>wait</code> 的缩写。需要与其它命令配合使用。</p>
+</li>
+<li><p><code>-h</code> 选项，监控进程的挂起状态。<code>h</code> 是 <code>hang</code> 的缩写。</p>
+</li>
+<li><p><code>-e</code> 选项，监控进程的异常状态。<code>e</code> 是 <code>exception</code> 的缩写。</p>
+</li>
+<li><p><code>-t</code> 选项，在进程终止时创建转储文件。<code>t</code> 是 <code>terminate</code> 的缩写。</p>
+<p>   一般情况下，我们只关心进程异常退出的情况，但有时候我们也关心进程正常退出的情况。这时候我们可以使用此选项，在进程退出的时候生成转储文件。不论进程是被强制终止的，还是由于异常退出的，还是正常退出的，统统没问题。</p>
+</li>
+</ul>
+<ul>
+<li><p>监视进程的运行状态并在进程发生异常的时候生成 <code>dump</code>。可以与 <code>-w</code> 选项一起使用。</p>
+<p>   <code>procdump [option] -e [-w] process_name or process_id [path/to/save/dump]</code></p>
+</li>
+<li><p>监视进程的运行状态并在进程挂起的时候生成 <code>dump</code>。可以与 <code>-w</code> 选项一起使用。</p>
+<p><code>procdump [option] -h [-w] process_name or process_id [path/to/save/dump]</code></p>
+</li>
+<li><p>监视进程的运行状态，不论是否发生异常，只要进程退出就创建转储文件。</p>
+</li>
+</ul>
+ <div class="note info"><p><strong>注意：</strong> 因为 <code>-w</code> 是用来等待尚未启动的进程的，所以不能与<code>process_id</code>一起使用。没启动的进程当然没有进程<code>ID</code>了。如果在一起使用，会报如下错误：<code>The wait option requires the process be specified by name.</code></p></div>
+
+<ul>
+<li><p>每隔 <code>5</code> 秒保存一次转储文件，一共保存 <code>3</code> 次。</p>
+<p><code>procdump -s 5 -n 3 process_name or process_id [path/to/save/dump]</code></p>
+</li>
+<li><p>当进程 <code>CPU 占用率</code> 高于 <code>%10</code>，并持续 <code>2s</code> 的时候生成转储文件，最多生成 <code>10</code> 个。</p>
+<p><code>procdump -s 2 -n 10 -c 10 process_name or process_id [path/to/save/dump]</code></p>
+</li>
+<li><p><code>dump</code> 文件名生成规则</p>
+<p>如果我们没指定转储文件的名字，<code>procdump</code> 会根据 <code>PROCESSNAME_YYMMDD_HHMMSS</code> 的规则生成。相信，细心的小伙伴已经从录屏里看出来了。这样我们就不用担心之前生成的转储文件被覆盖了。</p>
+</li>
+</ul>
+<ul>
+<li><p><code>-mp</code> 选项</p>
+<p>使用该选项可以大大的降低转储文件的大小。强烈建议启用此选项。具体工作原理，请参考《Windows Sysinternals 实战指南》。</p>
+<p><img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/mp-option-explain.jpg" alt="-mp选项介绍 截自英文版"></p>
+</li>
+<li><p>安装 <code>procdump</code> 为事后调试器（<code>postmortem debugger</code>），或者叫 <code>JIT</code> 调试器 （<code>Just In Time Debugger</code>）。</p>
+<p>以管理员权限运行 <code>procdump -i</code> 可以注册 <code>procdump</code> 为事后调试器。注册的时候可以指定转储文件保存的路径，及转储选项。例如，<code>procdump -mp -i e:\dumps\</code>。</p>
+<p>以管理员权限运行 <code>procdump -u</code> 可以解除注册。</p>
+</li>
+</ul>
+  <div class="note info"><p><strong>提示：</strong>  以管理员权限运行 <code>windbg -I</code> 可以设置 <code>windbg</code> 为事后调试器。注意：是大写的<code>I</code>，不是小写的 <code>i</code>。后面会专门写一篇文章介绍 <code>Just In Time Debug</code> 相关的内容。</p></div>
+
+
+
+<ul>
+<li><strong><em>Much Much More …</em></strong></li>
+</ul>
+   <div class="note info"><p><strong>说明：</strong><br><code>procdump</code> 官方文档中的 <code>Learn More</code> 一节中有 <code>Defrag Tools</code>上的视频链接，非常值得一看。<br><code>procdump</code> 的作者是 <code>Mark Russinovich</code> 和 <code>Andrew Richards</code>。<code>Andrew Richards</code> 是 <code>Defrag Tools</code>的主持人之一。</p></div>
+
+
+
+<p>  这里是一份使用 <code>procdump</code> 的录屏，展示了上面介绍的几种用法，感兴趣的小伙伴可以看看。<br>  <img src="http://resources.bianchengnan.tech/process-dump-tools-you-should-know/procdump-demos.gif" alt="procdump 使用范例"></p>
+<ol start="6">
+<li><p>其它工具</p>
+<p>讲道理，只要是调试器就应该提供保存转储文件的功能。比如， <code>cdb</code>,  <code>ntsd</code>，令我感到意外的是 <code>x64dbg</code> 和 <code>ollydbg</code>  居然没有保存转储文件的功能？不过，这不影响这两个调试器的伟大！如果你自己写调试器的话，请一定要加上保存转储文件的功能。除了上文种提到的各种工具和调试器外，还有很多其它工具也可以保存转储文件。比如，<code>DebugDia</code>，<code>AdPlus</code> ，<code>gflags</code> 等。如果对哪个工具感兴趣，请自行研究。</p>
+</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>有很多优秀的工具可以帮我们抓取转储文件，我认为最好用的非 <code>procdump</code> 莫属。</li>
+<li><code>JIT Debug</code> 非常有用，可以让我们在进程异常退出时收到通知，并做相应的处理。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li>《软件调试》</li>
+<li>《Windows Sysinternals 实战指南》</li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/-dump--create-dump-file-" target="_blank" rel="noopener">Microsoft Document : .dump (Create Dump File)</a></li>
+<li><a href="https://docs.microsoft.com/en-us/sysinternals/downloads/procdump" target="_blank" rel="noopener">procdump</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/" title="你需要知道的 N 种抓取 dump 的工具">https://bianchengnan.github.io/articles/process-dump-tools-you-should-know/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
+          
+            <a href="/tags/转储文件/" rel="tag"><i class="fa fa-tag"></i> 转储文件</a>
+          
+            <a href="/tags/procdump/" rel="tag"><i class="fa fa-tag"></i> procdump</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/注册表/" rel="tag"><i class="fa fa-tag"></i> 注册表</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/tell-you-something-2019/" rel="next" title="2019 年马上结束了，有些话想跟你说">
+                <i class="fa fa-chevron-left"></i> 2019 年马上结束了，有些话想跟你说
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/auto-dump-when-process-crash/" rel="prev" title="你需要了解的JIT Debugging">
+                你需要了解的JIT Debugging <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/something-you-should-know-about-process-dump/" title="转储文件知多少">转储文件知多少</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/brief-introduction-to-jit-debug-info/" title="JIT Debug Info 简介">JIT Debug Info 简介</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-dump-our-own-process/" title="向大厂看齐！为自己的程序增加自动转储的功能！">向大厂看齐！为自己的程序增加自动转储的功能！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-mode-dump-begins/" title="内核转储，开抓啦！">内核转储，开抓啦！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-memory-dump-setting/" title="蓝屏（BSOD）转储设置，看本文就够了！">蓝屏（BSOD）转储设置，看本文就够了！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-force-system-to-crash/" title="系统蓝屏的几种姿势，确定不了解下么？">系统蓝屏的几种姿势，确定不了解下么？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-local-kernel-debug-setup/" title="本地内核调试环境搭建，就这么简单！">本地内核调试环境搭建，就这么简单！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-remote-kernel-debug-setup/" title="双机内核调试 101">双机内核调试 101</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-virtualkd-windbg-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境">使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-vs2019-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + vs2019 从零搭建双机内核调试环境">使用 VMware + win10 + vs2019 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-dump-series-articles/" title="转储系列文章总结">转储系列文章总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#各种抓取转储文件的工具"><span class="nav-number">1.1.</span> <span class="nav-text">各种抓取转储文件的工具</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">2.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

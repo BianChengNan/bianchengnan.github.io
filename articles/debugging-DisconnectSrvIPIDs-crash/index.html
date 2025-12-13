@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,调试,debug,windbg,crash,崩溃,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言最近程序会不定期崩溃，很是头疼！今晚终于忍无可忍，下决心要干掉它！从之前的几个相关的dump可以猜到是有接口未释放导致的问题，但没有确认到底是哪个接口。本篇总结记录了找到这个接口的过程。">
+<meta name="keywords" content="原,调试,debug,windbg,crash,崩溃">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/debugging-DisconnectSrvIPIDs-crash/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言最近程序会不定期崩溃，很是头疼！今晚终于忍无可忍，下决心要干掉它！从之前的几个相关的dump可以猜到是有接口未释放导致的问题，但没有确认到底是哪个接口。本篇总结记录了找到这个接口的过程。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/startup.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/address-info.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/ecxr-kpn.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/ub-76f8bbe7.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/lma-5bbc97f8.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/reload-and-lmvm.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/reload-failed.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/ln-5bbc97f8.png">
+<meta property="og:updated_time" content="2019-11-28T15:06:27.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">
+<meta name="twitter:description" content="前言最近程序会不定期崩溃，很是头疼！今晚终于忍无可忍，下决心要干掉它！从之前的几个相关的dump可以猜到是有接口未释放导致的问题，但没有确认到底是哪个接口。本篇总结记录了找到这个接口的过程。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/startup.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/debugging-DisconnectSrvIPIDs-crash/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/debugging-DisconnectSrvIPIDs-crash/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-28T23:06:27+08:00">
+                2019-11-28
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2019-11-28T23:06:27+08:00">
+                2019-11-28
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/调试案例/" itemprop="url" rel="index">
+                    <span itemprop="name">调试案例</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近程序会不定期崩溃，很是头疼！今晚终于忍无可忍，下决心要干掉它！从之前的几个相关的<code>dump</code>可以猜到是有接口未释放导致的问题，但没有确认到底是哪个接口。本篇总结记录了找到这个接口的过程。</p>
+<a id="more"></a>
+
+
+
+<div class="note info"><p>这是几年前在项目中遇到的一个问题。我对之前的笔记进行了整理重新发布于此。</p></div> 
+
+
+
+<h2 id="初识问题"><a href="#初识问题" class="headerlink" title="初识问题"></a>初识问题</h2><p>用<code>windbg</code>打开<code>dump</code>文件，显示如下：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/startup.png" alt="startup"></p>
+<p>从图中可以很明显的看出来是访问违例（因为红框标识的地址<code>5bbc97f8</code>的内容是<code>？？？？？？？？</code>），而且这是一条<code>call</code>指令，<code>call</code>调用的地址存储在<code>ecx+8</code> (<code>0x5bbc97f8</code>) 处。我们可以用<code>!address address</code>来查看某个地址的信息，输入<code>!address 5bbc97f8</code></p>
+<p> <img src="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/address-info.png" alt="address info"></p>
+<p>从图中得知，地址<code>5bbc97f8</code>对应的内存已经被释放了（<code>State</code> 是 <code>MEM_FREE</code>）。<code>windbg</code>还贴心的给出了和此地址相关的一些模块信息。其中有几个是我们自己的模块，从<code>Unloaded</code>可以看出这几个模块曾经被卸载过。很有可能跟我们的崩溃相关。</p>
+<p>至此，我们可以大胆猜测崩溃的原因是<strong>模块被卸载后，还要执行其中的代码</strong>！:bomb: </p>
+<p>下面让我们继续分析，为什么模块卸载后还会执行其中的代码！</p>
+<h2 id="寻根溯源"><a href="#寻根溯源" class="headerlink" title="寻根溯源"></a>寻根溯源</h2><p>先用<code>.ecxr</code>切换到发生异常时的上下文，然后用<code>kpn</code>（<code>k</code>显示调用栈，<code>p</code>显示函数的参数，<code>n</code>显示栈帧编号）查看调用栈，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/ecxr-kpn.png" alt="ecxr &amp; kpn"></p>
+<p>从上图可知，<code>11</code>号线程在调用<code>CoUninitialize()</code>执行<code>COM</code>的线程清理工作，<code>frame 0</code>在调用<code>ole32!CStdMarshal::DisconnectSrvIPIDs()</code>时崩溃了！从<code>Disconnect</code>猜测是要断开连接！使用<code>ub 76f8bbe7</code> （<code>76f8bbe7</code>是由<code>76f8bbe4</code> + <code>3</code>得到的，<a href="./articles/debugging-ComFriendlyWaitMtaThreadProc-crash">在上一篇文章里</a>介绍过了）查看崩溃前的几条指令:</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/ub-76f8bbe7.png" alt="ub 76f8bbe7"></p>
+<p>红框内的指令非常像是虚函数的调用（调用约定是<code>stdcall</code>，不是<code>thiscall</code>） <code>eax</code>是调用类对象的指针（通过入栈方式传递）， <code>ecx</code>指向虚函数表(<code>vtable</code>)，<code>dword ptr[ecx+8]</code>是虚函数表中的第三项（<code>32</code>位下指针占<code>4</code>字节，第一项的偏移是<code>+0</code>，第二项的偏移是<code>+4</code>，第三项的偏移是<code>+8</code>）。回想<code>IUnkown</code>的前三个函数分别是<code>QueryInterface()</code>,  <code>AddRef()</code> 和 <code>Release()</code>，可以大胆猜测这里是在调用<code>Release()</code>，跟上下文也很搭（从<code>CoUninitialize()</code>推断当前线程正在做<code>COM</code>清理工作）！我们的猜测很有可能是正确的！</p>
+<p>我们先小小总结一下：整个过程应该是这样的，我们使用了一个<code>COM</code>接口，但是由于某些原因并没有释放，线程在退出的时候，调用<code>CoUninitialize()</code>做<code>COM</code>清理工作。当清理到我们的接口的时候，由于接口代码所在的<code>dll</code>已经被卸载了，从而导致了访问违例！下面我们的任务是找出到底是哪个接口没释放，然后对照代码验证我们的猜测是否正确！</p>
+<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>先用<code>lm a 5bbc97f8</code>确认下该地址属于哪个模块。</p>
+<p> <img src="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/lma-5bbc97f8.png" alt="lm a 5bbc97f8"></p>
+<p>看来，地址<code>5bbc97f8</code>落在<code>AccIME.dll</code>中，由于<code>AccIME.dll</code>已经被卸载了，我们需要使用命令<code>.reload /f AccIME.dll=5bbb0000,5bbd8000-5bbb0000</code>来重新加载已经被卸载的模块，我们可以使用<code>lm vm AccIME</code>来确认加载成功与否。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/reload-and-lmvm.png" alt="reload-and-lmvm"></p>
+<p>从上图可知，我们成功的加载了<code>AccIME</code>模块，符号也加载成功了。</p>
+<p><strong>友情提示：</strong>如果遇到如下错误，说明我们成功加载了被卸载的<code>dll</code>，但是加载符号的时候遇到了问题。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/reload-failed.png" alt="reload-failed"></p>
+<p>可以使用<code>!sym noisy</code>开启嘈杂模式，然后再次执行<code>.reload</code>命令，通过输出日志来排查具体原因。排查完毕后可以使用<code>!sym quiet</code>来关闭嘈杂模式。具体使用方法可通过<code>.hh !sym</code>查看<code>windbg</code>帮助文档。</p>
+<p> 接下来我们用<code>ln 5bbc97f8</code>查一下该地址附近函数。</p>
+<p> <img src="http://resources.bianchengnan.tech/debugging-DisconnectSrvIPIDs-crash/ln-5bbc97f8.png" alt="ln-5bbc97f8"></p>
+<p>至此，我们可以看到是与<code>AccIME!CCfgDpyScheme</code>类相关的问题，接下来我们可以把重点放到对此类的引用计数的使用上了！</p>
+<p>本篇总结暂时写到这，还需要弄明白几个问题：</p>
+<ol>
+<li>涉及引用计数的相关代码是否有问题。</li>
+<li>为什么有时候会崩溃，有时候不崩溃。</li>
+</ol>
+<p><del>有结果后会再发一篇总结，敬请期待！</del>（能力有限，没能查出来:cry:）</p>
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>由于没能查出代码哪里有问题。使用临时解决方案先绕过去了：在退出的时候，没有使用<code>FreeLibrary()</code>显示卸载该模块，交由操作系统来做模块清理工作）。</p>
+<p>未弄明白的问题的可能原因：</p>
+<ol>
+<li><p><strong>涉及引用计数的相关代码是否有问题。</strong></p>
+<p>Oops, 没查出代码哪里有问题。无法确定问题的根本原因。:sob:</p>
+</li>
+<li><p><strong>为什么有时候会崩溃，有时候不崩溃。</strong><br><code>有时候崩溃</code>应该是还没断开连接，对应的<code>dll</code>就被卸载了。<code>有时候不崩溃</code>应该是在卸载<code>dll</code>之前，已经成功的断开了连接。</p>
+</li>
+</ol>
+<h2 id="命令总结"><a href="#命令总结" class="headerlink" title="命令总结"></a>命令总结</h2><ul>
+<li><p><code>!address address</code>可以查看对应地址的信息，如果一个地址不可访问，那么显示的内容会是<code>????????</code>。</p>
+</li>
+<li><p><code>.ecxr</code>可以让<code>windbg</code>使用发生异常时的上下文，这样再使用<code>k</code>等命令时就是发生异常时的相关信息了。</p>
+</li>
+<li><p><code>u</code>可以反汇编某个地址对应的代码，<code>ub</code>可以向前反汇编，<code>b</code>应该是<code>backward</code>的缩写。</p>
+</li>
+<li><p><code>lm a address</code>可以查看<code>address</code>所属的模块。</p>
+</li>
+<li><p><code>ln</code>可以查看某个地址附近的符号名。</p>
+</li>
+<li><p><code>.reload /f &lt;image.ext&gt;=&lt;base&gt;,&lt;size&gt;</code>可以加载模块（甚至是已卸载的）到<code>base</code>指定的位置，并为之加载符号。</p>
+</li>
+<li><p>关于各个<code>windbg</code>命令的用法，可以使用<code>.hh command</code>进行查看！非常方便，而且非常重要！</p>
+</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li>《格蠹汇编》</li>
+<li><code>windbg</code>帮助文档</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">https://bianchengnan.github.io/articles/debugging-DisconnectSrvIPIDs-crash/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/crash/" rel="tag"><i class="fa fa-tag"></i> crash</a>
+          
+            <a href="/tags/崩溃/" rel="tag"><i class="fa fa-tag"></i> 崩溃</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/vs-clear-recent-projects/" rel="next" title="排错实战 | VS清空最近打开的工程记录">
+                <i class="fa fa-chevron-left"></i> 排错实战 | VS清空最近打开的工程记录
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/drag-full-windows-setting/" rel="prev" title="排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？">
+                排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">调试实战 | dll 加载失败之 Debug Release 争锋篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">调试技巧 | 你很可能需要知道这个调试小技巧</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">调试实战 | 从转储文件找出抛出的异常 —— 理论</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初识问题"><span class="nav-number">2.</span> <span class="nav-text">初识问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#寻根溯源"><span class="nav-number">3.</span> <span class="nav-text">寻根溯源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证"><span class="nav-number">4.</span> <span class="nav-text">验证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解决方案"><span class="nav-number">5.</span> <span class="nav-text">解决方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#命令总结"><span class="nav-number">6.</span> <span class="nav-text">命令总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

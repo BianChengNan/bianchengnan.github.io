@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="windbg,natvis,翻译,dx,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言Yarden Shafir 分享了两篇非常通俗易懂的，关于 windbg 新引入的调试数据模型的文章。原文链接如下： part1：https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b part2：https://medium.com/@yardenshafir2/windbg-the-fun-way-p">
+<meta name="keywords" content="windbg,natvis,翻译,dx">
+<meta property="og:type" content="article">
+<meta property="og:title" content="难译 | windbg 乐趣之道（下）">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part2/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言Yarden Shafir 分享了两篇非常通俗易懂的，关于 windbg 新引入的调试数据模型的文章。原文链接如下： part1：https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b part2：https://medium.com/@yardenshafir2/windbg-the-fun-way-p">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part2/dx-g-procWithKernelApc.Select.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part2/view-tempFile.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.736Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="难译 | windbg 乐趣之道（下）">
+<meta name="twitter:description" content="前言Yarden Shafir 分享了两篇非常通俗易懂的，关于 windbg 新引入的调试数据模型的文章。原文链接如下： part1：https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b part2：https://medium.com/@yardenshafir2/windbg-the-fun-way-p">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part2/dx-g-procWithKernelApc.Select.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part2/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>难译 | windbg 乐趣之道（下） | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">难译 | windbg 乐趣之道（下）</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-02-13T21:44:22+08:00">
+                2023-02-13
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/翻译/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><a href="https://twitter.com/yarden_shafir" target="_blank" rel="noopener">Yarden Shafir</a> 分享了两篇非常通俗易懂的，关于 <code>windbg</code> 新引入的调试数据模型的文章。原文链接如下：</p>
+<p><code>part1</code>：<a href="https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b" target="_blank" rel="noopener">https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b</a></p>
+<p><code>part2</code>：<a href="https://medium.com/@yardenshafir2/windbg-the-fun-way-part-2-7a904cba5435" target="_blank" rel="noopener">https://medium.com/@yardenshafir2/windbg-the-fun-way-part-2-7a904cba5435</a></p>
+<p>本文是第二部分的译文。同样在有道词典、必应词典、谷歌翻译的大力帮助下完成，感谢以上翻译工具，我只是一个搬运工。<strong>强烈建议</strong>英文好的朋友阅读原文，因为在翻译的过程中不可避免的按我的理解做了调整。</p>
+<blockquote>
+<p>第一部分译文在<a href="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part1/">这里</a>。</p>
+</blockquote>
+<p>以下是译文！</p>
+<hr>
+<a id="more"></a>
+
+
+
+<p>欢迎来到我试图让您享受在 <code>Windows</code> 上调试的第 <code>2</code> 部分（哇，我真是个书呆子）！</p>
+<p>在第一部分中，我们已经了解了新调试数据模型的基本知识——使用新对象、使用自定义寄存器、搜索和过滤输出、声明匿名类型以及解析列表和数组。在这一部分中，我们将学习如何在 <code>dx</code> 中使用传统命令（<strong>译注：</strong> 原文是 <code>legacy commands</code>，我理解是在引入 <code>dx</code> 之前就存在的一些命令，比如 <code>dt</code>、<code>u</code> 等），了解令人惊叹的新反汇编器，创建合成方法和类型，查看断点的奇妙变化，并在调试器中使用文件系统。</p>
+<p>听起来有很多内容。因为确实有很多内容。我们开始吧！</p>
+<h2 id="传统命令（Legacy-Commands）"><a href="#传统命令（Legacy-Commands）" class="headerlink" title="传统命令（Legacy Commands）"></a>传统命令（Legacy Commands）</h2><p>新数据模型完全改变了调试体验。但有时确实需要使用我们已经习惯的旧命令或扩展（这些功能在 <code>dx</code> 中没有对应的实现）。</p>
+<p>我们仍然可以通过 <code>Debugger.Utility.Control.ExecuteCommand</code> 在 <code>dx</code> 中使用这些旧命令，它让我们可以将传统命令作为 <code>dx</code> 查询的一部分运行。例如，我们可以使用传统的 <code>u</code> 命令查看第二个栈帧中 <code>RIP</code> 所指向的地址对应的反汇编。</p>
+<p>由于 <code>dx</code> 输出默认是十进制的，而传统命令只接受十六进制输入，我们首先需要使用 <code>ToDisplayString(&quot;x&quot;)</code> 将其转换为十六进制：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">dx Debugger.Utility.Control.ExecuteCommand(&quot;u &quot; + @$curstack.Frames[1].Attributes.InstructionOffset.ToDisplayString(&quot;x&quot;))</span><br><span class="line"></span><br><span class="line">Debugger.Utility.Control.ExecuteCommand(&quot;u &quot; + @$curstack.Frames[1].Attributes.InstructionOffset.ToDisplayString(&quot;x&quot;))                </span><br><span class="line">    [0x0]     : kdnic!TXTransmitQueuedSends+0x125:</span><br><span class="line">    [0x1]     : fffff807`52ad2b61 4883c430        add     rsp,30h</span><br><span class="line">    [0x2]     : fffff807`52ad2b65 5b              pop     rbx</span><br><span class="line">    [0x3]     : fffff807`52ad2b66 c3              ret</span><br><span class="line">    [0x4]     : fffff807`52ad2b67 4c8d4370        lea     r8,[rbx+70h]</span><br><span class="line">    [0x5]     : fffff807`52ad2b6b 488bd7          mov     rdx,rdi</span><br><span class="line">    [0x6]     : fffff807`52ad2b6e 488d4b60        lea     rcx,[rbx+60h]</span><br><span class="line">    [0x7]     : fffff807`52ad2b72 4c8b15d7350000  mov     r10,qword ptr [kdnic!_imp_ExInterlockedInsertTailList (fffff807`52ad6150)]</span><br><span class="line">    [0x8]     : fffff807`52ad2b79 e8123af8fb      call    nt!ExInterlockedInsertTailList (fffff807`4ea56590)</span><br></pre></td></tr></table></figure>
+
+<p>另一个有用的传统命令是 <code>!irp</code>。这个命令为我们提供了大量关于 <code>IRP</code> 的信息，所以没必要大费周章的使用 <code>dx</code> 重新实现它。</p>
+<p>我们将尝试对 <code>lsass.exe</code> 进程中所有的 <code>IRP</code> 执行 <code>!irp</code> 命令。让我们看看整个过程：</p>
+<p>首先，我们需要找到 <code>lsass.exe</code> 进程的容器。我们已经知道如何使用 <code>Where()</code> 来做到这一点。我们选择返回的第一个进程。通常应该只有一个 <code>lsass</code>，除非机器上有服务隔离。</p>
+<blockquote>
+<p><strong>译注：</strong> 服务隔离对应的原文是 <code>server silos</code>，在网上找到一个<a href="https://www.techopedia.com/definition/25939/silo" target="_blank" rel="noopener">解释</a> ：A silo in IT is an isolated point in a system where data is kept and segregated from other parts of the architecture.</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx @$lsass = @$cursession.Processes.Where(p =&gt; p.Name == &quot;lsass.exe&quot;).First()</span><br></pre></td></tr></table></figure>
+
+<p>然后，我们需要遍历进程中每个线程的 <code>IrpList</code> 并获得 <code>IRP</code> 本身。我们可以很容易地通过前面提到的 <code>FromListEntry()</code> 做到这一点。我们只选取包含 <code>IRP</code> 的线程：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">dx -r4 @$irpThreads = @$lsass.Threads.Select(t =&gt; new &#123;irp = Debugger.Utility.Collections.FromListEntry(t.KernelObject.IrpList, &quot;nt!_IRP&quot;, &quot;ThreadListEntry&quot;)&#125;).Where(t =&gt; t.irp.Count() != 0)</span><br><span class="line"></span><br><span class="line">@$irpThreads = @$lsass.Threads.Select(t =&gt; new &#123;irp = </span><br><span class="line">Debugger.Utility.Collections.FromListEntry(t.KernelObject.IrpList, &quot;nt!_IRP&quot;, &quot;ThreadListEntry&quot;)&#125;).Where(t =&gt; t.irp.Count() != 0)                </span><br><span class="line">    [0x384]         </span><br><span class="line">        irp             </span><br><span class="line">            [0x0]  [Type: _IRP]</span><br><span class="line">                [&lt;Raw View&gt;]  [Type: _IRP]</span><br><span class="line">                IoStack       : Size = 12, Current IRP_MJ_DIRECTORY_CONTROL / 0x2 for Device for &quot;\FileSystem\Ntfs&quot;</span><br><span class="line">                CurrentThread : 0xffffb90a59477080 [Type: _ETHREAD *]</span><br><span class="line">            [0x1]  [Type: _IRP]</span><br><span class="line">                [&lt;Raw View&gt;]  [Type: _IRP]</span><br><span class="line">                IoStack       : Size = 12, Current IRP_MJ_DIRECTORY_CONTROL / 0x2 for Device for &quot;\FileSystem\Ntfs&quot;</span><br><span class="line">                CurrentThread : 0xffffb90a59477080 [Type: _ETHREAD *]</span><br></pre></td></tr></table></figure>
+
+<p>我们可以在这里停一下，点击其中一个 <code>IRP</code> 的 <code>IoStack</code> （或者运行 <code>-r5</code> 来查看全部内容）可以得到调用栈信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">dx @$irpThreads.First().irp[0].IoStack</span><br><span class="line"></span><br><span class="line">@$irpThreads.First().irp[0].IoStack  : Size = 12, Current IRP_MJ_DIRECTORY_CONTROL / 0x2 for Device for &quot;\FileSystem\Ntfs&quot;</span><br><span class="line">    [0]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [1]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [2]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [3]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [4]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [5]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [6]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [7]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [8]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [9]              : IRP_MJ_CREATE / 0x0 for &#123;...&#125; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [10]             : IRP_MJ_DIRECTORY_CONTROL / 0x2 for Device for &quot;\FileSystem\Ntfs&quot; [Type: _IO_STACK_LOCATION]</span><br><span class="line">    [11]             : IRP_MJ_DIRECTORY_CONTROL / 0x2 for Device for &quot;\FileSystem\FltMgr&quot; [Type: _IO_STACK_LOCATION]</span><br></pre></td></tr></table></figure>
+
+<p>最后，我们将遍历每个线程，并且遍历线程中的每个 <code>IRP</code>，并对其执行 <code>Executeccommand !IRP &lt;irp address&gt;</code>。这里我们也需要类型转换和 <code>ToDisplayString(&quot;x&quot;)</code> 来匹配传统命令所期望的格式。（ <code>!irp</code> 的输出很长，所以我们将其截断，只关注感兴趣的数据）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">dx -r3 @$irpThreads.Select(t =&gt; t.irp.Select(i =&gt; Debugger.Utility.Control.ExecuteCommand(&quot;!irp &quot; + ((__int64)&amp;i).ToDisplayString(&quot;x&quot;))))</span><br><span class="line"></span><br><span class="line">@$irpThreads.Select(t =&gt; t.irp.Select(i =&gt; Debugger.Utility.Control.ExecuteCommand(&quot;!irp &quot; + ((__int64)&amp;i).ToDisplayString(&quot;x&quot;))))                </span><br><span class="line">    [0x384]         </span><br><span class="line">        [0x0]           </span><br><span class="line">            [0x0]            : Irp is active with 12 stacks 11 is current (= 0xffffb90a5b8f4d40)</span><br><span class="line">            [0x1]            :  No Mdl: No System Buffer: Thread ffffb90a59477080:  Irp stack trace.  </span><br><span class="line">            [0x2]            :      cmd  flg cl Device   File     Completion-Context</span><br><span class="line">            [0x3]            :  [N/A(0), N/A(0)]</span><br><span class="line">            ...</span><br><span class="line">            [0x34]           : Irp Extension present at 0xffffb90a5b8f4dd0:</span><br><span class="line">        [0x1]           </span><br><span class="line">            [0x0]            : Irp is active with 12 stacks 11 is current (= 0xffffb90a5bd24840)</span><br><span class="line">            [0x1]            :  No Mdl: No System Buffer: Thread ffffb90a59477080:  Irp stack trace.  </span><br><span class="line">            [0x2]            :      cmd  flg cl Device   File     Completion-Context</span><br><span class="line">            [0x3]            :  [N/A(0), N/A(0)]</span><br><span class="line">            ...</span><br><span class="line">            [0x34]           : Irp Extension present at 0xffffb90a5bd248d0:</span><br></pre></td></tr></table></figure>
+
+<p> <code>!irp</code> 提供给我们的大部分信息都可以通过使用 <code>dx</code> 解析 <code>IRP</code> 并转储其 <code>IoStack</code> 获得。但是有一些信息如果不使用传统命令则很难获得。比如， <code>IrpExtension</code> 是否存在及其地址，以及可能与 <code>IRP</code> 关联的 <code>Mdl</code> 的信息。</p>
+<h2 id="反汇编器（Disassembler）"><a href="#反汇编器（Disassembler）" class="headerlink" title="反汇编器（Disassembler）"></a>反汇编器（Disassembler）</h2><p>我们以 <code>u</code> 命令为例，下面的例子展示的是：在 <code>dx</code> 中通过 <code>Debugger.Utility.Code.CreateDisassember</code> 和 <code>DisassembleBlock</code> 创建可以遍历和搜索的反汇编代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">dx -r3 Debugger.Utility.Code.CreateDisassembler().DisassembleBlocks(@$curstack.Frames[1].Attributes.InstructionOffset)</span><br><span class="line"></span><br><span class="line">Debugger.Utility.Code.CreateDisassembler().DisassembleBlocks(@$curstack.Frames[1].Attributes.InstructionOffset)                </span><br><span class="line">    [0xfffff80752ad2b61] : Basic Block [0xfffff80752ad2b61 - 0xfffff80752ad2b67)</span><br><span class="line">        StartAddress     : 0xfffff80752ad2b61</span><br><span class="line">        EndAddress       : 0xfffff80752ad2b67</span><br><span class="line">        Instructions    </span><br><span class="line">            [0xfffff80752ad2b61] : add         rsp,30h</span><br><span class="line">            [0xfffff80752ad2b65] : pop         rbx</span><br><span class="line">            [0xfffff80752ad2b66] : ret</span><br><span class="line">    [0xfffff80752ad2b67] : Basic Block [0xfffff80752ad2b67 - 0xfffff80752ad2b7e)</span><br><span class="line">        StartAddress     : 0xfffff80752ad2b67</span><br><span class="line">        EndAddress       : 0xfffff80752ad2b7e</span><br><span class="line">        Instructions    </span><br><span class="line">            [0xfffff80752ad2b67] : lea         r8,[rbx+70h]</span><br><span class="line">            [0xfffff80752ad2b6b] : mov         rdx,rdi</span><br><span class="line">            [0xfffff80752ad2b6e] : lea         rcx,[rbx+60h]</span><br><span class="line">            [0xfffff80752ad2b72] : mov         r10,qword ptr [kdnic!__imp_ExInterlockedInsertTailList (fffff80752ad6150)]</span><br><span class="line">            [0xfffff80752ad2b79] : call        ntkrnlmp!ExInterlockedInsertTailList (fffff8074ea56590)</span><br><span class="line">    [0xfffff80752ad2b7e] : Basic Block [0xfffff80752ad2b7e - 0xfffff80752ad2b80)</span><br><span class="line">        StartAddress     : 0xfffff80752ad2b7e</span><br><span class="line">        EndAddress       : 0xfffff80752ad2b80</span><br><span class="line">        Instructions    </span><br><span class="line">            [0xfffff80752ad2b7e] : jmp         kdnic!TXTransmitQueuedSends+0xd0 (fffff80752ad2b0c)</span><br><span class="line">    [0xfffff80752ad2b80] : Basic Block [0xfffff80752ad2b80 - 0xfffff80752ad2b81)</span><br><span class="line">        StartAddress     : 0xfffff80752ad2b80</span><br><span class="line">        EndAddress       : 0xfffff80752ad2b81</span><br><span class="line">        Instructions</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+
+<p>只选择 <code>Instructions</code> 并将其扁平化显示，整理后的版本如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">dx -r2 Debugger.Utility.Code.CreateDisassembler().DisassembleBlocks(@$curstack.Frames[1].Attributes.InstructionOffset).Select(b =&gt; b.Instructions).Flatten()</span><br><span class="line"></span><br><span class="line">Debugger.Utility.Code.CreateDisassembler().DisassembleBlocks(@$curstack.Frames[1].Attributes.InstructionOffset).Select(b =&gt; b.Instructions).Flatten()                </span><br><span class="line">    [0x0]           </span><br><span class="line">        [0xfffff80752ad2b61] : add         rsp,30h</span><br><span class="line">        [0xfffff80752ad2b65] : pop         rbx</span><br><span class="line">        [0xfffff80752ad2b66] : ret</span><br><span class="line">    [0x1]           </span><br><span class="line">        [0xfffff80752ad2b67] : lea         r8,[rbx+70h]</span><br><span class="line">        [0xfffff80752ad2b6b] : mov         rdx,rdi</span><br><span class="line">        [0xfffff80752ad2b6e] : lea         rcx,[rbx+60h]</span><br><span class="line">        [0xfffff80752ad2b72] : mov         r10,qword ptr [kdnic!__imp_ExInterlockedInsertTailList (fffff80752ad6150)]</span><br><span class="line">        [0xfffff80752ad2b79] : call        ntkrnlmp!ExInterlockedInsertTailList (fffff8074ea56590)</span><br><span class="line">    [0x2]           </span><br><span class="line">        [0xfffff80752ad2b7e] : jmp         kdnic!TXTransmitQueuedSends+0xd0 (fffff80752ad2b0c)</span><br><span class="line">    [0x3]           </span><br><span class="line">        [0xfffff80752ad2b80] : int         3</span><br><span class="line">    [0x4]           </span><br><span class="line">        [0xfffff80752ad2b81] : int         3</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+
+<h2 id="合成方法（Synthetic-Methods）"><a href="#合成方法（Synthetic-Methods）" class="headerlink" title="合成方法（Synthetic Methods）"></a>合成方法（Synthetic Methods）</h2><p>新调试数据模型提供的另一个功能是允许我们创建并使用自定义函数。语法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">0: kd&gt; dx @$multiplyByThree = (x =&gt; x * 3)</span><br><span class="line"></span><br><span class="line">@$multiplyByThree = (x =&gt; x * 3)</span><br><span class="line"></span><br><span class="line">0: kd&gt; dx @$multiplyByThree(5)</span><br><span class="line"></span><br><span class="line">@$multiplyByThree(5) : 15</span><br></pre></td></tr></table></figure>
+
+<p>我们也可以创建包含多个参数的函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">0: kd&gt; dx @$add = ((x, y) =&gt; x + y)</span><br><span class="line"></span><br><span class="line">@$add = ((x, y) =&gt; x + y)</span><br><span class="line"></span><br><span class="line">0: kd&gt; dx @$add(5, 7)</span><br><span class="line"></span><br><span class="line">@$add(5, 7)      : 12</span><br></pre></td></tr></table></figure>
+
+<p>或者，如果我们真的想要玩的更高端一些，我们可以将这些函数应用到前面的反汇编输出中，以便找出 <code>ZwSetInformationProcess</code> 函数中所有的内存写入指令。为此，我们需要对每条指令进行一些检查，以便知道它是否是内存写入指令：</p>
+<ul>
+<li><p>指令至少有两个操作数吗？</p>
+<p>例如，<code>ret</code> 指令的操作数是 <code>0</code>，而 <code>jmp &lt;address&gt;</code> 指令的操作数是 <code>1</code>。我们只关心将一个值写入某个位置的情况，这总是需要两个操作数。为了验证这一点，我们需要检查每条指令的 <code>Operands.Count() &gt; 1</code>。</p>
+</li>
+</ul>
+<ul>
+<li>是否是内存引用操作？<br>我们只对内存写入操作感兴趣，并希望忽略像 <code>mon r10, rcx</code> 这样的指令。为此，我们将检查每条指令的 <code>Operands[0].Attributes.IsMemoryReference == true</code>。我们检查 <code>Operands[0]</code>，因为它是目的操作数。如果我们想查找内存读取指令，我们应该检查源操作数，它在 <code>Operands[1]</code> 中。</li>
+</ul>
+<ul>
+<li><p>目的操作数是输出吗？</p>
+<p>我们想过滤掉引用内存但没有写入内存的指令。我们将使用 <code>Operands[0].IsOutput == true</code> 进行检查。</p>
+</li>
+</ul>
+<ul>
+<li><p>作为最后一个过滤器，我们希望忽略栈内存写入操作，它看起来像 <code>mov [rsp+0x18]，1</code> 或 <code>mov [rbp-0x10]，rdx</code>。</p>
+<p>我们将检查第一个操作数的寄存器，并确保其索引不是 <code>rsp</code> 索引（<code>0x14</code>）或 <code>rbp</code> 索引（<code>0x15</code>）。</p>
+</li>
+</ul>
+<p>我们将编写一个函数 <code>@$isMemWrite</code>，它接收一个代码块并且只返回内存写入指令（基于上面的检查）。然后我们可以创建一个反汇编器，反汇编我们的目标函数并且只输出其中的内存写入指令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">dx -r0 @$rspId = 0x14</span><br><span class="line"></span><br><span class="line">dx -r0 @$rbpId = 0x15</span><br><span class="line"></span><br><span class="line">dx -r0 @$isMemWrite = (b =&gt; b.Instructions.Where(i =&gt; i.Operands.Count() &gt; 1 &amp;&amp; i.Operands[0].Attributes.IsOutput &amp;&amp; i.Operands[0].Registers[0].Id != @$rspId &amp;&amp; i.Operands[0].Registers[0].Id != @$rbpId &amp;&amp; i.Operands[0].Attributes.IsMemoryReference))</span><br><span class="line"></span><br><span class="line">dx -r0 @$findMemWrite = (a =&gt; Debugger.Utility.Code.CreateDisassembler().DisassembleBlocks(a).Select(b =&gt; @$isMemWrite(b)))</span><br><span class="line"></span><br><span class="line">dx -r2 @$findMemWrite(&amp;nt!ZwSetInformationProcess).Where(b =&gt; b.Count() != 0)</span><br><span class="line"></span><br><span class="line">@$findMemWrite(&amp;nt!ZwSetInformationProcess).Where(b =&gt; b.Count() != 0)         </span><br><span class="line">    [0xfffff8074ebd23d4]</span><br><span class="line">        [0xfffff8074ebd23e9] : mov         qword ptr [r10+80h],rax</span><br><span class="line">        [0xfffff8074ebd23f5] : mov         qword ptr [r10+44h],rax</span><br><span class="line">    [0xfffff8074ebd2415]</span><br><span class="line">        [0xfffff8074ebd2421] : mov         qword ptr [r10+98h],r8</span><br><span class="line">        [0xfffff8074ebd2428] : mov         qword ptr [r10+0F8h],r9</span><br><span class="line">        [0xfffff8074ebd2433] : mov         byte ptr gs:[5D18h],al</span><br><span class="line">    [0xfffff8074ebd25b2]</span><br><span class="line">        [0xfffff8074ebd25c3] : mov         qword ptr [rcx],rax</span><br><span class="line">        [0xfffff8074ebd25c9] : mov         qword ptr [rcx+8],rax</span><br><span class="line">        [0xfffff8074ebd25d0] : mov         qword ptr [rcx+10h],rax</span><br><span class="line">        [0xfffff8074ebd25d7] : mov         qword ptr [rcx+18h],rax</span><br><span class="line">        [0xfffff8074ebd25df] : mov         qword ptr [rcx+0A0h],rax</span><br><span class="line">    [0xfffff8074ebd263f]</span><br><span class="line">        [0xfffff8074ebd264f] : and         byte ptr [rax+5],0FDh</span><br><span class="line">    [0xfffff8074ebd26da]</span><br><span class="line">        [0xfffff8074ebd26e3] : mov         qword ptr [rcx],rax</span><br><span class="line">        [0xfffff8074ebd26e9] : mov         qword ptr [rcx+8],rax</span><br><span class="line">        [0xfffff8074ebd26f0] : mov         qword ptr [rcx+10h],rax</span><br><span class="line">        [0xfffff8074ebd26f7] : mov         qword ptr [rcx+18h],rax</span><br><span class="line">        [0xfffff8074ebd26ff] : mov         qword ptr [rcx+0A0h],rax</span><br><span class="line">        [0xfffff8074ebd2708] : mov         word ptr [rcx+72h],ax</span><br><span class="line">     ...</span><br></pre></td></tr></table></figure>
+
+<p>作为另外一个项目，它几乎结合了上面提到的所有内容 —— 实现 <code>dx</code> 版本的 <code>!apc</code> 。为了简化，我们只寻找内核 <code>APC</code>。要做到这一点，需要如下几个步骤：</p>
+<ul>
+<li>使用 <code>@$cursession.Processes</code> 遍历所有进程，以找到这些进程：包含  <code>KTHREAD.ApcState.KernelApcPending</code> 值为 <code>1</code> 的线程。</li>
+</ul>
+<ul>
+<li>在对应进程中创建一个容器，只包含那些包含挂起内核 <code>APC</code> 的线程，忽略其它线程。</li>
+</ul>
+<ul>
+<li>对于每个线程，遍历 <code>KTHREAD.ApcState.ApcListHead[0]</code> （包含内核 <code>APC</code>）并收集感兴趣的信息。可以通过前面介绍的 <code>FromListHead()</code> 方法实现。为了使我们的容器尽可能地与 <code>!apc</code> 相似，我们将只获取 <code>KernelRoutine</code> 和 <code>RundownRoutine</code>，尽管在你的实现中，你可能会发现其他感兴趣的字段。</li>
+</ul>
+<ul>
+<li>为了让容器更容易遍历，我们将收集进程名、进程 <code>ID</code>、 <code>EPROCESS</code> 地址以及线程 <code>ID</code> 和 <code>ETHREAD</code> 地址。</li>
+</ul>
+<ul>
+<li><p>在我们的实现中，我们创建了几个辅助函数：</p>
+<p><strong>@$printLn</strong> —— 运行传统命令 <code>ln</code>，以获取指定地址对应的符号信息。</p>
+<p><strong>@$extractBetween</strong> —— 提取两个字符串之间的字符串，用于从 <code>@$printLn</code> 的输出中获取子字符串。</p>
+<p><strong>@$printSymbol</strong> —— 传递一个地址给 <code>@$printLn</code>，并且使用 <code>@$extractSymbol</code> 提取符号名。</p>
+<p><strong>@$apcsForThread</strong> —— 找到一个线程中的所有内核 <code>APC</code>，并且创建一个包含 <code>KernelRoutine</code> 和 <code>RundownRoutine</code> 的容器。</p>
+</li>
+</ul>
+<p>在得到所有进程（包含挂起的内核 <code>APC</code> 的线程）后，将其保存到 <code>@$procWithKernelApcs</code> 寄存器中，然后在一个单独的命令中使用 <code>@$apcsForThread</code> 获取 <code>APC</code> 信息。我们将 <code>EPPROCESS</code> 和 <code>ETHREAD</code> 指针强制转换为 <code>void*</code>，这样当我们显示最终结果时 <code>dx</code> 就不会显示整个结构。</p>
+<p>这是我解决问题的方法，但也有其他方法，你的方法不一定和我的完全相同！</p>
+<p>我想出的脚本是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">dx -r0 @$printLn = (a =&gt; Debugger.Utility.Control.ExecuteCommand(“ln “+((__int64)a).ToDisplayString(“x”)))</span><br><span class="line"></span><br><span class="line">dx -r0 @$extractBetween = ((x,y,z) =&gt; x.Substring(x.IndexOf(y) + y.Length, x.IndexOf(z) — x.IndexOf(y) — y.Length))</span><br><span class="line"></span><br><span class="line">dx -r0 @$printSymbol = (a =&gt; @$extractBetween(@$printLn(a)[3], “ “, “|”))</span><br><span class="line"></span><br><span class="line">dx -r0 @$apcsForThread = (t =&gt; new &#123;TID = t.Id, Object = (void*)&amp;t.KernelObject, Apcs = Debugger.Utility.Collections.FromListEntry(*(nt!_LIST_ENTRY*)&amp;t.KernelObject.Tcb.ApcState.ApcListHead[0], “nt!_KAPC”, “ApcListEntry”).Select(a =&gt; new &#123; Kernel = @$printSymbol(a.KernelRoutine), Rundown = @$printSymbol(a.RundownRoutine)&#125;)&#125;)</span><br><span class="line"></span><br><span class="line">dx -r0 @$procWithKernelApc = @$cursession.Processes.Select(p =&gt; new &#123;Name = p.Name, PID = p.Id, Object = (void*)&amp;p.KernelObject, ApcThreads = p.Threads.Where(t =&gt; t.KernelObject.Tcb.ApcState.KernelApcPending != 0)&#125;).Where(p =&gt; p.ApcThreads.Count() != 0)</span><br><span class="line"></span><br><span class="line">dx -r6 @$procWithKernelApc.Select(p =&gt; new &#123; Name = p.Name, PID = p.PID, Object = p.Object, ApcThreads = p.ApcThreads.Select(t =&gt; @$apcsForThread(t))&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>它会产生以下输出：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line">dx -r6 @$procWithKernelApc.Select(p =&gt; new &#123; Name = p.Name, PID = p.PID, Object = p.Object, ApcThreads = p.ApcThreads.Select(t =&gt; @$apcsForThread(t))&#125;)</span><br><span class="line"></span><br><span class="line">@$procWithKernelApc.Select(p =&gt; new &#123; Name = p.Name, PID = p.PID, Object = p.Object, ApcThreads = p.ApcThreads.Select(t =&gt; @$apcsForThread(t))&#125;)</span><br><span class="line">    [0x15b8]        </span><br><span class="line">        Name             : SearchUI.exe</span><br><span class="line">            Length           : 0xc</span><br><span class="line">        PID              : 0x15b8</span><br><span class="line">        Object           : 0xffffb90a5b1300c0 [Type: void *]</span><br><span class="line">        ApcThreads      </span><br><span class="line">            [0x159c]        </span><br><span class="line">                TID              : 0x159c</span><br><span class="line">                Object           : 0xffffb90a5b14f080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x1528]        </span><br><span class="line">                TID              : 0x1528</span><br><span class="line">                Object           : 0xffffb90a5aa6b080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x16b4]        </span><br><span class="line">                TID              : 0x16b4</span><br><span class="line">                Object           : 0xffffb90a59f1e080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x16a0]        </span><br><span class="line">                TID              : 0x16a0</span><br><span class="line">                Object           : 0xffffb90a5b141080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x16b8]        </span><br><span class="line">                TID              : 0x16b8</span><br><span class="line">                Object           : 0xffffb90a5aab20c0 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x1740]        </span><br><span class="line">                TID              : 0x1740</span><br><span class="line">                Object           : 0xffffb90a5ab362c0 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x1780]        </span><br><span class="line">                TID              : 0x1780</span><br><span class="line">                Object           : 0xffffb90a5b468080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x1778]        </span><br><span class="line">                TID              : 0x1778</span><br><span class="line">                Object           : 0xffffb90a5b6f7080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x17d0]        </span><br><span class="line">                TID              : 0x17d0</span><br><span class="line">                Object           : 0xffffb90a5b1e8080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x17d4]        </span><br><span class="line">                TID              : 0x17d4</span><br><span class="line">                Object           : 0xffffb90a5b32f080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x17f8]        </span><br><span class="line">                TID              : 0x17f8</span><br><span class="line">                Object           : 0xffffb90a5b32e080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0xb28]         </span><br><span class="line">                TID              : 0xb28</span><br><span class="line">                Object           : 0xffffb90a5b065600 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList   </span><br><span class="line">            [0x1850]        </span><br><span class="line">                TID              : 0x1850</span><br><span class="line">                Object           : 0xffffb90a5b6a5080 [Type: void *]</span><br><span class="line">                Apcs            </span><br><span class="line">                    [0x0]           </span><br><span class="line">                        Kernel           :   nt!EmpCheckErrataList   </span><br><span class="line">                        Rundown          :   nt!EmpCheckErrataList</span><br></pre></td></tr></table></figure>
+
+<p>虽然输出结果没有 <code>!apc</code> 美观，但已经很美观了。</p>
+<p>我们还可以将其输出成表格，显示相关进程的信息并且可以分别浏览每个进程中的 <code>APC</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx -g @$procWithKernelApc.Select(p =&gt; new &#123; Name = p.Name, PID = p.PID, Object = p.Object, ApcThreads = p.ApcThreads.Select(t =&gt; @$apcsForThread(t))&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part2/dx-g-procWithKernelApc.Select.png" alt="dx-g-procWithKernelApc.Select"></p>
+<p>但是请等一下，这些包含 <code>nt!EmpCheckErrataList</code> 的 <code>APC</code> 是怎么回事？为什么 <code>SearchUI.exe</code> 里到处都是？这个进程和 <code>erratas</code> 有什么关系？（<strong>译注：</strong> 函数 <code>nt!EmpCheckErrataList</code> 中包含 <code>Errata</code>。）</p>
+<p>秘密在于实际上并没有 <code>APC</code> 会调用 <code>nt!EmpCheckErrataList</code>。不，符号也没有错。（<strong>译注：</strong> 哈哈，感觉作者在跟读者讨论问题）</p>
+<p>我们之所以看到这样的现象，是因为编译器很智能 —— 当编译器看到不同的函数具有相同的代码的时候，编译器会让它们全部指向同一段代码，而不是多次复制这段代码。你可能会认为这不是一个会经常发生的事情，但让我们看看 <code>nt!EmpCheckErrataList</code> 的反汇编代码（这次使用旧办法）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">u EmpCheckErrataList</span><br><span class="line"></span><br><span class="line">nt!EmpCheckErrataList:</span><br><span class="line">fffff807`4eb86010 c20000          ret     0</span><br><span class="line">fffff807`4eb86013 cc              int     3</span><br><span class="line">fffff807`4eb86014 cc              int     3</span><br><span class="line">fffff807`4eb86015 cc              int     3</span><br><span class="line">fffff807`4eb86016 cc              int     3</span><br></pre></td></tr></table></figure>
+
+<p>这实际上只是一个存根。它可能是一个尚未实现的函数（<code>EmpCheckErrataList</code> 可能是这种情况），也可能是出于某些原因被故意定义为存根函数。这些 <code>APC</code> 的 <code>KernelRoutine/RundownRoutine</code> 真正对应的函数是 <code>nt!KiSchedulerApcNop</code>，它被故意设计成存根函数，并且已经多年了。我们可以看到它具有相同的代码并且指向同一地址：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">u nt!KiSchedulerApcNop</span><br><span class="line"></span><br><span class="line">nt!EmpCheckErrataList:</span><br><span class="line">fffff807`4eb86010 c20000          ret     0</span><br><span class="line">fffff807`4eb86013 cc              int     3</span><br><span class="line">fffff807`4eb86014 cc              int     3</span><br><span class="line">fffff807`4eb86015 cc              int     3</span><br><span class="line">fffff807`4eb86016 cc              int     3</span><br></pre></td></tr></table></figure>
+
+<p>那么为什么我们会看到这么多这样的 <code>APC</code> 呢?</p>
+<p>当一个线程被挂起时，系统会创建一个信号量，并将一个等待该信号量的 <code>APC</code> 发送到该线程。线程将一直等待，直到有人唤醒它，然后系统将释放信号量，线程将停止等待并恢复运行。<code>APC</code> 本身不需要做很多事情，但它必须有一个 <code>KernelRoutine</code> 和一个 <code>RundownRoutine</code>，所以系统使用了存根。这个存根使用了这些函数（包含存根代码）中的一个，这次是 <code>nt!EmpCheckErrataList</code>，但在下一个版本中可能是一个不同的函数名。</p>
+<p>任何对挂起机制感兴趣的人都可以查看 <a href="https://github.com/reactos/reactos/blob/7523a7b13880b47d21f2ef17761450e5893e6f49/ntoskrnl/ke/thrdobj.c#L610" target="_blank" rel="noopener">ReactOS</a>。这些函数的代码发生了一点变化，并且存根函数名从 <code>KiSuspendNop</code> 变成了 <code>KiSchedulerApcNop</code>，但总体设计保持相似。</p>
+<p>我跑题了，这不是本篇文章应该讨论的内容。让我们回到 <code>WinDbg</code>，接着讲合成类型：</p>
+<h2 id="合成类型（Synthetic-Types）"><a href="#合成类型（Synthetic-Types）" class="headerlink" title="合成类型（Synthetic Types）"></a>合成类型（Synthetic Types）</h2><p>在介绍完合成方法后，我们还可以添加自定义的命名类型（named types），并使用它们来解析之前无法解析的数据。</p>
+<p>例如，让我们尝试打印 <code>PspCreateProcessNotifyRoutine</code> 数组，该数组包含所有已注册的<strong>进程通知例程</strong> —— 这些函数由驱动程序注册，在进程启动时会收到一个通知。但是这个数组不包含指向注册例程的指针。相反，它包含指向未文档化的结构体 <code>EX_CALLBACK_ROUTINE_BLOCK</code> 的指针。</p>
+<p>因此，为了解析这个数组，我们需要确保 <code>WinDbg</code> 认识这个类型 —— 我们需要使用<a href="https://github.com/Microsoft/WinDbg-Samples/tree/master/SyntheticTypes" target="_blank" rel="noopener">合成类型</a>。我们首先要创建一个头文件，里面包含我们想要定义的所有类型（我使用 <code>c:\temp\header.h</code>）。在本例中，我们只定义了 <code>EX_CALLBACK_ROUTINE_BLOCK</code>，可以在 <a href="https://github.com/reactos/reactos/blob/21362c8e86b39b8da2e36f31047b0ec45b56c9a8/sdk/include/ndk/extypes.h#L535" target="_blank" rel="noopener">ReactOS</a> 中找到它的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">typedef struct _EX_CALLBACK_ROUTINE_BLOCK</span><br><span class="line">&#123;</span><br><span class="line">    _EX_RUNDOWN_REF RundownProtect;</span><br><span class="line">    void* Function;</span><br><span class="line">    void* Context;</span><br><span class="line">&#125; EX_CALLBACK_ROUTINE_BLOCK, *PEX_CALLBACK_ROUTINE_BLOCK;</span><br></pre></td></tr></table></figure>
+
+<p>现在我们可以让 <code>WinDbg</code> 加载这个头文件并将里面的类型添加到 <code>nt</code> 模块中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">dx Debugger.Utility.Analysis.SyntheticTypes.ReadHeader(&quot;c:\\temp\\header.h&quot;, &quot;nt&quot;)</span><br><span class="line"></span><br><span class="line">Debugger.Utility.Analysis.SyntheticTypes.ReadHeader(&quot;c:\\temp\\header.h&quot;, &quot;nt&quot;)                 : ntkrnlmp.exe(header.h)</span><br><span class="line">    ReturnEnumsAsObjects : false</span><br><span class="line">    RegisterSyntheticTypeModels : false</span><br><span class="line">    Module           : ntkrnlmp.exe</span><br><span class="line">    Header           : header.h</span><br><span class="line">    Types</span><br></pre></td></tr></table></figure>
+
+<p>这会为我们返回一个对象，通过这个对象，我们可以查看添加到此模块的所有类型。现在，类型已经定义好了，我们可以通过  <code>CreateInstance</code> 使用它：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">dx Debugger.Utility.Analysis.SyntheticTypes.CreateInstance(&quot;_EX_CALLBACK_ROUTINE_BLOCK&quot;, *(__int64*)&amp;nt!PspCreateProcessNotifyRoutine)</span><br><span class="line"></span><br><span class="line">Debugger.Utility.Analysis.SyntheticTypes.CreateInstance(&quot;_EX_CALLBACK_ROUTINE_BLOCK&quot;, *(__int64*)&amp;nt!PspCreateProcessNotifyRoutine)                </span><br><span class="line">    RundownProtect   [Type: _EX_RUNDOWN_REF]</span><br><span class="line">    Function         : 0xfffff8074cbdff50 [Type: void *]</span><br><span class="line">    Context          : 0x6e496c4102031400 [Type: void *]</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是 <code>CreateInstance</code> 只接受 <code>__int64</code> 作为输入，所以任何其他类型都必须强制转换。提前知道这一点很好，因为返回的错误消息并不总是那么容易理解的。</p>
+<p>现在如果查看输出结果，特别是 <code>Context</code>，有些东西似乎很奇怪。实际上，如果我们试图转储 <code>Function</code>，我们会看到它并不指向任何代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">dq 0xfffff8074cbdff50</span><br><span class="line">fffff807`4cbdff50  ????????`???????? ????????`????????</span><br><span class="line">fffff807`4cbdff60  ????????`???????? ????????`????????</span><br><span class="line">fffff807`4cbdff70  ????????`???????? ????????`????????</span><br><span class="line">fffff807`4cbdff80  ????????`???????? ????????`????????</span><br><span class="line">fffff807`4cbdff90  ????????`???????? ????????`????????</span><br></pre></td></tr></table></figure>
+
+<p>发生了什么？</p>
+<p>不是我们强制转换到 <code>EX_CALLBACK_ROUTINE_BLOCK</code> 出了问题，而是我们转换的地址有问题。如果我们转储 <code>PspCreateProcessNotifyRoutine</code> 中的值，我们可能会看到它的值：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">dx ((void**[0x40])&amp;nt!PspCreateProcessNotifyRoutine).Where(a =&gt; a != 0)</span><br><span class="line"></span><br><span class="line">((void**[0x40])&amp;nt!PspCreateProcessNotifyRoutine).Where(a =&gt; a != 0)</span><br><span class="line">    [0]              : 0xffffb90a530504ef [Type: void * *]</span><br><span class="line">    [1]              : 0xffffb90a532a512f [Type: void * *]</span><br><span class="line">    [2]              : 0xffffb90a53da9d5f [Type: void * *]</span><br><span class="line">    [3]              : 0xffffb90a53da9ccf [Type: void * *]</span><br><span class="line">    [4]              : 0xffffb90a53e5d15f [Type: void * *]</span><br><span class="line">    [5]              : 0xffffb90a571469ef [Type: void * *]</span><br><span class="line">    [6]              : 0xffffb90a5714722f [Type: void * *]</span><br><span class="line">    [7]              : 0xffffb90a571473df [Type: void * *]</span><br><span class="line">    [8]              : 0xffffb90a597d989f [Type: void * *]</span><br></pre></td></tr></table></figure>
+
+<p>所有这些地址的低半字节都是 <code>0xF</code>，而我们知道 <code>x64</code> 机器中的指针总会对齐到 <code>8</code> 字节，通常是 <code>0x10</code>。这是因为我之前过度简化了 —— 这些不是指向 <code>EX_CALLBACK_ROUTINE_BLOCK</code> 的指针，它们实际上是包含 <code>EX_RUNDOWN_REF</code> 的 <code>EX_CALLBACK</code> 结构体（另一种不在公共符号中的类型）。但是为了使这个示例更简单，我将把它们当作与 <code>~0xF</code> 执行<strong>与</strong>操作后的简单指针，因为这对于我们的目的来说已经足够好了。如果你选择写一个驱动程序来处理 <code>PspCreateProcessNotifyRoutine</code>，请不要使用这个 <code>hack</code>，查看 <code>ReactOS</code> 并正确地做事情。😊</p>
+<p>因此，要修复我们的命令，我们只需要在对地址进行强制类型转换之前将其对齐到 <code>0x10</code>。我们可以像下面这样做：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;address&gt; &amp; 0xFFFFFFFFFFFFFFF0</span><br></pre></td></tr></table></figure>
+
+<p>或更好的版本：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;address&gt; &amp; ~0xF</span><br></pre></td></tr></table></figure>
+
+<p>让我们在我们的命令中使用它：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">dx Debugger.Utility.Analysis.SyntheticTypes.CreateInstance(&quot;_EX_CALLBACK_ROUTINE_BLOCK&quot;, (*(__int64*)&amp;nt!PspCreateProcessNotifyRoutine) &amp; ~0xf)</span><br><span class="line"></span><br><span class="line">Debugger.Utility.Analysis.SyntheticTypes.CreateInstance(&quot;_EX_CALLBACK_ROUTINE_BLOCK&quot;, (*(__int64*)&amp;nt!PspCreateProcessNotifyRoutine) &amp; ~0xf)                </span><br><span class="line">    RundownProtect   [Type: _EX_RUNDOWN_REF]</span><br><span class="line">    Function         : 0xfffff8074ea7f310 [Type: void *]</span><br><span class="line">    Context          : 0x0 [Type: void *]</span><br></pre></td></tr></table></figure>
+
+<p>看起来好些了。这次让我们确认 <code>Function</code> 确实指向了一个函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ln 0xfffff8074ea7f310</span><br><span class="line">Browse module</span><br><span class="line">Set bu breakpoint</span><br><span class="line"></span><br><span class="line">(fffff807`4ea7f310)   nt!ViCreateProcessCallback   |</span><br><span class="line">(fffff807`4ea7f330)   nt!RtlStringCbLengthW</span><br><span class="line">Exact matches:</span><br><span class="line">    nt!ViCreateProcessCallback (void)</span><br></pre></td></tr></table></figure>
+
+<p>看起来好多了！现在我们可以将这种类型转换定义为一个合成方法，并使用它来获取数组中所有例程的函数地址：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">dx -r0 @$getCallbackRoutine = (a =&gt; Debugger.Utility.Analysis.SyntheticTypes.CreateInstance(&quot;_EX_CALLBACK_ROUTINE_BLOCK&quot;, (__int64)(a &amp; ~0xf)))</span><br><span class="line"></span><br><span class="line">dx ((void**[0x40])&amp;nt!PspCreateProcessNotifyRoutine).Where(a =&gt; a != 0).Select(a =&gt; @$getCallbackRoutine(a).Function)</span><br><span class="line"></span><br><span class="line">((void**[0x40])&amp;nt!PspCreateProcessNotifyRoutine).Where(a =&gt; a != 0).Select(a =&gt; @$getCallbackRoutine(a).Function)                </span><br><span class="line">    [0]              : 0xfffff8074ea7f310 [Type: void *]</span><br><span class="line">    [1]              : 0xfffff8074ff97220 [Type: void *]</span><br><span class="line">    [2]              : 0xfffff80750a41330 [Type: void *]</span><br><span class="line">    [3]              : 0xfffff8074f8ab420 [Type: void *]</span><br><span class="line">    [4]              : 0xfffff8075106d9f0 [Type: void *]</span><br><span class="line">    [5]              : 0xfffff807516dd930 [Type: void *]</span><br><span class="line">    [6]              : 0xfffff8074ff252c0 [Type: void *]</span><br><span class="line">    [7]              : 0xfffff807520b6aa0 [Type: void *]</span><br><span class="line">    [8]              : 0xfffff80753a63cf0 [Type: void *]</span><br></pre></td></tr></table></figure>
+
+<p>如果我们能看到符号而不是地址，这会更有趣。我们已经知道如何通过执行传统命令 <code>ln</code> 来获取符号，但这一次我们将使用 <code>.printf</code>。</p>
+<p>首先，我们将编写一个辅助函数 <code>@$getsym</code>，它将运行命令 <code>printf &quot;%y&quot;, &lt;address&gt;</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx -r0 @$getsym = (x =&gt; Debugger.Utility.Control.ExecuteCommand(&quot;.printf\&quot;%y\&quot;, &quot; + ((__int64)x).ToDisplayString(&quot;x&quot;))[0])</span><br></pre></td></tr></table></figure>
+
+<p>然后我们使用这个辅助函数打印每个函数地址对应的符号：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">dx ((void**[0x40])&amp;nt!PspCreateProcessNotifyRoutine).Where(a =&gt; a != 0).Select(a =&gt; @$getsym(@$getCallbackRoutine(a).Function))</span><br><span class="line"></span><br><span class="line">((void**[0x40])&amp;nt!PspCreateProcessNotifyRoutine).Where(a =&gt; a != 0).Select(a =&gt; @$getsym(@$getCallbackRoutine(a).Function))                </span><br><span class="line">    [0]              : nt!ViCreateProcessCallback (fffff807`4ea7f310)</span><br><span class="line">    [1]              : cng!CngCreateProcessNotifyRoutine (fffff807`4ff97220)</span><br><span class="line">    [2]              : WdFilter!MpCreateProcessNotifyRoutineEx (fffff807`50a41330)</span><br><span class="line">    [3]              : ksecdd!KsecCreateProcessNotifyRoutine (fffff807`4f8ab420)</span><br><span class="line">    [4]              : tcpip!CreateProcessNotifyRoutineEx (fffff807`5106d9f0)</span><br><span class="line">    [5]              : iorate!IoRateProcessCreateNotify (fffff807`516dd930)</span><br><span class="line">    [6]              : CI!I_PEProcessNotify (fffff807`4ff252c0)</span><br><span class="line">    [7]              : dxgkrnl!DxgkProcessNotify (fffff807`520b6aa0)</span><br><span class="line">    [8]              : peauth+0x43cf0 (fffff807`53a63cf0)</span><br></pre></td></tr></table></figure>
+
+<p>你看，好太多了！</p>
+<h2 id="断点（Breakpoints）"><a href="#断点（Breakpoints）" class="headerlink" title="断点（Breakpoints）"></a>断点（Breakpoints）</h2><h3 id="条件断点（Conditional-Breakpoint）"><a href="#条件断点（Conditional-Breakpoint）" class="headerlink" title="条件断点（Conditional Breakpoint）"></a>条件断点（Conditional Breakpoint）</h3><p>调试时，条件断点是一个巨大的痛点。在旧的 <code>MASM</code> 语法中，它们几乎不可用。我花了几个小时试图让它们以我想要的方式工作，但结果是如此糟糕，以至于我甚至不知道我在试图做什么，更不用说为什么它不过滤任何东西或者如何修复它。</p>
+<p>好吧，这些日子已经过去了。我们现在可以在条件断点中使用 <code>dx</code> 查询，语法为：<code>bp /w &quot;dx query&quot; &lt;address&gt;</code>。</p>
+<p>例如，假设我们正在调试一个 <code>Wow64</code> 进程打开文件的问题。<code>NtOpenProcess</code> 函数一直在被调用，但是我们只关心来自 <code>Wow64</code> 进程的调用，这并不是现代操作系统上的大多数进程（<strong>译注：</strong> <code>Wow64</code> 进程指的是运行在 <code>64</code> 位系统上的 <code>32</code> 位进程，<code>64</code> 位进程逐渐成为主流）。因此，为了避免在走狗屎运之前无助的经历 <code>100</code> 次调试中断或者避免与 <code>MASM</code> 风格的条件断点做斗争，我们可以这样做：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bp /w &quot;@$curprocess.KernelObject.WoW64Process != 0&quot;</span><br><span class="line">nt!NtOpenProcess</span><br></pre></td></tr></table></figure>
+
+<p>然后让系统运行起来，当再次中断时，我们可以检查它是否奏效：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Breakpoint 3 hit</span><br><span class="line">nt!NtOpenProcess:</span><br><span class="line">fffff807`2e96b7e0 4883ec38        sub     rsp,38h</span><br><span class="line"></span><br><span class="line">dx $curprocess.KernelObject.WoW64Process</span><br><span class="line"></span><br><span class="line">@$curprocess.KernelObject.WoW64Process  : 0xffffc10f5163b390 [Type: _EWOW64PROCESS *]</span><br><span class="line">    [+0x000] Peb              : 0xf88000 [Type: void *]</span><br><span class="line">    [+0x008] Machine          : 0x14c [Type: unsigned short]</span><br><span class="line">    [+0x00c] NtdllType        : PsWowX86SystemDll (1) [Type: _SYSTEM_DLL_TYPE]</span><br><span class="line">    </span><br><span class="line">dx @$curprocess.Name</span><br><span class="line"></span><br><span class="line">@$curprocess.Name : IpOverUsbSvc.exe</span><br><span class="line">    Length           : 0x10</span><br></pre></td></tr></table></figure>
+
+<p>触发断点的进程是一个 <code>WoW64</code> 进程！对于那些曾经尝试过在 <code>MASM</code> 中使用条件断点的人来说，<code>dx</code> 真是一个大救星。</p>
+<h3 id="其它断点选项（Other-Breakpoint-Options）"><a href="#其它断点选项（Other-Breakpoint-Options）" class="headerlink" title="其它断点选项（Other Breakpoint Options）"></a>其它断点选项（Other Breakpoint Options）</h3><p>在 <code>Debugger.Utility.Control</code> 下，还有其他一些有趣的断点选项：</p>
+<ul>
+<li><p><code>SetBreakpointAtSourceLocation</code> —— 允许我们在模块对应的源文件中设置断点，语法如下：</p>
+<p><code>dx Debugger.Utility.Control.SetBreakpointAtSourceLocation(&quot;MyModule!myFile.cpp&quot;, &quot;172&quot;)</code></p>
+</li>
+</ul>
+<ul>
+<li><code>SetBreakpointAtOffset</code> —— 在函数内部偏移设置断点 —— <code>dx Debugger.Utility.Control.SetBreakpointAtOffset(&quot;NtOpenFile&quot;, 8, “nt&quot;)</code></li>
+</ul>
+<ul>
+<li><p><code>SetBreakpointForReadWrite</code> —— 类似于传统的 <code>ba</code> 命令，但其语法更具可读性。它允许我们设置断点，以便在任何读或写某个地址时中断。它的默认配置为 <code>type = Hardware Write</code> 并且 <code>size = 1</code>。（<strong>译注：</strong> 原文中的函数名是 <code>SetBreakpointForReadWriteFile</code>，应该是笔误。）</p>
+<p>比如，让我们在读取 <code>Ci!g_CiOptions</code>（一个 <code>4</code> 字节大小的变量）时中断下来：</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx Debugger.Utility.Control.SetBreakpointForReadWrite(&amp;Ci!g_CiOptions, “Hardware Read”, 0x4)</span><br></pre></td></tr></table></figure>
+
+<p>让系统继续运行，断点几乎立即命中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0: kd&gt; g</span><br><span class="line">Breakpoint 0 hit</span><br><span class="line">CI!CiValidateImageHeader+0x51b:</span><br><span class="line">fffff807`2f6fcb1b 740c je CI!CiValidateImageHeader+0x529 (fffff807`2f6fcb29)</span><br></pre></td></tr></table></figure>
+
+<p><code>CI!CiValidateImageHeader</code> 在验证镜像头时会读取此全局变量。在这个特定的示例中，我们将看到读取这个变量是很频繁的，修改此变量则加有趣，因为它可以向我们展示篡改签名验证的尝试。</p>
+<p>值得注意的是，这些命令不仅仅是设置了一个断点，实际上会返回给我们一个可以操作的对象，包含属性 <code>IsEnabled</code> , <code>Condition</code>（允许我们设置一个条件），<code>PassCount</code>（告诉我们这个断点已经访问了多少次），还有更多其它属性。</p>
+<h2 id="文件系统（FileSystem）"><a href="#文件系统（FileSystem）" class="headerlink" title="文件系统（FileSystem）"></a>文件系统（FileSystem）</h2><p>在 <code>Debugger.Utility</code> 下提供了 <code>FileSystem</code> 模块，允许我们在调试器中查询和控制主机上的文件系统（不是正在被调试的机器）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 Debugger.Utility.FileSystem</span><br><span class="line"></span><br><span class="line">Debugger.Utility.FileSystem</span><br><span class="line"></span><br><span class="line">CreateFile [CreateFile(path, [disposition]) - Creates a file at the specified path and returns a file object.  &apos;disposition&apos; can be one of &apos;CreateAlways&apos; or &apos;CreateNew&apos;]</span><br><span class="line"></span><br><span class="line">CreateTempFile   [CreateTempFile() - Creates a temporary file in the %TEMP% folder and returns a file object]</span><br><span class="line"></span><br><span class="line">CreateTextReader [CreateTextReader(file | path, [encoding]) - Creates a text reader over the specified file.  If a path is passed instead of a file, a file is opened at the specified path.  &apos;encoding&apos; can be &apos;Utf16&apos;, &apos;Utf8&apos;, or &apos;Ascii&apos;.  &apos;Ascii&apos; is the default]</span><br><span class="line"></span><br><span class="line">CreateTextWriter [CreateTextWriter(file | path, [encoding]) - Creates a text writer over the specified file.  If a path is passed instead of a file, a file is created at the specified path.  &apos;encoding&apos; can be &apos;Utf16&apos;, &apos;Utf8&apos;, or &apos;Ascii&apos;.  &apos;Ascii&apos; is the default]</span><br><span class="line"></span><br><span class="line">CurrentDirectory : C:\WINDOWS\system32</span><br><span class="line"></span><br><span class="line">DeleteFile       [DeleteFile(path) - Deletes a file at the specified path]</span><br><span class="line"></span><br><span class="line">FileExists       [FileExists(path) - Checks for the existance of a file at the specified path]</span><br><span class="line"></span><br><span class="line">OpenFile         [OpenFile(path) - Opens a file read/write at the specified path]</span><br><span class="line"></span><br><span class="line">TempDirectory    : C:\Users\yshafir\AppData\Local\Temp</span><br></pre></td></tr></table></figure>
+
+<p>我们可以创建文件、打开文件、写入文件、删除文件或检查某个文件是否存在于某个特定路径中。来看一个简单的例子，让我们转储当前目录（<code>C:\Windows\System32</code>）的内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 Debugger.Utility.FileSystem.CurrentDirectory.Files</span><br><span class="line"></span><br><span class="line">Debugger.Utility.FileSystem.CurrentDirectory.Files                </span><br><span class="line">    [0x0]            : C:\WINDOWS\system32\07409496-a423-4a3e-b620-2cfb01a9318d_HyperV-ComputeNetwork.dll</span><br><span class="line">    [0x1]            : C:\WINDOWS\system32\1</span><br><span class="line">    [0x2]            : C:\WINDOWS\system32\103</span><br><span class="line">    [0x3]            : C:\WINDOWS\system32\108</span><br><span class="line">    [0x4]            : C:\WINDOWS\system32\11</span><br><span class="line">    [0x5]            : C:\WINDOWS\system32\113</span><br><span class="line">    ...</span><br><span class="line">    [0x44]           : C:\WINDOWS\system32\93</span><br><span class="line">    [0x45]           : C:\WINDOWS\system32\98</span><br><span class="line">    [0x46]           : C:\WINDOWS\system32\@AppHelpToast.png</span><br><span class="line">    [0x47]           : C:\WINDOWS\system32\@AudioToastIcon.png</span><br><span class="line">    [0x48]           : C:\WINDOWS\system32\@BackgroundAccessToastIcon.png</span><br><span class="line">    [0x49]           : C:\WINDOWS\system32\@bitlockertoastimage.png</span><br><span class="line">    [0x4a]           : C:\WINDOWS\system32\@edptoastimage.png</span><br><span class="line">    [0x4b]           : C:\WINDOWS\system32\@EnrollmentToastIcon.png</span><br><span class="line">    [0x4c]           : C:\WINDOWS\system32\@language_notification_icon.png</span><br><span class="line">    [0x4d]           : C:\WINDOWS\system32\@optionalfeatures.png</span><br><span class="line">    [0x4e]           : C:\WINDOWS\system32\@VpnToastIcon.png</span><br><span class="line">    [0x4f]           : C:\WINDOWS\system32\@WiFiNotificationIcon.png</span><br><span class="line">    [0x50]           : C:\WINDOWS\system32\@windows-hello-V4.1.gif</span><br><span class="line">    [0x51]           : C:\WINDOWS\system32\@WindowsHelloFaceToastIcon.png</span><br><span class="line">    [0x52]           : C:\WINDOWS\system32\@WindowsUpdateToastIcon.contrast-black.png</span><br><span class="line">    [0x53]           : C:\WINDOWS\system32\@WindowsUpdateToastIcon.contrast-white.png</span><br><span class="line">    [0x54]           : C:\WINDOWS\system32\@WindowsUpdateToastIcon.png</span><br><span class="line">    [0x55]           : C:\WINDOWS\system32\@WirelessDisplayToast.png</span><br><span class="line">    [0x56]           : C:\WINDOWS\system32\@WwanNotificationIcon.png</span><br><span class="line">    [0x57]           : C:\WINDOWS\system32\@WwanSimLockIcon.png</span><br><span class="line">    [0x58]           : C:\WINDOWS\system32\aadauthhelper.dll</span><br><span class="line">    [0x59]           : C:\WINDOWS\system32\aadcloudap.dll</span><br><span class="line">    [0x5a]           : C:\WINDOWS\system32\aadjcsp.dll</span><br><span class="line">    [0x5b]           : C:\WINDOWS\system32\aadtb.dll</span><br><span class="line">    [0x5c]           : C:\WINDOWS\system32\aadWamExtension.dll</span><br><span class="line">    [0x5d]           : C:\WINDOWS\system32\AboutSettingsHandlers.dll</span><br><span class="line">    [0x5e]           : C:\WINDOWS\system32\AboveLockAppHost.dll</span><br><span class="line">    [0x5f]           : C:\WINDOWS\system32\accessibilitycpl.dll</span><br><span class="line">    [0x60]           : C:\WINDOWS\system32\accountaccessor.dll</span><br><span class="line">    [0x61]           : C:\WINDOWS\system32\AccountsRt.dll</span><br><span class="line">    [0x62]           : C:\WINDOWS\system32\AcGenral.dll</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>我们可以选择删除其中的一个文件：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 Debugger.Utility.FileSystem.CurrentDirectory.Files[1].Delete()</span><br></pre></td></tr></table></figure>
+
+<p>或者通过 <code>DeleteFile</code> 删除：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx Debugger.Utility.FileSystem.DeleteFile(“C:\\WINDOWS\\system32\\71”)</span><br></pre></td></tr></table></figure>
+
+<p>注意，在这个模块中，路径必须使用双反斜杠(“\\“)，就像我们自己调用 <code>Win32 API</code> 时一样。</p>
+<p>作为最后一个练习，我们将把在这里学到的东西放在一起 —— 我们将在内核变量上创建一个断点，从调用栈中获取访问它的符号，并将访问它的符号写入主机上的一个文件中。</p>
+<p>让我们把它分成几个步骤：</p>
+<ul>
+<li><p>打开一个文件，以便写入结果。</p>
+</li>
+<li><p>创建一个 <code>text writer</code>，我们将使用它写入文件。</p>
+</li>
+<li><p>创建访问变量的断点。在本例中，我们将选择 <code>nt!PsInitialSystemProcess</code> 并设置读断点。我们将使用旧的 <code>MASM</code> 语法来设置一个断点，每次断点命中时，会执行一个 <code>dx</code> 命令并继续运行：<code>ba r4 &lt;address&gt; &quot;dx &lt;command&gt;; g”</code></p>
+<p>我们的命令将使用 <code>@$curstack</code> 来获取访问该变量的函数地址，然后使用前面编写的 <code>@$getsym</code> 辅助函数来查找该地址对应的符号。然后使用 <code>text writer</code> 将结果写入文件。</p>
+</li>
+<li><p>最后，关闭文件。</p>
+</li>
+</ul>
+<p>整合在一起：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dx -r0 @$getsym = (x =&gt; Debugger.Utility.Control.ExecuteCommand(&quot;.printf\&quot;%y\&quot;, &quot; + ((__int64)x).ToDisplayString(&quot;x&quot;))[0])</span><br><span class="line"></span><br><span class="line">dx @$tmpFile = Debugger.Utility.FileSystem.TempDirectory.OpenFile(&quot;log.txt&quot;)</span><br><span class="line"></span><br><span class="line">dx @$txtWriter = Debugger.Utility.FileSystem.CreateTextWriter(@$tmpFile)ba r4 nt!PsInitialSystemProcess &quot;</span><br><span class="line"></span><br><span class="line">dx @$txtWriter.WriteLine(@$getsym(@$curstack.Frames[0].Attributes.InstructionOffset)); g&quot;</span><br></pre></td></tr></table></figure>
+
+<p>我们让系统想运行多久就运行多久，当我们想停止记录日志时，我们可以禁用或清除断点并使用 <code>dx @$tmpFile.Close()</code> 关闭文件。</p>
+<p>现在我们可以打开 <code>@$tmpFile</code> 并查看结果：</p>
+<p><img src="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part2/view-tempFile.png" alt="view-tempFile"></p>
+<p>就是这样！记录关于调试器的信息是多么简单啊！</p>
+<p>这就是我们 <code>WinDbg</code> 系列的全部内容！本系列的所有脚本都将被上传到 <code>github</code> ，还有一些新的没有包含在这里的脚本。我鼓励您进一步研究这个数据模型，因为我们甚至没有涵盖它包含的所有不同方法。编写你自己的工具，并与世界分享它们 :)</p>
+<blockquote>
+<p><strong>译注：</strong> <code>github</code> 地址是 <a href="https://github.com/yardenshafir/WinDbg_Scripts）" target="_blank" rel="noopener">https://github.com/yardenshafir/WinDbg_Scripts）</a></p>
+</blockquote>
+<p>尽管本指南很长，但这些甚至还不是新数据模型中的所有可能选项。我甚至没有提到新增的对  <code>Javascript</code> 的支持！</p>
+<p>你可以在这篇精彩的<a href="https://doar-e.github.io/blog/2017/12/01/debugger-data-model/" target="_blank" rel="noopener">文章</a>中获得更多关于在 <code>WinDbg</code> 中使用 <code>Javascript</code> 的信息，以及对令人兴奋的 <code>TTD (time travel debugging)</code> 的新支持。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part2/" title="难译 | windbg 乐趣之道（下）">https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part2/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/natvis/" rel="tag"><i class="fa fa-tag"></i> natvis</a>
+          
+            <a href="/tags/翻译/" rel="tag"><i class="fa fa-tag"></i> 翻译</a>
+          
+            <a href="/tags/dx/" rel="tag"><i class="fa fa-tag"></i> dx</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/translation-windbg-the-fun-way-part1/" rel="next" title="难译 | windbg 乐趣之道（上）">
+                <i class="fa fa-chevron-left"></i> 难译 | windbg 乐趣之道（上）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor/" rel="prev" title="感受 AI 的力量——利用 Cursor 自动生成 powershell 脚本下载 TheOldNewThing 博文">
+                感受 AI 的力量——利用 Cursor 自动生成 powershell 脚本下载 TheOldNewThing 博文 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/translation-windbg-the-fun-way-part1/" title="难译 | windbg 乐趣之道（上）">难译 | windbg 乐趣之道（上）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传统命令（Legacy-Commands）"><span class="nav-number">2.</span> <span class="nav-text">传统命令（Legacy Commands）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#反汇编器（Disassembler）"><span class="nav-number">3.</span> <span class="nav-text">反汇编器（Disassembler）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#合成方法（Synthetic-Methods）"><span class="nav-number">4.</span> <span class="nav-text">合成方法（Synthetic Methods）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#合成类型（Synthetic-Types）"><span class="nav-number">5.</span> <span class="nav-text">合成类型（Synthetic Types）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#断点（Breakpoints）"><span class="nav-number">6.</span> <span class="nav-text">断点（Breakpoints）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#条件断点（Conditional-Breakpoint）"><span class="nav-number">6.1.</span> <span class="nav-text">条件断点（Conditional Breakpoint）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其它断点选项（Other-Breakpoint-Options）"><span class="nav-number">6.2.</span> <span class="nav-text">其它断点选项（Other Breakpoint Options）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文件系统（FileSystem）"><span class="nav-number">7.</span> <span class="nav-text">文件系统（FileSystem）</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

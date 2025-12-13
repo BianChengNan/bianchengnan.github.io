@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,调试,vs,debug,natvis,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="缘起最近在调试的时候，需要观察第三方容器中每一个元素的值。默认情况下，vs 并不知道如何显示第三方容器的内容，只能手动观察容器中的每一个值，超级不方便。我找到一个非常给力的好办法，你还知道其它好办法吗？">
+<meta name="keywords" content="原,总结,调试,vs,debug,natvis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试技巧 | 你很可能需要知道这个调试小技巧">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="缘起最近在调试的时候，需要观察第三方容器中每一个元素的值。默认情况下，vs 并不知道如何显示第三方容器的内容，只能手动观察容器中的每一个值，超级不方便。我找到一个非常给力的好办法，你还知道其它好办法吗？">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-tip.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-watch-window.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/copy-watch-expression.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-quick-watch-window.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-tip-with-natvis.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-watch-window-with-natvis.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-quick-watch-window-with-natvis.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/natvis-path.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.791Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试技巧 | 你很可能需要知道这个调试小技巧">
+<meta name="twitter:description" content="缘起最近在调试的时候，需要观察第三方容器中每一个元素的值。默认情况下，vs 并不知道如何显示第三方容器的内容，只能手动观察容器中的每一个值，超级不方便。我找到一个非常给力的好办法，你还知道其它好办法吗？">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-tip.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试技巧 | 你很可能需要知道这个调试小技巧 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试技巧 | 你很可能需要知道这个调试小技巧</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-06-27T16:20:02+08:00">
+                2020-06-27
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>最近在调试的时候，需要观察第三方容器中每一个元素的值。默认情况下，<code>vs</code> 并不知道如何显示第三方容器的内容，只能手动观察容器中的每一个值，<strong>超级</strong>不方便。我找到一个<strong>非常给力</strong>的好办法，你还知道其它好办法吗？</p>
+<a id="more"></a>
+
+
+
+<p>为了更直观的感受这种便利，我特意截图对比了三种常用的观察变量的方法。</p>
+<h2 id="直接观察"><a href="#直接观察" class="headerlink" title="直接观察"></a>直接观察</h2><p>1、通过 <code>vs</code> 的悬浮提示观察。</p>
+<blockquote>
+<p>小贴士：把鼠标移动到对应的变量即可。</p>
+</blockquote>
+<p><img src="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-tip.png" alt="悬浮提示"></p>
+<p>可以发现，现在 <code>vs</code> 并不知道如何解析 <code>pts</code> 的内容，只能 “傻傻” 的显示出 <code>bvector</code> 中的三个成员。</p>
+<p>2、通过 <code>watch</code> 窗口观察。</p>
+<blockquote>
+<p>小贴士：可以使用快捷键 <code>ctrl + alt + w, 1</code> 来打开第一个 <code>watch</code> 窗口。据我观察，最多支持 <code>4</code> 个 <code>watch</code> 窗口。</p>
+</blockquote>
+<p><img src="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-watch-window.png" alt="watch-in-watch-window"></p>
+<p>可以发现，我们可以在代码中使用的 <code>at(index)</code> 和 <code>[index]</code> 已经失效了，只能使用蹩脚的 <code>(pts._C_alloc)._C_begin + index</code> 来观察对应的变量（反人类，有木有）。 </p>
+<p>你也许好奇，我是怎么知道可以使用 <code>(pts._C_alloc)._C_begin + index</code> 来观察的，简单！在悬浮提示中，右键，复制表达式(X)，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/copy-watch-expression.png" alt="copy-watch-expression"></p>
+<p>3、通过 <code>quick watch</code> 窗口观察。</p>
+<blockquote>
+<p>小贴士：可以选中要观察的变量，然后按快捷键 <code>shift + f9</code> 打开快速监视窗口。</p>
+</blockquote>
+<p><img src="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-quick-watch-window.png" alt="watch-in-quick-watch-window"></p>
+<p>同样，没什么用。</p>
+<p>难道只能这么<strong>低效</strong>吗？<code>vs2012</code> 之前是的，但是事情从 <code>vs2012</code> 发生了变化。从 <code>vs2012</code> 开始，<code>vs</code> 支持通过  <code>natvis</code> 来观察变量，超级方便。</p>
+<p>话不多说，开启 <code>natvis</code> 后再使用上面的三种方法观察同样的变量。</p>
+<h2 id="开启-natvis-后观察"><a href="#开启-natvis-后观察" class="headerlink" title="开启 natvis 后观察"></a>开启 natvis 后观察</h2><p>1、通过 <code>vs</code> 的悬浮提示观察。</p>
+<p><img src="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-tip-with-natvis.png" alt="watch-in-tip-with-natvis"></p>
+<p>2、通过 <code>watch</code> 窗口观察。</p>
+<p><img src="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-watch-window-with-natvis.png" alt="watch-in-watch-window-with-natvis"></p>
+<p>3、通过 <code>quick watch</code> 窗口观察。</p>
+<p><img src="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/watch-in-quick-watch-window-with-natvis.png" alt="watch-in-quick-watch-window-with-natvis"></p>
+<p>有木有很方便？要是很多元素要观察（比如，有 <code>128</code> 或者 <code>1024</code> 个），是不是可以节省很多时间？</p>
+<h2 id="如何开启"><a href="#如何开启" class="headerlink" title="如何开启"></a>如何开启</h2><p>可以自己编写 <code>.natvis</code>文件并放到指定目录下，重启 <code>vs</code> 后即可加载。请原谅我比较懒，直接从官方文档上摘录了一段，更多内容可以参考文末给出的参考链接。</p>
+<p><a href="https://blogs.msdn.microsoft.com/vcblog/2015/09/28/debug-visualizers-in-visual-c-2015/" target="_blank" rel="noopener">搜索位置及顺序转载如下</a></p>
+<blockquote>
+<p>If multiple valid entries are encountered for the same type, the first one in the following list will be used:</p>
+<ul>
+<li>PDB</li>
+<li>Project/solution</li>
+<li>User directory: %USERPROFILE%\My Documents\Visual Studio 2015\Visualizers</li>
+<li>Install directory: %VSINSTALLDIR%\Common7\Packages\Debugger\Visualizers</li>
+</ul>
+</blockquote>
+<p>我放到了 <code>%USERPROFILE%\My Documents\Visual Studio 2013\Visualizers</code> 下。</p>
+<p><img src="http://resources.bianchengnan.tech/view-variables-in-your-own-way-using-natvis-in-visual-studio/natvis-path.png" alt="natvis-path"></p>
+<h2 id="提示"><a href="#提示" class="headerlink" title="提示"></a>提示</h2><p>在高版本的 <code>vs</code> 中（<code>vs2017/vs2019</code> ，<code>vs2015</code> 没亲自确认），可以自动重新加载修改的 <code>.natvis</code> 文件内容，但是 <code>vs2012/vs2013</code> 并不支持动态加载。</p>
+<h2 id="排错"><a href="#排错" class="headerlink" title="排错"></a>排错</h2><p>如果 <code>natvis</code> 加载有问题，可以通过设置注册表<a href="https://social.msdn.microsoft.com/Forums/vstudio/en-US/6e4a67f8-1239-4b3c-af45-f5ea5ea41e80/enabling-natvis-diagnostic-mode" target="_blank" rel="noopener">开启诊断信息</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[HKEY_CURRENT_USER\Software\Microsoft\VisualStudio\11.0_Config\Debugger]</span><br><span class="line">&quot;EnableNatvisDiagnostics&quot;=dword:00000001</span><br></pre></td></tr></table></figure>
+
+<h2 id="windbg-中的-natvis"><a href="#windbg-中的-natvis" class="headerlink" title="windbg 中的 natvis"></a>windbg 中的 natvis</h2><p><code>windbg</code> 中也可以使用 <code>dx</code> 命令来进行一些高级查看（超级超级厉害的 <code>dx</code> 命令），具体参考 <code>defrag tools</code> 上的视频。</p>
+<ul>
+<li><a href="https://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-138-Debugging-dx-Command-Part-1" target="_blank" rel="noopener">Defrag Tools #138 - Debugging - ‘dx’ Command Part 1</a></li>
+<li><a href="https://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-139-Debugging-dx-Command-Part-2" target="_blank" rel="noopener">Defrag Tools #139 - Debugging - ‘dx’ Command Part 2</a></li>
+</ul>
+<p>最后，附上文中用到的 <code>.natvis</code> 文件，大家可以做个参考。</p>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">AutoVisualizer</span> <span class="attr">xmlns</span>=<span class="string">"http://schemas.microsoft.com/vstudio/debugger/natvis/2010"</span>&gt;</span></span><br><span class="line">  <span class="comment">&lt;!--from bvector --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">Type</span> <span class="attr">Name</span>=<span class="string">"Bentley::Bstdcxx::bvector&amp;lt;*&amp;gt;"</span>&gt;</span>  </span><br><span class="line">  <span class="tag">&lt;<span class="name">DisplayString</span>&gt;</span>&#123;&#123;size = &#123;_C_alloc._C_end - _C_alloc._C_begin&#125;&#125;&#125;<span class="tag">&lt;/<span class="name">DisplayString</span>&gt;</span>  </span><br><span class="line">  <span class="tag">&lt;<span class="name">Expand</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">Item</span> <span class="attr">Name</span>=<span class="string">"[size]"</span>&gt;</span>_C_alloc._C_end - _C_alloc._C_begin<span class="tag">&lt;/<span class="name">Item</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">Item</span> <span class="attr">Name</span>=<span class="string">"[capacity]"</span>&gt;</span>(_C_alloc._C_bufend - _C_alloc._C_begin)<span class="tag">&lt;/<span class="name">Item</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">ArrayItems</span>&gt;</span>  </span><br><span class="line">      <span class="tag">&lt;<span class="name">Size</span>&gt;</span>_C_alloc._C_end - _C_alloc._C_begin<span class="tag">&lt;/<span class="name">Size</span>&gt;</span>  </span><br><span class="line">      <span class="tag">&lt;<span class="name">ValuePointer</span>&gt;</span>_C_alloc._C_begin<span class="tag">&lt;/<span class="name">ValuePointer</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">ArrayItems</span>&gt;</span>  </span><br><span class="line">  <span class="tag">&lt;/<span class="name">Expand</span>&gt;</span>  </span><br><span class="line">  <span class="tag">&lt;/<span class="name">Type</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">AutoVisualizer</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>调试时，鼠标悬停到对应的变量上可以通过悬浮提示观察变量的值。</p>
+</li>
+<li><p>使用 <code>ctr + alt + w,1</code> 可以快速打开 <code>watch 1</code> 窗口。</p>
+</li>
+<li><p>鼠标悬浮到变量上，按 <code>shift + f9</code> 可以打开快速观察窗口。</p>
+</li>
+<li><p><code>.natvis</code> 文件可以让我们个性化的观察变量，可以极大的提高我们的调试效率。</p>
+</li>
+<li><p>在高版本的 <code>vs</code> 中，我们甚至可以动态编辑 <code>.natvis</code> 文件的内容，更加灵活的观察变量。</p>
+</li>
+<li><p><code>windbg</code> 中的 <code>dx</code> 命令，可谓神器，但是本文并未介绍，感兴趣的小伙伴儿可以直接看视频！</p>
+</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="https://blogs.msdn.microsoft.com/vcblog/2015/09/28/debug-visualizers-in-visual-c-2015/" target="_blank" rel="noopener">https://blogs.msdn.microsoft.com/vcblog/2015/09/28/debug-visualizers-in-visual-c-2015/</a></li>
+<li><a href="https://blogs.msdn.microsoft.com/vcblog/2014/06/12/project-support-for-natvis/" target="_blank" rel="noopener">https://blogs.msdn.microsoft.com/vcblog/2014/06/12/project-support-for-natvis/</a></li>
+<li><a href="https://docs.microsoft.com/en-us/cpp/build/reference/natvis-add-natvis-to-pdb?view=vs-2017" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/cpp/build/reference/natvis-add-natvis-to-pdb?view=vs-2017</a></li>
+<li><a href="https://docs.microsoft.com/en-us/visualstudio/debugger/create-custom-views-of-native-objects?view=vs-2017" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/visualstudio/debugger/create-custom-views-of-native-objects?view=vs-2017</a></li>
+<li><a href="https://social.msdn.microsoft.com/Forums/vstudio/en-US/6e4a67f8-1239-4b3c-af45-f5ea5ea41e80/enabling-natvis-diagnostic-mode" target="_blank" rel="noopener">https://social.msdn.microsoft.com/Forums/vstudio/en-US/6e4a67f8-1239-4b3c-af45-f5ea5ea41e80/enabling-natvis-diagnostic-mode</a></li>
+<li><a href="https://stackoverflow.com/questions/17811628/user-defined-natvis-files-in-visual-studio-2012" target="_blank" rel="noopener">https://stackoverflow.com/questions/17811628/user-defined-natvis-files-in-visual-studio-2012</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">https://bianchengnan.github.io/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/natvis/" rel="tag"><i class="fa fa-tag"></i> natvis</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/troubleshoot-different-DEBUG-macro-in-different-cpp/" rel="next" title="排错实战 | 使用 pragma message 查找多变的 DEBUG 宏">
+                <i class="fa fa-chevron-left"></i> 排错实战 | 使用 pragma message 查找多变的 DEBUG 宏
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/five-basic-but-useful-debug-tricks/" rel="prev" title="5 个非常实用的 vs 调试技巧">
+                5 个非常实用的 vs 调试技巧 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">调试实战 | dll 加载失败之 Debug Release 争锋篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">调试实战 | 从转储文件找出抛出的异常 —— 理论</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">1.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#直接观察"><span class="nav-number">2.</span> <span class="nav-text">直接观察</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#开启-natvis-后观察"><span class="nav-number">3.</span> <span class="nav-text">开启 natvis 后观察</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何开启"><span class="nav-number">4.</span> <span class="nav-text">如何开启</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提示"><span class="nav-number">5.</span> <span class="nav-text">提示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#排错"><span class="nav-number">6.</span> <span class="nav-text">排错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#windbg-中的-natvis"><span class="nav-number">7.</span> <span class="nav-text">windbg 中的 natvis</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#示例"><span class="nav-number">8.</span> <span class="nav-text">示例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">9.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">10.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

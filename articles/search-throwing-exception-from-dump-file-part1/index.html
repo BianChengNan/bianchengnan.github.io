@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,调试,异常,debug,dump,转储文件,part1,exception,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="缘起最近在分析转储文件时，遇到了一个由 throw 抛出的异常。尽管在 windbg 中使用 !analyze -v 迅速知道了异常码是 0xe06d7363（对应的 ASCII 码是 .msc），但是根据异常码并不能确定具体抛出来的是哪种异常。针对这种情况，确定具体的异常类型才有意义。 本篇文章会简单介绍与抛出异常相关的内容，包括关键的函数及结构体。下一篇文章会通过实例介绍几种典型情况（有调试符">
+<meta name="keywords" content="原,总结,调试,异常,debug,dump,转储文件,part1,exception">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试实战 | 从转储文件找出抛出的异常 —— 理论">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/search-throwing-exception-from-dump-file-part1/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="缘起最近在分析转储文件时，遇到了一个由 throw 抛出的异常。尽管在 windbg 中使用 !analyze -v 迅速知道了异常码是 0xe06d7363（对应的 ASCII 码是 .msc），但是根据异常码并不能确定具体抛出来的是哪种异常。针对这种情况，确定具体的异常类型才有意义。 本篇文章会简单介绍与抛出异常相关的内容，包括关键的函数及结构体。下一篇文章会通过实例介绍几种典型情况（有调试符">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.701Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试实战 | 从转储文件找出抛出的异常 —— 理论">
+<meta name="twitter:description" content="缘起最近在分析转储文件时，遇到了一个由 throw 抛出的异常。尽管在 windbg 中使用 !analyze -v 迅速知道了异常码是 0xe06d7363（对应的 ASCII 码是 .msc），但是根据异常码并不能确定具体抛出来的是哪种异常。针对这种情况，确定具体的异常类型才有意义。 本篇文章会简单介绍与抛出异常相关的内容，包括关键的函数及结构体。下一篇文章会通过实例介绍几种典型情况（有调试符">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/search-throwing-exception-from-dump-file-part1/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试实战 | 从转储文件找出抛出的异常 —— 理论 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/search-throwing-exception-from-dump-file-part1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试实战 | 从转储文件找出抛出的异常 —— 理论</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-12-30T08:36:41+08:00">
+                2023-12-30
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>最近在分析转储文件时，遇到了一个由 <code>throw</code> 抛出的异常。尽管在 <code>windbg</code> 中使用 <code>!analyze -v</code> 迅速知道了异常码是 <code>0xe06d7363</code>（对应的 <code>ASCII</code> 码是 <code>.msc</code>），但是根据异常码并不能确定具体抛出来的是哪种异常。针对这种情况，确定具体的异常类型才有意义。</p>
+<p>本篇文章会简单介绍与抛出异常相关的内容，包括关键的函数及结构体。下一篇文章会通过实例介绍几种典型情况（有调试符号 / 没有调试符号 / <code>32</code> 位程序 / <code>64</code> 位程序）下的定位方法。</p>
+<a id="more"></a>
+
+<blockquote>
+<p><strong>说明：</strong> 对源码不感兴趣的小伙伴而可以直接跳到【解析方法小结】查看结论。</p>
+</blockquote>
+<h2 id="突破口"><a href="#突破口" class="headerlink" title="突破口"></a>突破口</h2><p><code>throw</code> 关键字编译后对应的函数是 <code>_CxxThrowException()</code>，该函数内部会通过 <code>RaiseException()</code> 触发异常。<code>_CxxThrowException()</code> 是有源码可查的，我们可以从这个函数入手，先来熟悉下这个函数以及相关的结构体。</p>
+<h2 id="CxxThrowException"><a href="#CxxThrowException" class="headerlink" title="_CxxThrowException"></a>_CxxThrowException</h2><p>该函数定义在 <code>vs</code> 自带的 <code>throw.cpp</code> 中，一般在 <code>crt\src\vcruntime\</code> 目录下。直接用 <code>everything</code> 搜索 <code>throw.cpp</code>，然后打开即可。<code>vs2019</code> 中的实现代码如下，有删减：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span> __declspec(noreturn) <span class="keyword">void</span> __stdcall</span><br><span class="line">_CxxThrowException(</span><br><span class="line">  <span class="keyword">void</span>*       pExceptionObject, <span class="comment">// The object thrown</span></span><br><span class="line">  _ThrowInfo* pThrowInfo        <span class="comment">// Everything we need to know about it</span></span><br><span class="line">) &#123;</span><br><span class="line">    EHTRACE_ENTER_FMT1(<span class="string">"Throwing object @ 0x%p"</span>, pExceptionObject);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> EHExceptionRecord ExceptionTemplate = &#123; <span class="comment">// A generic exception record</span></span><br><span class="line">      EH_EXCEPTION_NUMBER,       <span class="comment">// Exception number</span></span><br><span class="line">      EXCEPTION_NONCONTINUABLE,  <span class="comment">// Exception flags (we don't do resume)</span></span><br><span class="line">      <span class="literal">nullptr</span>,                   <span class="comment">// Additional record (none)</span></span><br><span class="line">      <span class="literal">nullptr</span>,                   <span class="comment">// Address of exception (OS fills in)</span></span><br><span class="line">      EH_EXCEPTION_PARAMETERS,   <span class="comment">// Number of parameters</span></span><br><span class="line">      &#123; EH_MAGIC_NUMBER1,        <span class="comment">// Our version control magic number</span></span><br><span class="line">        <span class="literal">nullptr</span>,                 <span class="comment">// pExceptionObject</span></span><br><span class="line">        <span class="literal">nullptr</span>,</span><br><span class="line">#<span class="keyword">if</span> EH_EXCEPTION_PARAMETERS == <span class="number">4</span></span><br><span class="line">        <span class="literal">nullptr</span>                  <span class="comment">// Image base of thrown object</span></span><br><span class="line">#endif</span><br><span class="line">      &#125;                          <span class="comment">// pThrowInfo</span></span><br><span class="line">    &#125;;</span><br><span class="line">    EHExceptionRecord ThisException = ExceptionTemplate; <span class="comment">// This exception</span></span><br><span class="line"></span><br><span class="line">    ThrowInfo* pTI = (ThrowInfo*)pThrowInfo;</span><br><span class="line">    <span class="comment">// deleted ...</span></span><br><span class="line">    </span><br><span class="line">    ThisException.params.pExceptionObject = pExceptionObject;</span><br><span class="line">    ThisException.params.pThrowInfo = pTI;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> _EH_RELATIVE_TYPEINFO</span></span><br><span class="line">    PVOID ThrowImageBase = RtlPcToFileHeader((PVOID)pTI, &amp;ThrowImageBase);</span><br><span class="line">    ThisException.params.pThrowImageBase = ThrowImageBase;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="comment">// deleted ...</span></span><br><span class="line"></span><br><span class="line">    EHTRACE_EXIT;</span><br><span class="line">    RaiseException( ThisException.ExceptionCode,</span><br><span class="line">      ThisException.ExceptionFlags,</span><br><span class="line">      ThisException.NumberParameters,</span><br><span class="line">      (PULONG_PTR)&amp;ThisException.params );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据源码可知， <code>_CxxThrowException()</code> 内部会调用 <code>RaiseException()</code>，<code>RaiseException()</code> 的原型如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">VOID WINAPI <span class="title">RaiseException</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_ DWORD dwExceptionCode,</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_ DWORD dwExceptionFlags,</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_ DWORD nNumberOfArguments,</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_reads_opt_(nNumberOfArguments) CONST ULONG_PTR* lpArguments</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p> <code>_CxxThrowException</code> 调用 <code>RaiseException()</code> 时传递的各个参数值如下：</p>
+<ul>
+<li><p><code>dwExceptionCode</code> 的值是 <code>EH_EXCEPTION_NUMBER</code>，对应的十六进制值是 <code>0xe06d7363</code>，也就是 <code>.msc</code>。</p>
+</li>
+<li><p><code>dwExceptionFlags</code> 的值是 <code>EXCEPTION_NONCONTINUABLE</code>，对应的十六进制值是 <code>0x1</code>。</p>
+</li>
+<li><p><code>nNumberOfArguments</code> 的值是 <code>EH_EXCEPTION_PARAMETERS</code>，在 <code>32</code> 位程序中是 <code>3</code>，在 <code>64</code> 位程序中是 <code>4</code>。定义如下：</p>
+</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">if</span> (defined(_M_AMD64) || defined(_M_ARM) || defined(_M_ARM64)) &amp;&amp; !defined(_CHPE_X86_ARM64_EH_)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EH_EXCEPTION_PARAMETERS 4  <span class="comment">// Number of parameters in exception record</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EH_EXCEPTION_PARAMETERS 3  <span class="comment">// Number of parameters in exception record</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>lpArguments</code> 指向具体的参数，来自 <code>ThisException.params</code>。<code>ThisException</code> 的类型是 <code>EHExceptionRecord</code>，其定义如下：</li>
+</ul>
+<h2 id="EHExceptionRecord"><a href="#EHExceptionRecord" class="headerlink" title="EHExceptionRecord"></a>EHExceptionRecord</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">EHExceptionRecord</span> &#123;</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span>	ExceptionCode;  <span class="comment">// The code of this exception. (= EH_EXCEPTION_NUMBER)</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span>	ExceptionFlags;	<span class="comment">// Flags determined by NT</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> _<span class="title">EXCEPTION_RECORD</span>* <span class="title">ExceptionRecord</span>;</span> <span class="comment">// An extra exception record (not used)</span></span><br><span class="line">  <span class="keyword">void</span>* ExceptionAddress;  <span class="comment">// Address at which exception occurred</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> NumberParameters; <span class="comment">// Number of extended parameters. (= EH_EXCEPTION_PARAMETERS)</span></span><br><span class="line"></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">EHParameters</span> &#123;</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> magicNumber; <span class="comment">// = EH_MAGIC_NUMBER1</span></span><br><span class="line">    <span class="keyword">void</span> * pExceptionObject;   <span class="comment">// Pointer to the actual object thrown</span></span><br><span class="line">    ThrowInfo* pThrowInfo;     <span class="comment">// Description of thrown object</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> _EH_RELATIVE_TYPEINFO</span></span><br><span class="line">  <span class="keyword">void</span> * pThrowImageBase;    <span class="comment">// Image base of thrown object</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">  &#125; params; <span class="comment">// &lt;-----</span></span><br><span class="line"></span><br><span class="line">&#125; EHExceptionRecord;</span><br></pre></td></tr></table></figure>
+
+<p>根据定义可知，<code>ThisException.params</code> 的类型是 <code>EHExceptionRecord::EHParameters</code>，如果 <code>_EH_RELATIVE_TYPEINFO</code> 为 <code>0</code>，则包含 <code>3</code> 个成员，否则就会包含第 4 个成员 <code>pThrowImageBase</code>。</p>
+<p>而 <code>_EH_RELATIVE_TYPEINFO</code> 在 <code>32</code> 位程序中是 <code>0</code>，在 <code>64</code> 位程序中是 <code>1</code>，定义如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">if</span> defined(_M_CEE_PURE) || defined(BUILDING_C1XX_FORCEINCLUDE)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_TYPEINFO 0  <span class="comment">// &lt;-----</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_FUNCINFO 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _RTTI_RELATIVE_TYPEINFO 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> defined(_CHPE_X86_ARM64_EH_)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_TYPEINFO 0  <span class="comment">// &lt;-----</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_FUNCINFO 1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _RTTI_RELATIVE_TYPEINFO 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> defined(_M_ARM)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_TYPEINFO 1  <span class="comment">// &lt;-----</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_FUNCINFO 1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _RTTI_RELATIVE_TYPEINFO 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">elif</span> defined(_M_AMD64) || defined(_M_ARM64)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_TYPEINFO 1  <span class="comment">// &lt;-----</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_FUNCINFO 1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _RTTI_RELATIVE_TYPEINFO 1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_TYPEINFO 0  <span class="comment">// &lt;-----</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _EH_RELATIVE_FUNCINFO 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _RTTI_RELATIVE_TYPEINFO 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<p><code>EHExceptionRecord::EHParameters</code> 结构体的成员数量与调用 <code>RaiseException()</code> 时的 <code>nNumberOfArguments</code> 参数值是对应的。</p>
+<p>在 <code>32</code> 位程序中，<code>nNumberOfArguments</code> 的值是 <code>3</code>，<code>EHExceptionRecord::EHParameters</code> 刚好有 <code>3</code> 个成员，在 <code>64</code> 位程序中 <code>nNumberOfArguments</code> 的值是 <code>4</code>，<code>EHExceptionRecord::EHParameters</code> 刚好有 <code>4</code> 个成员。</p>
+<p><code>EHExceptionRecord::EHParameters</code> 中的 <code>pExceptionObject</code> 和 <code>pThrowInfo</code> 是查找异常类型的关键。</p>
+<p>其中，<code>pExceptionObject</code> 是异常对象的地址，<code>pThrowInfo</code> 的类型是 <code>ThrowInfo</code>，用来描述异常对象的类型信息。一起来看看 <code>ThrowInfo</code> 的定义。</p>
+<h2 id="ThrowInfo"><a href="#ThrowInfo" class="headerlink" title="ThrowInfo"></a>ThrowInfo</h2> <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> _<span class="title">s_ThrowInfo</span> &#123;</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> attributes; <span class="comment">// Throw Info attributes (Bit field)</span></span><br><span class="line">  PMFN pmfnUnwind; <span class="comment">// Destructor to call when exception has been handled or aborted</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> _EH_RELATIVE_TYPEINFO &amp;&amp; !defined(BUILDING_C1XX_FORCEINCLUDE)</span></span><br><span class="line">  <span class="keyword">int</span> pForwardCompat;  <span class="comment">// Image relative offset of Forward compatibility frame handler</span></span><br><span class="line">  <span class="keyword">int</span> pCatchableTypeArray; <span class="comment">// Image relative offset of CatchableTypeArray</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">  <span class="keyword">int</span> (__cdecl * pForwardCompat)(...); <span class="comment">// Forward compatibility frame handler</span></span><br><span class="line">  CatchableTypeArray* pCatchableTypeArray; <span class="comment">// Pointer to list of pointers to types</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125; ThrowInfo;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><code>pmfnUnwind</code> 是处理异常时会调用的回卷函数，一般是析构函数，可以根据此值判断异常对象的类型！</p>
+</li>
+<li><p><code>pForwardCompat</code> 一般情况下都是 <code>0</code>，不用太关心</p>
+</li>
+<li><p><code>pCatchableTypeArray</code> <strong>非常重要</strong>，记录了类型信息</p>
+</li>
+</ul>
+<p><code>_EH_RELATIVE_TYPEINFO</code> 在上面已经贴出来了，在 <code>32</code> 位程序中被定义为 <code>0</code>，在 <code>64</code> 位程序中被定义为 <code>1</code>。</p>
+<p>所以，<code>pForwardCompat</code> 和 <code>pCatchableTypeArray</code> 在 <code>32</code> 位程序中是地址，在 <code>64</code> 位程序中是偏移。</p>
+<p>还记得 <code>EHExceptionRecord::EHParameters</code> 在 <code>64</code> 位程序中有 <code>4</code> 个成员吗？第 <code>4</code> 个成员就是抛出异常对应的模块基址，用这个基址加上这里的偏移就得到了对应成员在内存中的位置。<strong>一定要记住这个结论</strong>，在分析 <code>64</code> 位程序的异常对象类型时会用到！</p>
+<p>接下来看看关键的 <code>CatchableTypeArray</code> 类型的定义，摘录如下：</p>
+<h2 id="CatchableTypeArray"><a href="#CatchableTypeArray" class="headerlink" title="CatchableTypeArray"></a>CatchableTypeArray</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> _<span class="title">s_CatchableTypeArray</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> nCatchableTypes;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> _EH_RELATIVE_TYPEINFO</span></span><br><span class="line">  <span class="keyword">int</span> arrayOfCatchableTypes[];	<span class="comment">// Image relative offset of Catchable Types</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">  CatchableType* arrayOfCatchableTypes[];</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125; CatchableTypeArray;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>nCatchableTypes</code> 记录了数组 <code>arrayOfCatchableTypes</code> 的数量。</li>
+<li><code>arrayOfCatchableTypes</code> 记录了异常类型信息。同样的，在 <code>32</code> 位程序中是地址，在 <code>64</code> 位程序中是偏移。</li>
+</ul>
+<blockquote>
+<p><strong>说明：</strong> 这里为什么使用数组呢？因为抛出的异常可能继承自某个基类。<code>arrayOfCatchableTypes</code> 会把继承链上的所有类型信息按照从子类到基类的顺序记录下来。拿 <code>std::bad_alloc</code> 举例，它继承自 <code>std::exception</code>。所以，<code>nCatchableTypes</code> 的值为 <code>2</code>，<code>arrayOfCatchableTypes[0]</code> 记录了 <code>std::bad_alloc</code> 的类型信息，<code>arrayOfCatchableTypes[1]</code> 记录了 <code>std::exception</code> 的类型信息。</p>
+</blockquote>
+<p>再来看看结构体 <code>CatchableType</code> 的定义，摘录如下：</p>
+<h2 id="CatchableType"><a href="#CatchableType" class="headerlink" title="CatchableType"></a>CatchableType</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> _<span class="title">s_CatchableType</span> &#123;</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> properties; <span class="comment">// Catchable Type properties (Bit field)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> _EH_RELATIVE_TYPEINFO</span></span><br><span class="line">  <span class="keyword">int</span> pType; <span class="comment">// Image relative offset of TypeDescriptor</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">  TypeDescriptor* pType; <span class="comment">// Pointer to the type descriptor for this type</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">  PMD thisDisplacement;	<span class="comment">// Pointer to instance of catch type within thrown object.</span></span><br><span class="line">  <span class="keyword">int</span> sizeOrOffset;  <span class="comment">// Size of simple-type object or offset into</span></span><br><span class="line">           <span class="comment">// buffer of 'this' pointer for catch object</span></span><br><span class="line">  PMFN copyFunction; <span class="comment">// Copy constructor or CC-closure</span></span><br><span class="line">&#125; CatchableType;</span><br></pre></td></tr></table></figure>
+
+<p>我们只需要关注 <code>pType</code> 成员即可。同样的，在 <code>32</code> 位程序中是地址，在 <code>64</code> 位程序中是偏移。 <code>pType</code> 对应的类型是 <code>TypeDescriptor</code>，接下来看看 <code>TypeDescriptor</code> 的定义。</p>
+<h2 id="TypeDescriptor"><a href="#TypeDescriptor" class="headerlink" title="TypeDescriptor"></a>TypeDescriptor</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">TypeDescriptor</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> defined(_WIN64) || defined(_RTTI) || defined(BUILDING_C1XX_FORCEINCLUDE)</span></span><br><span class="line">  <span class="keyword">const</span> <span class="keyword">void</span>* pVFTable; <span class="comment">// Field overloaded by RTTI</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span>	hash; <span class="comment">// Hash value computed from type's decorated name</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">  <span class="keyword">void</span>*	spare; <span class="comment">// reserved, possible for RTTI</span></span><br><span class="line">  <span class="keyword">char</span> name[]; <span class="comment">// The decorated name of the type; 0 terminated.</span></span><br><span class="line">&#125; TypeDescriptor;</span><br></pre></td></tr></table></figure>
+
+<p>其中，<code>name</code> 成员是经过名字改编后的异常类型，它是一个以 <code>\0</code> 结尾的字符串，可以在 <code>windbg</code> 中通过 <code>da</code> 查看。</p>
+<p>源码有点乱，还是在 <code>windbg</code> 中看的直观舒服，还可以看到偏移。以下是  <code>32</code> 位和 <code>64</code> 位程序中对应的结构体定义：</p>
+<h2 id="关键结构"><a href="#关键结构" class="headerlink" title="关键结构"></a>关键结构</h2><h3 id="32-位关键结构"><a href="#32-位关键结构" class="headerlink" title="32 位关键结构"></a>32 位关键结构</h3> <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt EHExceptionRecord</span><br><span class="line">TestThrowException!EHExceptionRecord</span><br><span class="line">   +<span class="number">0x000</span> ExceptionCode    : Uint4B</span><br><span class="line">   +<span class="number">0x004</span> ExceptionFlags   : Uint4B</span><br><span class="line">   +<span class="number">0x008</span> ExceptionRecord  : Ptr32 _EXCEPTION_RECORD</span><br><span class="line">   +<span class="number">0x00c</span> ExceptionAddress : Ptr32 Void</span><br><span class="line">   +<span class="number">0x010</span> NumberParameters : Uint4B</span><br><span class="line">   +<span class="number">0x014</span> params           : EHExceptionRecord::EHParameters <span class="comment">//&lt;----</span></span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt EHExceptionRecord::EHParameters</span><br><span class="line">TestThrowException!EHExceptionRecord::EHParameters</span><br><span class="line">   +<span class="number">0x000</span> magicNumber      : Uint4B</span><br><span class="line">   +<span class="number">0x004</span> pExceptionObject : Ptr32 Void</span><br><span class="line">   +<span class="number">0x008</span> pThrowInfo       : Ptr32 _s_ThrowInfo <span class="comment">//&lt;----</span></span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt _s_ThrowInfo</span><br><span class="line">TestThrowException!_s_ThrowInfo</span><br><span class="line">   +<span class="number">0x000</span> attributes       : Uint4B</span><br><span class="line">   +<span class="number">0x004</span> pmfnUnwind       : Ptr32     <span class="keyword">void</span> </span><br><span class="line">   +<span class="number">0x008</span> pForwardCompat   : Ptr32     <span class="keyword">int</span> </span><br><span class="line">   +<span class="number">0x00c</span> pCatchableTypeArray : Ptr32 _s_CatchableTypeArray <span class="comment">//&lt;----</span></span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt _s_CatchableTypeArray</span><br><span class="line">TestThrowException!_s_CatchableTypeArray</span><br><span class="line">   +<span class="number">0x000</span> nCatchableTypes  : Int4B</span><br><span class="line">   +<span class="number">0x004</span> arrayOfCatchableTypes : [<span class="number">0</span>] Ptr32 _s_CatchableType <span class="comment">//&lt;----</span></span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt _s_CatchableType</span><br><span class="line">TestThrowException!_s_CatchableType</span><br><span class="line">   +<span class="number">0x000</span> properties       : Uint4B</span><br><span class="line">   +<span class="number">0x004</span> pType            : Ptr32 TypeDescriptor <span class="comment">//&lt;----</span></span><br><span class="line">   +<span class="number">0x008</span> thisDisplacement : PMD</span><br><span class="line">   +<span class="number">0x014</span> sizeOrOffset     : Int4B</span><br><span class="line">   +<span class="number">0x018</span> copyFunction     : Ptr32     <span class="keyword">void</span></span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt TypeDescriptor</span><br><span class="line">TestThrowException!TypeDescriptor</span><br><span class="line">   +<span class="number">0x000</span> hash             : Uint4B</span><br><span class="line">   +<span class="number">0x004</span> spare            : Ptr32 Void</span><br><span class="line">   +<span class="number">0x008</span> name             : [<span class="number">0</span>] Char <span class="comment">//&lt;====</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="64-位关键结构"><a href="#64-位关键结构" class="headerlink" title="64 位关键结构"></a>64 位关键结构</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt EHExceptionRecord</span><br><span class="line">VCRUNTIME140!EHExceptionRecord</span><br><span class="line">   +<span class="number">0x000</span> ExceptionCode    : Uint4B</span><br><span class="line">   +<span class="number">0x004</span> ExceptionFlags   : Uint4B</span><br><span class="line">   +<span class="number">0x008</span> ExceptionRecord  : Ptr64 _EXCEPTION_RECORD</span><br><span class="line">   +<span class="number">0x010</span> ExceptionAddress : Ptr64 Void</span><br><span class="line">   +<span class="number">0x018</span> NumberParameters : Uint4B</span><br><span class="line">   +<span class="number">0x020</span> params           : EHExceptionRecord::EHParameters <span class="comment">//&lt;----</span></span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt EHExceptionRecord::EHParameters</span><br><span class="line">VCRUNTIME140!EHExceptionRecord::EHParameters</span><br><span class="line">   +<span class="number">0x000</span> magicNumber      : Uint4B</span><br><span class="line">   +<span class="number">0x008</span> pExceptionObject : Ptr64 Void</span><br><span class="line">   +<span class="number">0x010</span> pThrowInfo       : Ptr64 _s_ThrowInfo <span class="comment">//&lt;----</span></span><br><span class="line">   +<span class="number">0x018</span> pThrowImageBase  : Ptr64 Void</span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt _s_ThrowInfo</span><br><span class="line">VCRUNTIME140!_s_ThrowInfo</span><br><span class="line">   +<span class="number">0x000</span> attributes       : Uint4B</span><br><span class="line">   +<span class="number">0x004</span> pmfnUnwind       : Int4B</span><br><span class="line">   +<span class="number">0x008</span> pForwardCompat   : Int4B</span><br><span class="line">   +<span class="number">0x00c</span> pCatchableTypeArray : Int4B <span class="comment">//&lt;----</span></span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt CatchableTypeArray</span><br><span class="line">VCRUNTIME140!CatchableTypeArray</span><br><span class="line">   +<span class="number">0x000</span> nCatchableTypes  : Int4B</span><br><span class="line">   +<span class="number">0x004</span> arrayOfCatchableTypes : [<span class="number">0</span>] Int4B <span class="comment">//&lt;----</span></span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt CatchableType</span><br><span class="line">VCRUNTIME140!CatchableType</span><br><span class="line">   +<span class="number">0x000</span> properties       : Uint4B</span><br><span class="line">   +<span class="number">0x004</span> pType            : Int4B <span class="comment">//&lt;----</span></span><br><span class="line">   +<span class="number">0x008</span> thisDisplacement : PMD</span><br><span class="line">   +<span class="number">0x014</span> sizeOrOffset     : Int4B</span><br><span class="line">   +<span class="number">0x018</span> copyFunction     : Int4B</span><br><span class="line"></span><br><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; dt TypeDescriptor</span><br><span class="line">VCRUNTIME140!TypeDescriptor</span><br><span class="line">   +<span class="number">0x000</span> pVFTable         : Ptr64 Void</span><br><span class="line">   +<span class="number">0x008</span> spare            : Ptr64 Void</span><br><span class="line">   +<span class="number">0x010</span> name             : [<span class="number">0</span>] Char <span class="comment">//&lt;====</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>划重点：</strong> 务必记住以上结构体的定义，尤其是关键字段的偏移。这是解析的依据！</p>
+</blockquote>
+<h2 id="解析方法小结"><a href="#解析方法小结" class="headerlink" title="解析方法小结"></a>解析方法小结</h2><ol>
+<li><p>先找到 <code>EHParameters</code> 类型的对象（可省略此步）</p>
+<p>可以通过 <code>RaiseException()</code> 的第四个参数查找。</p>
+<p>在 <code>32</code> 位程序中，定位方法非常简单，可以直接查看 <code>RaiseException()</code> 的第 <code>4</code> 个参数，<code>ebp+0x14</code>。</p>
+<p>在 <code>x64</code> 位中可以通过 <code>_CxxThrowException()</code> 的 <code>rsp + 0x28</code> 定位。因为在调用 <code>RaiseException()</code> 的时候， <code>_CxxThrowException()</code> 会把此参数存在自己栈帧中 <code>rsp + 0x28</code> 的位置。</p>
+</li>
+</ol>
+<ol start="2">
+<li><p>再找到  <code>ThrowInfo</code> 类型的对象</p>
+<p>解析 <code>EHParameters</code> 中的第 <code>3</code> 个成员 <code>pThrowInfo</code>，在 <code>32</code> 位程序中偏移是 <code>0x8</code>，在 <code>64</code> 位程序中偏移是 <code>0x10</code>。</p>
+<blockquote>
+<p><strong>说明：</strong> 还有两种查看方法： </p>
+<ol>
+<li><p>对于 <code>32</code> 位程序可以通过 <code>_CxxThrowException()</code> 对应栈帧的第 <code>2</code> 个参数（<code>ebp+c</code>）直接查看。</p>
+</li>
+<li><p>如果有 <code>vcruntimexxx.dll</code> 的调试符号，可以直接切到 <code>_CxxThrowException()</code> 对应的栈帧，<code>windbg</code> 会自动帮忙列出对应的值。 </p>
+</li>
+</ol>
+</blockquote>
+</li>
+</ol>
+<ol start="3">
+<li><p>再找到 <code>CatchableTypeArray</code> 类型的对象</p>
+<p>解析 <code>ThrowInfo</code> 的第 <code>4</code> 个成员 <code>pCatchableTypeArray</code>，其偏移是 <code>0xc</code>（<code>32</code>位 <code>64</code> 位通用）。</p>
+<p><strong>需要注意的是，此成员在 <code>32</code> 位程序中是地址；在 <code>64</code> 位程序中是偏移，需要加上镜像基址得到最终的地址。</strong></p>
+</li>
+</ol>
+<ol start="4">
+<li><p>再找到 <code>CatchableType</code> 类型的对象</p>
+<p>解析 <code>CatchableTypeArray</code> 的第 <code>2</code>个成员 <code>arrayOfCatchableTypes</code> ，偏移是 <code>0x4</code>（<code>32</code>位 <code>64</code> 位通用）。</p>
+<p>该成员记录了 <code>CatchableType</code> 数组的首地址或者偏移。</p>
+<p><strong>需要注意的是，此成员在 <code>32</code> 位程序中是地址；在 <code>64</code> 位程序中是偏移，需要加上镜像基址得到最终的地址。</strong></p>
+<blockquote>
+<p><strong>说明：</strong> 第 <code>1</code> 个成员 <code>nCatchableTypes</code> 记录了 <code>CatchableType</code> 数组的个数。</p>
+</blockquote>
+</li>
+</ol>
+<ol start="5">
+<li><p>再找到 <code>TypeDescriptor</code> 类型的对象</p>
+<p>解析 <code>CatchableType</code> 数组中的每个对象（其实，只需要解析第一个即可）。重点关注第 <code>2</code> 个成员 <code>pType</code>，偏移是 <code>0x4</code>（<code>32</code>位 <code>64</code> 位通用）。</p>
+<p><strong>需要注意的是，此成员在 <code>32</code> 位程序中是地址；在 <code>64</code> 位程序中是偏移，需要加上镜像基址得到最终的地址。</strong></p>
+</li>
+</ol>
+<ol start="6">
+<li><p>最后找到异常类型名</p>
+<p>解析 <code>TypeDescriptor</code> 对象，只需要关注第 <code>3</code> 个成员 <code>name</code> 成员即可，在 <code>32</code> 位程序中偏移是 <code>0x8</code>，在 <code>64</code> 位程序中偏移是 <code>0x10</code>。</p>
+<p>它是一个以 <code>\0</code> 结尾的字符串，可以在 <code>windbg</code> 用 <code>da</code> 显示其内容。</p>
+</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><code>throw</code> 对应的实现函数是 <code>_CxxThrowException()</code> 函数，该函数定义在 <code>throw.cpp</code> 中，可以查看源码。</li>
+<li><code>_CxxThrowException()</code> 内部会调用 <code>RaiseException()</code>，调用时传递的错误码是 <code>0xe06d7363</code>（对应的字符是 <code>.msc</code>）。</li>
+<li>【关键结构】中的结构体是解析时的依据，务必要熟悉。</li>
+<li>【解析方法小结】中总结的方法是通用方法，适用于任何情况。在实际解析过程中还可以利用虚表等其它相关信息进行解析。</li>
+<li>在解析过程中，需要注意的是在 <code>64</code> 位程序中，很多成员变量都是相对于发生异常模块的偏移，而不是直接可用的地址，需要先把偏移转换成虚拟地址后再使用。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><code>vs</code> 源码</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">https://bianchengnan.github.io/articles/search-throwing-exception-from-dump-file-part1/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/异常/" rel="tag"><i class="fa fa-tag"></i> 异常</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
+          
+            <a href="/tags/转储文件/" rel="tag"><i class="fa fa-tag"></i> 转储文件</a>
+          
+            <a href="/tags/part1/" rel="tag"><i class="fa fa-tag"></i> part1</a>
+          
+            <a href="/tags/exception/" rel="tag"><i class="fa fa-tag"></i> exception</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/findout-who-is-using-my-file-with-the-help-of-perfview-and-process-explorer/" rel="next" title="调试实战 | 谁在偷偷占用我的文件？原来是我自己">
+                <i class="fa fa-chevron-left"></i> 调试实战 | 谁在偷偷占用我的文件？原来是我自己
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/search-throwing-exception-from-dump-file-part2/" rel="prev" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">
+                调试实战 | 从转储文件找出抛出的异常 —— 实战 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">调试实战 | dll 加载失败之 Debug Release 争锋篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">调试技巧 | 你很可能需要知道这个调试小技巧</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">1.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#突破口"><span class="nav-number">2.</span> <span class="nav-text">突破口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CxxThrowException"><span class="nav-number">3.</span> <span class="nav-text">_CxxThrowException</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#EHExceptionRecord"><span class="nav-number">4.</span> <span class="nav-text">EHExceptionRecord</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ThrowInfo"><span class="nav-number">5.</span> <span class="nav-text">ThrowInfo</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CatchableTypeArray"><span class="nav-number">6.</span> <span class="nav-text">CatchableTypeArray</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CatchableType"><span class="nav-number">7.</span> <span class="nav-text">CatchableType</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TypeDescriptor"><span class="nav-number">8.</span> <span class="nav-text">TypeDescriptor</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关键结构"><span class="nav-number">9.</span> <span class="nav-text">关键结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#32-位关键结构"><span class="nav-number">9.1.</span> <span class="nav-text">32 位关键结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#64-位关键结构"><span class="nav-number">9.2.</span> <span class="nav-text">64 位关键结构</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解析方法小结"><span class="nav-number">10.</span> <span class="nav-text">解析方法小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">11.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">12.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

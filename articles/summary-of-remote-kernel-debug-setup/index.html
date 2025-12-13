@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,调试,debug,dump,转储,kernel dump,kernel debug,remote kernel debug,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="标题中的 101 请参阅 wikipedia 101。 前言我们在上一篇文章——本地内核调试环境搭建，就这么简单！中总结了本地内核调试的开启方法。本地内核调试有很多限制（比如，不能执行 .crash 来让系统蓝屏，不能执行 .dump 保存转储，不能下断点 ……），双机内核调试完全没有这方面的限制，可以说是真正意义上的内核调试。 双机内核调试主要分两种情况：  被调试系统运行在虚拟机中。 被调试系">
+<meta name="keywords" content="原,调试,debug,dump,转储,kernel dump,kernel debug,remote kernel debug">
+<meta property="og:type" content="article">
+<meta property="og:title" content="双机内核调试 101">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/summary-of-remote-kernel-debug-setup/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="标题中的 101 请参阅 wikipedia 101。 前言我们在上一篇文章——本地内核调试环境搭建，就这么简单！中总结了本地内核调试的开启方法。本地内核调试有很多限制（比如，不能执行 .crash 来让系统蓝屏，不能执行 .dump 保存转储，不能下断点 ……），双机内核调试完全没有这方面的限制，可以说是真正意义上的内核调试。 双机内核调试主要分两种情况：  被调试系统运行在虚拟机中。 被调试系">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/windbg-kernel-debug-setting-net.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/windbg-kernel-debug-com.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/windbg-kernel-debug-by-pipe.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/check-kernel-debug-setting.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.724Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="双机内核调试 101">
+<meta name="twitter:description" content="标题中的 101 请参阅 wikipedia 101。 前言我们在上一篇文章——本地内核调试环境搭建，就这么简单！中总结了本地内核调试的开启方法。本地内核调试有很多限制（比如，不能执行 .crash 来让系统蓝屏，不能执行 .dump 保存转储，不能下断点 ……），双机内核调试完全没有这方面的限制，可以说是真正意义上的内核调试。 双机内核调试主要分两种情况：  被调试系统运行在虚拟机中。 被调试系">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/windbg-kernel-debug-setting-net.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/summary-of-remote-kernel-debug-setup/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>双机内核调试 101 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/summary-of-remote-kernel-debug-setup/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">双机内核调试 101</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-03-11T22:00:19+08:00">
+                2020-03-11
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/转储/" itemprop="url" rel="index">
+                    <span itemprop="name">转储</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>标题中的 <code>101</code> 请参阅 <a href="https://en.wikipedia.org/wiki/101_(topic)" target="_blank" rel="noopener">wikipedia 101</a>。</p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我们在上一篇文章——<a href="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/">本地内核调试环境搭建，就这么简单！</a>中总结了本地内核调试的开启方法。本地内核调试有很多限制（比如，不能执行 <code>.crash</code> 来让系统蓝屏，不能执行 <code>.dump</code> 保存转储，不能下断点 ……），双机内核调试完全没有这方面的限制，可以说是真正意义上的内核调试。</p>
+<p>双机内核调试主要分两种情况：</p>
+<ol>
+<li>被调试系统运行在虚拟机中。</li>
+<li>被调试系统运行在另外一台真实的物理机中。</li>
+</ol>
+<p>不论被调试系统运行在虚拟机中，还是运行在另外一台物理机中，系统设置都是一样的。本文简单梳理了常用的内核调试设置方法及连接方法。</p>
+<a id="more"></a>
+
+
+
+<h2 id="几种连接方式"><a href="#几种连接方式" class="headerlink" title="几种连接方式"></a>几种连接方式</h2><p>可以通过 <code>1394</code>，<code>串口</code>（<code>Pipe</code>），<code>USB2.0</code>，<code>USB3.0</code>，<code>网络</code> 等方式进行双机内核调试。我只使用过 <code>串口</code> 和 <code>网络</code> 在两台真实的物理机上进行双机内核调试，并没有使用过 <code>1394</code>，<code>USB2.0</code>，<code>USB3.0</code> 的方式。当被调试系统运行在虚拟机中的时候，我们可以使用 <code>Pipe</code>  和 <code>VirtualKD</code> 两种方式进行双机调试。</p>
+<h2 id="系统设置-amp-连接方法"><a href="#系统设置-amp-连接方法" class="headerlink" title="系统设置 &amp; 连接方法"></a>系统设置 &amp; 连接方法</h2><h3 id="1-网络"><a href="#1-网络" class="headerlink" title="1. 网络"></a>1. 网络</h3><p><strong>被调试系统设置：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bcdedit /debug on</span><br><span class="line">bcdedit /dbgsettings net hostip:192.168.1.2 port:55555 key:your.own.safe.key</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>温馨提示：</p>
+<ul>
+<li><code>hostip</code> 指的是<strong>调试主机端</strong>的 <code>ip</code>，不是当前系统的 <code>ip</code> ！务必注意！很多朋友连不上，很可能是这里设置反了。</li>
+<li>端口号必须大于 <code>49151</code> 并且小于 <code>65536</code>。</li>
+</ul>
+</blockquote>
+<p><strong>调试主机连接方法：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">windbg.exe -k net:port=55555,key=your.own.safe.key</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/windbg-kernel-debug-setting-net.png" alt="windbg 设置界面"></p>
+<h3 id="2-串口"><a href="#2-串口" class="headerlink" title="2. 串口"></a>2. 串口</h3><p><strong>被调试系统设置：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bcdedit /debug on</span><br><span class="line">bcdedit /dbgsettings serial debugport:1 baudrate:115200</span><br></pre></td></tr></table></figure>
+
+<p><strong>调试主机连接方法：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">windbg -k com:port=COM1,baud=115200</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/windbg-kernel-debug-com.png" alt="windbg 界面设置"></p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>内核调试支持的波特率有 <code>9600</code>、 <code>19200</code>、<code>38400</code>、<code>57600</code> 和 <code>115200</code> 几种。数值越大，传输速率越大。我们通常选最大的 <code>115200</code>。<br>关于波特率的介绍请参考百度百科：<a href="https://baike.baidu.com/item/%E6%B3%A2%E7%89%B9%E7%8E%87/2153185" target="_blank" rel="noopener">https://baike.baidu.com/item/%E6%B3%A2%E7%89%B9%E7%8E%87/2153185</a></p>
+</blockquote>
+<h3 id="3-命名管道"><a href="#3-命名管道" class="headerlink" title="3. 命名管道"></a>3. 命名管道</h3><p>当被调试的系统在虚拟机中时，我们可以通过命名管道模拟串口来进行双机内核调试。</p>
+<p><strong>被调试系统设置：</strong>（和串口一样）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bcdedit /debug on</span><br><span class="line">bcdedit /dbgsettings serial debugport:1 baudrate:115200</span><br></pre></td></tr></table></figure>
+
+<p><strong>调试主机连接方法：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">windbg -k com:pipe,port=\\VMHost\pipe\PipeName[,resets=0][,reconnect]</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/windbg-kernel-debug-by-pipe.png" alt="windbg 界面设置"></p>
+<blockquote>
+<p>简单介绍下相关参数：</p>
+<ul>
+<li><code>com:</code>  表示以串口形式连接。</li>
+<li><code>pipe</code> 表示调试方式是通过命名管道模拟的串口。</li>
+<li><code>VMHost</code> 表示虚拟机运行的机器名。因为命名管道可以跨机器。<code>\\.</code> 表示虚拟机运行在本地机器上。</li>
+<li><code>PipeName</code> 表示命名管道的名字，不能与现有内核对象名字冲突。不一定非要是 <code>com1</code> 之类的。</li>
+<li><code>reset</code> 表示调试器向管道发送复位命令。调试器使用复位命令来与被调试系统建立连接。</li>
+<li><code>=0</code> 表示无限发送。也可以指定一个其它的值，不过没必要。需要注意的是：对于 <code>VMWare</code> 等不会丢弃过量数据的虚拟机，不要指定此参数。真正的物理端口会自动丢弃过剩的数据包，<code>Virtual PC</code> 也会自动丢弃。</li>
+<li><code>reconnect</code> 参数表示如果读写管道失败，调试器会自动重新连接。如果不指定 <code>reconnect</code> 选项，那么每次虚拟机重新启动时，需要重新启动调试器，否则无法建立连接。指定此参数后，虚拟机可以任意重启，调试器会自动连接。</li>
+</ul>
+</blockquote>
+<h3 id="4-其它连接方式"><a href="#4-其它连接方式" class="headerlink" title="4. 其它连接方式"></a>4. 其它连接方式</h3><ul>
+<li><code>1394</code> ：我机器上没有 <code>1394</code> 端口，所以没有实际尝试过。</li>
+<li><code>usb2.0</code> ：要求使用 0 号端口。而且对数据线也有要求：一般的 <code>usb2.0</code> 的数据线不行，因为需要同时连接两台物理机。没尝试过。</li>
+<li><code>usb3.0</code>：需要买专用的线，或者制作特殊的线，之前工作电脑上还没有 <code>usb3.0</code> 的接口，所以也没尝试过。强烈推荐大家参考张银奎老师的文章：<a href="http://advdbg.org/blogs/advdbg_system/articles/5954.aspx。看的我手又痒痒了。" target="_blank" rel="noopener">http://advdbg.org/blogs/advdbg_system/articles/5954.aspx。看的我手又痒痒了。</a>:)</li>
+<li><code>eXDI</code> ：请参考张银奎老师的文章：<a href="http://advdbg.org/blogs/advdbg_system/articles/903.aspx。" target="_blank" rel="noopener">http://advdbg.org/blogs/advdbg_system/articles/903.aspx。</a></li>
+</ul>
+<p>因为以上几种形式我没实战过，就不搬文档了。而且，设置起来不算复杂。如果有需要，请参考官方文档 <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-kernel-mode-debugging-in-windbg--cdb--or-ntsd。" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-kernel-mode-debugging-in-windbg--cdb--or-ntsd。</a></p>
+<h2 id="检查"><a href="#检查" class="headerlink" title="检查"></a>检查</h2><p>做好设置后，在开始搭建物理环境前，我们需要确保设置正确。我们可以执行 <code>bcdedit /enum {ID}</code> 来检查对应启动项是否开启了 <code>Debug</code> ，并且执行 <code>bcdedit /dbgsettings</code> 来检查当前设置的参数是正确的。下图是我设置内核调试方式为网络的截图：</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-remote-kernel-debug-setup/check-kernel-debug-setting.png" alt="检查设置"></p>
+<h2 id="物理环境搭建"><a href="#物理环境搭建" class="headerlink" title="物理环境搭建"></a>物理环境搭建</h2><p><strong>1. 被调试系统运行在真实的物理机中。</strong></p>
+<p>我通过 <code>网络</code> 和 <code>串口</code> 两种方式成功的进行过双机内核调试。</p>
+<ul>
+<li><code>网络</code>：不需要做特殊设置。但是需要注意以下几点：<ul>
+<li>需要检查网卡是否支持内核调试，不是所有网卡都支持双机内核调试的。具体支持的网卡列表请参考微软官方文档：<a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/supported-ethernet-nics-for-network-kernel-debugging-in-windows-10。" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/supported-ethernet-nics-for-network-kernel-debugging-in-windows-10。</a></li>
+<li>要使用网线，不要使用无线网卡。</li>
+<li>被调试系统必须是 <code>win8</code> 及以后的操作系统，运行调试器的系统至少是 <code>win7</code> 系统。</li>
+</ul>
+</li>
+<li><code>串口</code> ：需要制作特殊的线，一般的串口线不行。当时买了一根，找了同学帮忙焊了下，成功的连上了。串口线连接方法，请参考 <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-null-modem-cable-connection。" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-null-modem-cable-connection。</a></li>
+</ul>
+<p><strong>2. 被调试系统运行在虚拟机中。</strong></p>
+<p>我通过 <code>Pipe</code> 和 <code>VirtualKD</code> 两种方式成功的进行过双机内核调试。</p>
+<p>使用虚拟串口，传输速率是真的慢。使用 <code>VirtualKD</code>，相较于虚拟串口，速度要快很多。调试运行在虚拟机中的系统应该是比较常见的形式，毕竟不需要两台物理机，在本地装个虚拟机就够了。具体的环境搭建方法请参考下一篇文章。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p><code>bcdedit</code> 是内核调试设置的好帮手，建议大家好好了解下。</p>
+</li>
+<li><p>使用串口做双机内核调试，传输速率是真的慢，建议大家尽量用其它方式。</p>
+</li>
+<li><p>通过网络进行双机内核调试时，<code>hostip</code> 指的是运行内核调试器系统的 <code>ip</code>，而不是被调试系统的 <code>ip</code>。</p>
+</li>
+<li><p>强烈建议大家参考《软件调试》第 18 章。介绍的非常详细，有各种连接方式的介绍，也有原理讲解。</p>
+</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li>《软件调试》第 18 章</li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/boot-parameters-to-enable-debugging" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/boot-parameters-to-enable-debugging</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-null-modem-cable-connection" target="_blank" rel="noopener">Setting Up Kernel-Mode Debugging over a Serial Cable Manually</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-usb-3-0-debug-cable-connection" target="_blank" rel="noopener">Setting Up Kernel-Mode Debugging over a USB 3.0 Cable Manually</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-usb-2-0-debug-cable-connection" target="_blank" rel="noopener">Setting Up Kernel-Mode Debugging over a USB 2.0 Cable Manually</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-1394-cable-connection" target="_blank" rel="noopener">Setting Up Kernel-Mode Debugging over a 1394 Cable Manually</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-network-debugging-connection" target="_blank" rel="noopener">Setting Up KDNET Network Kernel Debugging Manually</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/attaching-to-a-virtual-machine--kernel-mode-" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/attaching-to-a-virtual-machine--kernel-mode-</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/supported-ethernet-nics-for-network-kernel-debugging-in-windows-10" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/supported-ethernet-nics-for-network-kernel-debugging-in-windows-10</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/summary-of-remote-kernel-debug-setup/" title="双机内核调试 101">https://bianchengnan.github.io/articles/summary-of-remote-kernel-debug-setup/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
+          
+            <a href="/tags/转储/" rel="tag"><i class="fa fa-tag"></i> 转储</a>
+          
+            <a href="/tags/kernel-dump/" rel="tag"><i class="fa fa-tag"></i> kernel dump</a>
+          
+            <a href="/tags/kernel-debug/" rel="tag"><i class="fa fa-tag"></i> kernel debug</a>
+          
+            <a href="/tags/remote-kernel-debug/" rel="tag"><i class="fa fa-tag"></i> remote kernel debug</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/summary-of-local-kernel-debug-setup/" rel="next" title="本地内核调试环境搭建，就这么简单！">
+                <i class="fa fa-chevron-left"></i> 本地内核调试环境搭建，就这么简单！
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/vmware-virtualkd-windbg-win10-kernel-debug-setup-step-by-step/" rel="prev" title="使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境">
+                使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/something-you-should-know-about-process-dump/" title="转储文件知多少">转储文件知多少</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/process-dump-tools-you-should-know/" title="你需要知道的 N 种抓取 dump 的工具">你需要知道的 N 种抓取 dump 的工具</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/brief-introduction-to-jit-debug-info/" title="JIT Debug Info 简介">JIT Debug Info 简介</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-dump-our-own-process/" title="向大厂看齐！为自己的程序增加自动转储的功能！">向大厂看齐！为自己的程序增加自动转储的功能！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-mode-dump-begins/" title="内核转储，开抓啦！">内核转储，开抓啦！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-memory-dump-setting/" title="蓝屏（BSOD）转储设置，看本文就够了！">蓝屏（BSOD）转储设置，看本文就够了！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-force-system-to-crash/" title="系统蓝屏的几种姿势，确定不了解下么？">系统蓝屏的几种姿势，确定不了解下么？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-local-kernel-debug-setup/" title="本地内核调试环境搭建，就这么简单！">本地内核调试环境搭建，就这么简单！</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-virtualkd-windbg-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境">使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-vs2019-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + vs2019 从零搭建双机内核调试环境">使用 VMware + win10 + vs2019 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-dump-series-articles/" title="转储系列文章总结">转储系列文章总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#几种连接方式"><span class="nav-number">2.</span> <span class="nav-text">几种连接方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统设置-amp-连接方法"><span class="nav-number">3.</span> <span class="nav-text">系统设置 &amp; 连接方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-网络"><span class="nav-number">3.1.</span> <span class="nav-text">1. 网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-串口"><span class="nav-number">3.2.</span> <span class="nav-text">2. 串口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-命名管道"><span class="nav-number">3.3.</span> <span class="nav-text">3. 命名管道</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-其它连接方式"><span class="nav-number">3.4.</span> <span class="nav-text">4. 其它连接方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#检查"><span class="nav-number">4.</span> <span class="nav-text">检查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#物理环境搭建"><span class="nav-number">5.</span> <span class="nav-text">物理环境搭建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

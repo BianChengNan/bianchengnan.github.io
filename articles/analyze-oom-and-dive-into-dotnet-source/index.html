@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="源码,.net,OOM,clr,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="摘要本文记录了一次对 .NET 应用程序发生的“内存不足”（OOM）异常进行的深度源码级调查。问题始于一个看似矛盾的现象：诊断工具显示有足够大的空闲内存块（约 50MB），但垃圾回收（GC）过程却在尝试预留较小内存段（约 16MB）时失败。 为了探究根源，笔者逆向追踪了诊断工具（如SOS）输出的数据链路：从高层诊断命令（AnalyzeOOMCommand）入手，逐步深入Microsoft.Diag">
+<meta name="keywords" content="源码,.net,OOM,clr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入.NET Runtime：一次 OOM 异常的分析与源码追踪之旅">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/analyze-oom-and-dive-into-dotnet-source/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="摘要本文记录了一次对 .NET 应用程序发生的“内存不足”（OOM）异常进行的深度源码级调查。问题始于一个看似矛盾的现象：诊断工具显示有足够大的空闲内存块（约 50MB），但垃圾回收（GC）过程却在尝试预留较小内存段（约 16MB）时失败。 为了探究根源，笔者逆向追踪了诊断工具（如SOS）输出的数据链路：从高层诊断命令（AnalyzeOOMCommand）入手，逐步深入Microsoft.Diag">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/oom.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/address-summary.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/search-keyword.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.518Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入.NET Runtime：一次 OOM 异常的分析与源码追踪之旅">
+<meta name="twitter:description" content="摘要本文记录了一次对 .NET 应用程序发生的“内存不足”（OOM）异常进行的深度源码级调查。问题始于一个看似矛盾的现象：诊断工具显示有足够大的空闲内存块（约 50MB），但垃圾回收（GC）过程却在尝试预留较小内存段（约 16MB）时失败。 为了探究根源，笔者逆向追踪了诊断工具（如SOS）输出的数据链路：从高层诊断命令（AnalyzeOOMCommand）入手，逐步深入Microsoft.Diag">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/oom.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/analyze-oom-and-dive-into-dotnet-source/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>深入.NET Runtime：一次 OOM 异常的分析与源码追踪之旅 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/analyze-oom-and-dive-into-dotnet-source/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">深入.NET Runtime：一次 OOM 异常的分析与源码追踪之旅</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2025-11-29T20:42:23+08:00">
+                2025-11-29
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/NET/" itemprop="url" rel="index">
+                    <span itemprop="name">NET</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>本文记录了一次对 <code>.NET</code> 应用程序发生的“内存不足”（<code>OOM</code>）异常进行的深度源码级调查。问题始于一个看似矛盾的现象：诊断工具显示有足够大的空闲内存块（约 <code>50MB</code>），但垃圾回收（<code>GC</code>）过程却在尝试预留较小内存段（约 <code>16MB</code>）时失败。</p>
+<p>为了探究根源，笔者<strong>逆向追踪了诊断工具（如SOS）输出的数据链路</strong>：从高层诊断命令（<code>AnalyzeOOMCommand</code>）入手，逐步深入<code>Microsoft.Diagnostics.Runtime (CLRMD)</code>库、托管辅助类、<code>Dac</code> 接口，最终直达 <code>.NET Runtime(CoreCLR)</code> 底层的 <code>GC</code> 相关 <code>Native</code> 代码（如 <code>ClrDataAccess</code>、<code>gc_heap</code>）。</p>
+<p>虽然最终并没能定位问题的真实原因，但是理清了 <code>GC</code> 在 <code>virtual_alloc</code>过程中因<strong>内存限制检查、地址空间布局考量等因素</strong>导致预留失败的具体逻辑，并对 <code>.NET</code> 源码有了一定的认识，还是非常值得记录分享的。</p>
+<a id="more"></a>
+
+
+
+<h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>前些日子，在 <code>.NET</code> 调试群里有位网友的 <code>.NET</code> 程序触发了 <code>OOM (Out Of Memory)</code> 异常，他在群里发了一些截图，询问大家是什么原因导致的。其中一张分析结果图如下：</p>
+<p><img src="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/oom.png" alt="oom"></p>
+<p>看着是 <code>gc</code> 过程中发生了内存不足的问题。大概率是要分配 <code>16MB</code> 左右的内存空间时失败了，但是另外一张截图显示，最大空闲块还有 <code>50MB</code>，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/address-summary.png" alt="address-summary"></p>
+<p>由于没看过 <code>.net</code> 源码，只能根据自己的认知进行了回复，这种心里没底的感觉很不爽。正好最近想多研究下 <code>.net</code>，而且有源代码可查，为啥不看看呢？</p>
+<h2 id="下载源码"><a href="#下载源码" class="headerlink" title="下载源码"></a>下载源码</h2><p>可以通过 <code>git clone https://github.com/dotnet/runtime.git</code> 命令把 <code>.NET runtime</code> 源码克隆到本地。还可以下载对应的诊断工具源码，包括但不限于 <code>SOS</code>。可以通过 <code>git clone https://github.com/dotnet/diagnostics.git</code> 克隆到本地。</p>
+<blockquote>
+<p><strong>说明：</strong> 最开始的想法是编译一份进行调试，折腾了半天，还遇到一些编译错误，这里就不展开了，后面会有一篇文章单独总结。</p>
+<p>下载的版本与我我本地的运行时版本（<code>8.0.7</code>）不匹配，切换到对应的版本（<code>git tag --list</code> 然后 <code>git checkout v8.0.7</code> ）。</p>
+</blockquote>
+<p>如何开始呢？截图中的关键信息描述就是入手点，当然从搜索入手了。</p>
+<h2 id="追踪-OOM-来源"><a href="#追踪-OOM-来源" class="headerlink" title="追踪 OOM 来源"></a>追踪 OOM 来源</h2><p>打开文件内容搜索神器 <code>FileLocator</code>，搜索 <code>Failed to reserve memory</code>，在 <code>AnalyzeOOMCommand.cs</code> 中发现了匹配项。 </p>
+<p><img src="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/search-keyword.png" alt="search-keyword"></p>
+<p>关键类摘录如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AnalyzeOOMCommand</span> : <span class="title">ClrRuntimeCommandBase</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">Invoke</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">bool</span> foundOne = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">foreach</span> (ClrOutOfMemoryInfo oom <span class="keyword">in</span> Runtime.Heap.SubHeaps.Select(h =&gt; h.OomInfo).Where(oom =&gt; oom != <span class="literal">null</span>))</span><br><span class="line">        &#123;</span><br><span class="line">            foundOne = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">            Console.WriteLine(oom.Reason <span class="keyword">switch</span></span><br><span class="line">            &#123;</span><br><span class="line">                OutOfMemoryReason.Budget or OutOfMemoryReason.CantReserve =&gt; <span class="string">"OOM was due to an internal .Net error, likely a bug in the GC"</span>,</span><br><span class="line">                OutOfMemoryReason.CantCommit =&gt; <span class="string">"Didn't have enough memory to commit"</span>,</span><br><span class="line">                OutOfMemoryReason.LOH =&gt; <span class="string">"Didn't have enough memory to allocate an LOH segment"</span>,</span><br><span class="line">                OutOfMemoryReason.LowMem =&gt; <span class="string">"Low on memory during GC"</span>,</span><br><span class="line">                OutOfMemoryReason.UnproductiveFullGC =&gt; <span class="string">"Could not do a full GC"</span>,</span><br><span class="line">                _ =&gt; oom.Reason.ToString() <span class="comment">// shouldn't happen, we handle all cases above</span></span><br><span class="line">            &#125;);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (oom.GetMemoryFailure != GetMemoryFailureReason.None)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">string</span> message = oom.GetMemoryFailure <span class="keyword">switch</span></span><br><span class="line">                &#123;</span><br><span class="line">                    GetMemoryFailureReason.ReserveSegment =&gt; <span class="string">"Failed to reserve memory"</span>,</span><br><span class="line">                    GetMemoryFailureReason.CommitSegmentBegin =&gt; <span class="string">"Didn't have enough memory to commit beginning of the segment"</span>,</span><br><span class="line">                    GetMemoryFailureReason.CommitEphemeralSegment =&gt; <span class="string">"Didn't have enough memory to commit the new ephemeral segment"</span>,</span><br><span class="line">                    GetMemoryFailureReason.GrowTable =&gt; <span class="string">"Didn't have enough memory to grow the internal GC data structures"</span>,</span><br><span class="line">                    GetMemoryFailureReason.CommitTable =&gt; <span class="string">"Didn't have enough memory to commit the internal GC data structures"</span>,</span><br><span class="line">                    _ =&gt; oom.GetMemoryFailure.ToString() <span class="comment">// shouldn't happen, we handle all cases above</span></span><br><span class="line">                &#125;;</span><br><span class="line"></span><br><span class="line">                Console.WriteLine(<span class="string">$"Details: <span class="subst">&#123;(oom.IsLargeObjectHeap ? <span class="string">"LOH"</span> : <span class="string">"SOH"</span>)&#125;</span> <span class="subst">&#123;message&#125;</span> <span class="subst">&#123;oom.Size:n0&#125;</span> bytes"</span>);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// If it's a commit error (GetMemoryFailureReason.GrowTable can indicate a reserve</span></span><br><span class="line">                <span class="comment">// or a commit error since we make one VirtualAlloc call to reserve and commit),</span></span><br><span class="line">                <span class="comment">// we indicate the available commit space if we recorded it.</span></span><br><span class="line">                <span class="keyword">if</span> (oom.AvailablePageFileMB != <span class="number">0</span>)</span><br><span class="line">                &#123;</span><br><span class="line">                    Console.WriteLine(<span class="string">$" - on GC entry available commit space was <span class="subst">&#123;oom.AvailablePageFileMB:n0&#125;</span> MB"</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!foundOne)</span><br><span class="line">        &#123;</span><br><span class="line">            Console.WriteLine(<span class="string">"There was no managed OOM due to allocations on the GC heap"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从代码看，与网友截图中的输出高度匹配，看样子是找对地方了。从代码逻辑可知，<code>AnalyzeOOMCommand</code> 命令会遍历堆，输出每个堆上的 <code>ClrOutOfMemoryInfo</code> 信息。关键代码如下：</p>
+<p><code>foreach (ClrOutOfMemoryInfo oom in Runtime.Heap.SubHeaps.Select(h =&gt; h.OomInfo).Where(oom =&gt; oom != null))</code></p>
+<p>至此可推断，发生 <code>OOM</code> 异常时，<code>runtime</code> 会把相关信息保存到堆上。<code>SOS</code> 等插件直接从对上取出对应信息，展示出来即可。看完这个类的实现，感觉我又行了，也能写一个类似的插件了，哈哈哈。不废话了，回到正题。单击 <code>h.OomInfo</code> 跳转到 <code>OomInfo</code> 的实现，可以发现其是类 <code>ClrSubHeap</code> 的一个属性字段。</p>
+<blockquote>
+<p><strong>说明：</strong><code>ClrSubHeap</code> 并没有实现在 <code>diagnostics</code> 工程中，而是实现在 <code>Microsoft.Diagnostics.Runtime</code> 中，可以通过 <code>git clone https://github.com/microsoft/clrmd.git</code> 下载。</p>
+</blockquote>
+<p>打开 <code>Microsoft.Diagnostics.Runtime.sln</code>，可以搜到 <code>OomInfo</code> 的实现，如下：</p>
+<p><code>public ClrOutOfMemoryInfo? OomInfo =&gt; Heap.Helpers.GetOOMInfo(Address, out OomInfo oomInfo) ? new(oomInfo) : null;</code></p>
+<p><code>OomInfo</code> 来自 <code>Heap.Helpers.GetOOMInfo()</code> 函数。而 <code>Heap</code> 是 <code>ClrSubHeap</code> 的一个字段，在 <code>ClrSubHeap</code> 构造的时候传进来。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ClrSubHeap</span> : <span class="title">IClrSubHeap</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">internal</span> <span class="title">ClrSubHeap</span>(<span class="params">ClrHeap clrHeap, <span class="keyword">in</span> SubHeapInfo subHeap</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Heap = clrHeap;</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> ClrHeap Heap &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">    IClrHeap IClrSubHeap.Heap =&gt; Heap;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>跳转到 <code>ClrHeap</code> 的实现看下 <code>Helpers</code> 的来源</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">ClrHeap</span> : <span class="title">IClrHeap</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">internal</span> <span class="title">ClrHeap</span>(<span class="params">ClrRuntime runtime, IMemoryReader memoryReader, IAbstractHeapProvider helpers, IAbstractTypeProvider typeHelpers, <span class="keyword">in</span> GCState gcInfo</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Runtime = runtime;</span><br><span class="line">        _memoryReader = memoryReader;</span><br><span class="line">        Helpers = helpers; <span class="comment">//&lt;----</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">        SubHeaps = Helpers.EnumerateSubHeaps().Select(r =&gt; <span class="keyword">new</span> ClrSubHeap(<span class="keyword">this</span>, r)).ToImmutableArray();</span><br><span class="line">        Segments = SubHeaps.SelectMany(r =&gt; r.Segments).OrderBy(r =&gt; r.FirstObjectAddress).ToImmutableArray();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">internal</span> IAbstractHeap Helpers &#123; <span class="keyword">get</span>; &#125; <span class="comment">//&lt;---</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> ClrRuntime Runtime &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现 <code>Helpers</code> 是在 <code>ClrHeap</code> 构造的时候通过参数传进来的，而且 <code>SubHeaps</code> 也会在 <code>ClrHeap</code> 构造的时候被创建出来。</p>
+<p>再看下 <code>ClrHeap</code> 是怎么被构造出来的。在 <code>ClrHeap</code> 的构造函数上方点击引用数量，跳转到对应的位置。可以发现其来自 <code>ClrRuntime</code> 的 <code>Heap</code> 属性。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">ClrRuntime</span> : <span class="title">IClrRuntime</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> ClrHeap Heap</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            ClrHeap? heap = _heap;</span><br><span class="line">            <span class="keyword">while</span> (heap <span class="keyword">is</span> <span class="literal">null</span>) <span class="comment">// Flush can cause a race.</span></span><br><span class="line">            &#123;</span><br><span class="line">                IAbstractHeap? heapHelpers = GetService&lt;IAbstractHeap&gt;(); <span class="comment">//&lt;---</span></span><br><span class="line">                IAbstractTypeHelpers? typeHelpers = GetService&lt;IAbstractTypeHelpers&gt;();</span><br><span class="line"></span><br><span class="line">                <span class="comment">// These are defined as non-nullable but just in case, double check we have a non-null instance.</span></span><br><span class="line">                <span class="keyword">if</span> (heapHelpers <span class="keyword">is</span> <span class="literal">null</span> || typeHelpers <span class="keyword">is</span> <span class="literal">null</span>)</span><br><span class="line">                    <span class="keyword">throw</span> <span class="keyword">new</span> NotSupportedException(<span class="string">"Unable to create a ClrHeap for this runtime."</span>);</span><br><span class="line"></span><br><span class="line">                heap = <span class="keyword">new</span>(<span class="keyword">this</span>, DataTarget.DataReader, heapHelpers, typeHelpers);</span><br><span class="line">                Interlocked.CompareExchange(<span class="keyword">ref</span> _heap, heap, <span class="literal">null</span>);</span><br><span class="line">                heap = _heap;</span><br><span class="line">             &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> heap;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现 <code>heapHelpers</code> 参数来自 <code>IAbstractHeap? heapHelpers = GetService&lt;IAbstractHeap&gt;();</code></p>
+<p>跳转到 <code>GetService()</code> 的实现，如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> T? GetService&lt;T&gt;() <span class="keyword">where</span> T: <span class="keyword">class</span> =&gt; (T?)_services.GetService(<span class="keyword">typeof</span>(T));</span><br></pre></td></tr></table></figure>
+
+<p>可以发现，<code>GetService&lt;T&gt;()</code> 是通过 <code>_services.GetService(typeof(T))</code> 实现的，再看下 <code>_services</code> 的来源。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">ClrRuntime</span> : <span class="title">IClrRuntime</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> IServiceProvider _services;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> ClrHeap? _heap;</span><br><span class="line">    <span class="keyword">private</span> ImmutableArray&lt;ClrThread&gt; _threads;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> DomainAndModules? _domainAndModules;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> IAbstractRuntime? _runtime;</span><br><span class="line">    <span class="keyword">private</span> IAbstractComHelpers? _comHelpers;</span><br><span class="line">    <span class="keyword">private</span> IAbstractMethodLocator? _methodLocator;</span><br><span class="line">    <span class="keyword">private</span> IAbstractDacController? _controller;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">internal</span> <span class="title">ClrRuntime</span>(<span class="params">ClrInfo clrInfo, IServiceProvider services</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        ClrInfo = clrInfo;</span><br><span class="line">        DataTarget = clrInfo.DataTarget;</span><br><span class="line">        _services = services; <span class="comment">//&lt;---</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>发现 <code>_services</code> 是在 <code>ClrRuntime</code> 构造的时候传进来的。点击 <code>ClrRuntime</code> 的构造函数上方的引用计数，可以发现  <code>ClrRuntime</code>  在<code>ClrInfo</code> 的 <code>CreateRuntimeWorker()</code> 函数中被创建，<code>services</code> 参数来自 <code>ClrInfoProvider.GetDacServices()</code>。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">ClrInfo</span> : <span class="title">IClrInfo</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> ClrRuntime <span class="title">CreateRuntimeWorker</span>(<span class="params"><span class="keyword">string</span>? dacPath, <span class="keyword">bool</span> ignoreMismatch, <span class="keyword">bool</span> verifySignature</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        IServiceProvider services = ClrInfoProvider.GetDacServices(<span class="keyword">this</span>, dacPath, ignoreMismatch, verifySignature);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> ClrRuntime(<span class="keyword">this</span>, services);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再看下 <code>ClrInfoProvider</code> 的来源，发现其是 <code>ClrInfo</code> 的属性成员，在 <code>ClrInfo</code> 构造的时候被初始化。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">ClrInfo</span> : <span class="title">IClrInfo</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">internal</span> <span class="title">ClrInfo</span>(<span class="params">DataTarget dt, ModuleInfo module, Version clrVersion, IClrInfoProvider provider</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        DataTarget = dt ?? <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="keyword">nameof</span>(dt));</span><br><span class="line">        ModuleInfo = module ?? <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="keyword">nameof</span>(module));</span><br><span class="line">        ClrInfoProvider = provider ?? <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="keyword">nameof</span>(provider)); <span class="comment">//&lt;---</span></span><br><span class="line">        Version = clrVersion ?? <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="keyword">nameof</span>(clrVersion));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> The DataTarget containing this ClrInfo.</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> DataTarget DataTarget &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> The IClrInfoProvider which created this ClrInfo.</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">internal</span> IClrInfoProvider ClrInfoProvider &#123; <span class="keyword">get</span>; &#125; <span class="comment">//&lt;---</span></span><br><span class="line"></span><br><span class="line">    IDataTarget IClrInfo.DataTarget =&gt; DataTarget;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再看看 <code>ClrInfo</code> 是在哪里被创建的，点击 <code>ClrInfo</code> 的构造函数上方的引用计数，可以发现其来自 <code>DotNetClrInfoProvider</code> 的 <code>CreateClrInfo()</code> 函数。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">DotNetClrInfoProvider</span> : <span class="title">IClrInfoProvider</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> ClrInfo <span class="title">CreateClrInfo</span>(<span class="params">DataTarget dataTarget, ModuleInfo module, <span class="keyword">ulong</span> runtimeInfo, ClrFlavor flavor</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">        ClrInfo result = <span class="keyword">new</span>(dataTarget, module, version, <span class="keyword">this</span>) <span class="comment">//&lt;---</span></span><br><span class="line">        &#123;</span><br><span class="line">            Flavor = flavor,</span><br><span class="line">            DebuggingLibraries = orderedDebugLibraries.ToImmutableArray(),</span><br><span class="line">            ContractDescriptorAddress = contractDescriptor,</span><br><span class="line">            IndexFileSize = indexFileSize,</span><br><span class="line">            IndexTimeStamp = indexTimeStamp,</span><br><span class="line">            BuildId = buildId,</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由以上代码可知，<code>ClrInfo</code> 构造函数的最后一个参数是 <code>this</code>，所以 <code>ClrInfo</code> 中的 <code>ClrInfoProvider</code> 是 <code>DotNetClrInfoProvider</code> 类型的对象。再来查看一下 <code>DotNetClrInfoProvider::GetDacServices()</code> 函数。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> IServiceProvider <span class="title">GetDacServices</span>(<span class="params">ClrInfo clrInfo, <span class="keyword">string</span>? providedPath, <span class="keyword">bool</span> ignoreMismatch, <span class="keyword">bool</span> verifySignature</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    DacLibrary library = GetDacLibraryFromPath(clrInfo, providedPath, ignoreMismatch, verifySignature);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> DacServiceProvider(clrInfo, library);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>会返回 <code>DacServiceProvider</code> 类型的对象，所以 <code>ClrRuntime._services</code> 实际是 <code>DacServiceProvider</code> 类型的对象。<code>ClrRuntime</code> 的 <code>Heap</code> 属性中调用的 <code>IAbstractHeap? heapHelpers = GetService&lt;IAbstractHeap&gt;()</code> 就相当于调用的是 <code>DacServiceProvider.GetService(IAbstractHeap)</code>。</p>
+<p>看看 <code>DacServiceProvider.GetService(Type)</code> 的实现，如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">DacServiceProvider</span> : <span class="title">IServiceProvider</span>, <span class="title">IDisposable</span>, <span class="title">IAbstractDacController</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">object</span>? GetService(Type serviceType)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (serviceType == <span class="keyword">typeof</span>(IAbstractRuntime))</span><br><span class="line">            <span class="keyword">return</span> _runtime ??= <span class="keyword">new</span> DacRuntime(_clrInfo, _process, _sos, _sos13);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (serviceType == <span class="keyword">typeof</span>(IAbstractHeap)) <span class="comment">//&lt;---</span></span><br><span class="line">        &#123;</span><br><span class="line">            IAbstractHeap? heap = _heapHelper;</span><br><span class="line">            <span class="keyword">if</span> (heap <span class="keyword">is</span> not <span class="literal">null</span>)</span><br><span class="line">                <span class="keyword">return</span> heap;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (_sos.GetGCHeapData(<span class="keyword">out</span> GCInfo data) &amp;&amp; _sos.GetCommonMethodTables(<span class="keyword">out</span> CommonMethodTables mts) &amp;&amp; mts.ObjectMethodTable != <span class="number">0</span>)</span><br><span class="line">                <span class="keyword">return</span> _heapHelper = <span class="keyword">new</span> DacHeap(_sos, _sos8, _sos12, _sos16, _dataReader, data, mts);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以 <code>ClrHeap</code> 中的 <code>Helpers</code> 成员的类型是 <code>DacHeap</code>，看看其 <code>GetOOMInfo()</code> 的实现。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">DacHeap</span> : <span class="title">IAbstractHeap</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">bool</span> <span class="title">GetOOMInfo</span>(<span class="params"><span class="keyword">ulong</span> subHeapAddress, <span class="keyword">out</span> OomInfo oomInfo</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        DacOOMData oomData;</span><br><span class="line">        <span class="keyword">if</span> (subHeapAddress != <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (!_sos.GetOOMData(subHeapAddress, <span class="keyword">out</span> oomData) || oomData.Reason == OutOfMemoryReason.None &amp;&amp; oomData.GetMemoryFailure == GetMemoryFailureReason.None)</span><br><span class="line">            &#123;</span><br><span class="line">                oomInfo = <span class="keyword">default</span>;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (!_sos.GetOOMData(<span class="keyword">out</span> oomData) || oomData.Reason == OutOfMemoryReason.None &amp;&amp; oomData.GetMemoryFailure == GetMemoryFailureReason.None)</span><br><span class="line">            &#123;</span><br><span class="line">                oomInfo = <span class="keyword">default</span>;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        oomInfo = <span class="keyword">new</span>()</span><br><span class="line">        &#123;</span><br><span class="line">            AllocSize = oomData.AllocSize,</span><br><span class="line">            AvailablePageFileMB = oomData.AvailablePageFileMB,</span><br><span class="line">            GCIndex = oomData.GCIndex,</span><br><span class="line">            GetMemoryFailure = oomData.GetMemoryFailure,</span><br><span class="line">            IsLOH = oomData.IsLOH != <span class="number">0</span>,</span><br><span class="line">            Reason = oomData.Reason,</span><br><span class="line">            Size = oomData.Size,</span><br><span class="line">        &#125;;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用了 <code>_sos.GetOOMData(out oomData)</code>。<code>_sos</code> 是 <code>DacHeap</code> 的成员变量，来自 <code>DacHeap</code> 构造函数的第一个参数。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">DacHeap</span> : <span class="title">IAbstractHeap</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> SOSDac _sos; <span class="comment">//&lt;--</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> SOSDac8? _sos8;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DacHeap</span>(<span class="params">SOSDac sos, SOSDac8? sos8, SosDac12? sos12, ISOSDac16? sos16, IMemoryReader reader, <span class="keyword">in</span> GCInfo gcInfo, <span class="keyword">in</span> CommonMethodTables commonMethodTables</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _sos = sos; <span class="comment">//&lt;--</span></span><br><span class="line">        _sos8 = sos8;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>而 <code>DacHeap</code> 又是在 <code>DacServiceProvider.GetService(Type)</code> 中创建的，关键代码是</p>
+<p><code>return _heapHelper = new DacHeap(_sos, _sos8, _sos12, _sos16, _dataReader, data, mts);</code></p>
+<p>传递给 <code>DacHeap</code> 的第一个参数是 <code>DacServiceProvider</code> 的成员变量 <code>_sos</code>。该成员变量是在 <code>DacServiceProvider</code> 的构造函数中初始化的。构造函数如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">DacServiceProvider</span> : <span class="title">IServiceProvider</span>, <span class="title">IDisposable</span>, <span class="title">IAbstractDacController</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> ClrInfo _clrInfo;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> IDataReader _dataReader;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> DacLibrary _dac;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> ClrDataProcess _process;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> SOSDac _sos;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> SOSDac6? _sos6;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DacServiceProvider</span>(<span class="params">ClrInfo clrInfo, DacLibrary library</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _clrInfo = clrInfo;</span><br><span class="line">        _dataReader = _clrInfo.DataTarget.DataReader;</span><br><span class="line"></span><br><span class="line">        _dac = library;</span><br><span class="line">        _process = library.CreateClrDataProcess();</span><br><span class="line">        _sos = _process.CreateSOSDacInterface() ?? <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(<span class="string">$"Could not create ISOSDacInterface."</span>); <span class="comment">//&lt;--</span></span><br><span class="line">        _sos6 = _process.CreateSOSDacInterface6();</span><br><span class="line"></span><br><span class="line">        library.DacDataTarget.SetMagicCallback(_process.Flush);</span><br><span class="line">        IsThreadSafe = _sos13 <span class="keyword">is</span> not <span class="literal">null</span> || RuntimeInformation.IsOSPlatform(OSPlatform.Windows);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>_sos</code> 是由 <code>_process.CreateSOSDacInterface()</code> 创建的，而 <code>_process</code> 的类型是 <code>ClrDataProcess</code>，看一下 <code>_process.CreateSOSDacInterface()</code> 的实现，如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">sealed</span> <span class="keyword">unsafe</span> <span class="keyword">class</span> <span class="title">ClrDataProcess</span> : <span class="title">CallableCOMWrapper</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> Guid IID_IXCLRDataProcess = <span class="keyword">new</span>(<span class="string">"5c552ab6-fc09-4cb3-8e36-22fa03c798b7"</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> DacLibrary _library;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> SOSDac? CreateSOSDacInterface()</span><br><span class="line">    &#123;</span><br><span class="line">        IntPtr result = QueryInterface(SOSDac.IID_ISOSDac);</span><br><span class="line">        <span class="keyword">if</span> (result == IntPtr.Zero)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> SOSDac(_library, result);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (InvalidOperationException)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该函数会返回 <code>SOSDac</code> 类型的对象，该类型构造函数的第二个参数是通过 <code>QueryInterface(SOSDac.IID_ISOSDac)</code> 得到的，<code>SOSDac.IID_ISOSDac</code> 的值是 <code>436f00f2-b42a-4b9f-870c-e73db66ae930</code>，是 <code>SOSDac</code> 类的静态变量，<code>SOSDac</code> 的定义如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">sealed</span> <span class="keyword">unsafe</span> <span class="keyword">class</span> <span class="title">SOSDac</span> : <span class="title">CallableCOMWrapper</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">internal</span> <span class="keyword">static</span> <span class="keyword">readonly</span> Guid IID_ISOSDac = <span class="keyword">new</span>(<span class="string">"436f00f2-b42a-4b9f-870c-e73db66ae930"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> DacLibrary _library;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> Dictionary&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;? _regNames;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> Dictionary&lt;<span class="keyword">ulong</span>, <span class="keyword">string</span>&gt;? _frameNames;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SOSDac</span>(<span class="params">DacLibrary? library, IntPtr ptr</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">library?.OwningLibrary, IID_ISOSDac, ptr</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _library = library ?? <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="keyword">nameof</span>(library));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">ref</span> <span class="keyword">readonly</span> ISOSDacVTable VTable =&gt; <span class="keyword">ref</span> Unsafe.AsRef&lt;ISOSDacVTable&gt;(_vtable);</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SOSDac</span>(<span class="params">DacLibrary lib, CallableCOMWrapper toClone</span>) : <span class="title">base</span>(<span class="params">toClone</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _library = lib;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> HResult <span class="title">GetOOMData</span>(<span class="params"><span class="keyword">out</span> DacOOMData oomData</span>)</span> =&gt; VTable.GetOOMStaticData(Self, <span class="keyword">out</span> oomData);</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> HResult <span class="title">GetOOMData</span>(<span class="params"><span class="keyword">ulong</span> address, <span class="keyword">out</span> DacOOMData oomData</span>)</span> =&gt; VTable.GetOOMData(Self, address, <span class="keyword">out</span> oomData);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>此类什么有用的事情都没做，都是调用 <code>VTable</code> 中的实现，而且其基类是 <code>CallableCOMWrapper</code>，可以大胆猜测此类是一个 <code>COM</code> 调用类，真正的实现在 <code>native</code> 层。是不是呢？到 <code>native</code> 层搜搜就知道了。</p>
+<h2 id="查看-clr-runtime-实现"><a href="#查看-clr-runtime-实现" class="headerlink" title="查看 clr runtime 实现"></a>查看 clr runtime 实现</h2><p>在  <code>native</code> 代码中搜索 <code>436f00f2-b42a-4b9f-870c-e73db66ae930</code>，可以在 <code>sospriv.h</code> 头文件中搜到。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">MIDL_INTERFACE(<span class="string">"436f00f2-b42a-4b9f-870c-e73db66ae930"</span>) <span class="comment">//&lt;---</span></span><br><span class="line">ISOSDacInterface : <span class="keyword">public</span> IUnknown</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> HRESULT STDMETHODCALLTYPE <span class="title">GetOOMData</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">        CLRDATA_ADDRESS oomAddr,</span></span></span><br><span class="line"><span class="function"><span class="params">        struct DacpOomData *data)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> HRESULT STDMETHODCALLTYPE <span class="title">GetOOMStaticData</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">        struct DacpOomData *data)</span> </span>= <span class="number">0</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>继续搜索 <code>ISOSDacInterface</code>，可以在 <code>daccess.cpp</code> 中找到使用的地方，对应的实现类是 <code>ClrDataAccess</code>。</p>
+<blockquote>
+<p><strong>说明：</strong> 对应的声明文件在 <code>D:\dotnet\runtime\src\coreclr\debug\daccess\dacimpl.h</code></p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//D:\dotnet\runtime\src\coreclr\debug\daccess\daccess.cpp</span></span><br><span class="line"></span><br><span class="line">STDMETHODIMP</span><br><span class="line">ClrDataAccess::QueryInterface(THIS_</span><br><span class="line">                              IN REFIID interfaceId,</span><br><span class="line">                              OUT PVOID* iface)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">void</span>* ifaceRet;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (IsEqualIID(interfaceId, IID_IUnknown) ||</span><br><span class="line">        IsEqualIID(interfaceId, __uuidof(IXCLRDataProcess)) ||</span><br><span class="line">        IsEqualIID(interfaceId, __uuidof(IXCLRDataProcess2)))</span><br><span class="line">    &#123;</span><br><span class="line">        ifaceRet = <span class="keyword">static_cast</span>&lt;IXCLRDataProcess2*&gt;(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (IsEqualIID(interfaceId, __uuidof(ICLRDataEnumMemoryRegions)))</span><br><span class="line">    &#123;</span><br><span class="line">        ifaceRet = <span class="keyword">static_cast</span>&lt;ICLRDataEnumMemoryRegions*&gt;(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (IsEqualIID(interfaceId, __uuidof(ISOSDacInterface))) <span class="comment">//&lt;---</span></span><br><span class="line">    &#123;</span><br><span class="line">        ifaceRet = <span class="keyword">static_cast</span>&lt;ISOSDacInterface*&gt;(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (IsEqualIID(interfaceId, __uuidof(ISOSDacInterface2)))</span><br><span class="line">    &#123;</span><br><span class="line">        ifaceRet = <span class="keyword">static_cast</span>&lt;ISOSDacInterface2*&gt;(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    </span><br><span class="line">    AddRef();</span><br><span class="line">    *iface = ifaceRet;</span><br><span class="line">    <span class="keyword">return</span> S_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以查看 <code>ClrDataAccess::GetOOMData()</code> 的具体实现，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//D:\dotnet\runtime\src\coreclr\debug\daccess\request.cpp</span></span><br><span class="line"></span><br><span class="line">HRESULT</span><br><span class="line">ClrDataAccess::GetOOMData(CLRDATA_ADDRESS oomAddr, struct DacpOomData *data)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (oomAddr == <span class="number">0</span> || data == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> E_INVALIDARG;</span><br><span class="line"></span><br><span class="line">    SOSDacEnter();</span><br><span class="line">    *data = &#123;&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!GCHeapUtilities::IsServerHeap())</span><br><span class="line">        hr = E_FAIL; <span class="comment">// doesn't make sense to call this on WKS mode</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> FEATURE_SVR_GC</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        hr = ServerOomData(oomAddr, data);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    _ASSERTE_MSG(<span class="literal">false</span>, <span class="string">"IsServerHeap returned true but FEATURE_SVR_GC not defined"</span>);</span><br><span class="line">    hr = E_NOTIMPL;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span> <span class="comment">//FEATURE_SVR_GC</span></span></span><br><span class="line"></span><br><span class="line">    SOSDacLeave();</span><br><span class="line">    <span class="keyword">return</span> hr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ClrDataAccess::ServerOomData()</code> 的实现如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//D:\dotnet\runtime\src\coreclr\debug\daccess\request_svr.cpp</span></span><br><span class="line">    </span><br><span class="line">HRESULT</span><br><span class="line">ClrDataAccess::ServerOomData(CLRDATA_ADDRESS addr, DacpOomData *oomData)</span><br><span class="line">&#123;</span><br><span class="line">    TADDR heapAddress = TO_TADDR(addr);</span><br><span class="line">    dac_gc_heap heap = LoadGcHeapData(heapAddress);</span><br><span class="line">    dac_gc_heap* pHeap = &amp;heap;</span><br><span class="line"></span><br><span class="line">    oom_history pOOMInfo = pHeap-&gt;oom_info;</span><br><span class="line">    oomData-&gt;reason = pOOMInfo.reason;</span><br><span class="line">    oomData-&gt;alloc_size = pOOMInfo.alloc_size;</span><br><span class="line">    oomData-&gt;available_pagefile_mb = pOOMInfo.available_pagefile_mb;</span><br><span class="line">    oomData-&gt;gc_index = pOOMInfo.gc_index;</span><br><span class="line">    oomData-&gt;fgm = pOOMInfo.fgm;</span><br><span class="line">    oomData-&gt;size = pOOMInfo.size;</span><br><span class="line">    oomData-&gt;loh_p = pOOMInfo.loh_p;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> S_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由以上代码可知，<code>oomData</code> 来自 <code>pHeap-&gt;oom_info</code>，看下 <code>oom_info</code> 的定义，如下</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//D:\dotnet\runtime\src\coreclr\gc\gcpriv.h</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">gc_heap</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    PER_HEAP_FIELD_DIAG_ONLY oom_history oom_info;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其类型是 <code>oom_history</code>，查看定义，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//D:\dotnet\runtime\src\coreclr\gc\gcinterface.dac.h</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Reasons why an OOM might occur, recorded in the oom_history</span></span><br><span class="line"><span class="comment">// struct below.</span></span><br><span class="line"><span class="keyword">enum</span> oom_reason</span><br><span class="line">&#123;</span><br><span class="line">    oom_no_failure = <span class="number">0</span>,</span><br><span class="line">    oom_budget = <span class="number">1</span>,</span><br><span class="line">    oom_cant_commit = <span class="number">2</span>,</span><br><span class="line">    oom_cant_reserve = <span class="number">3</span>,</span><br><span class="line">    oom_loh = <span class="number">4</span>,</span><br><span class="line">    oom_low_mem = <span class="number">5</span>,</span><br><span class="line">    oom_unproductive_full_gc = <span class="number">6</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/</span></span><br><span class="line"><span class="comment">/* If you modify failure_get_memory and         */</span></span><br><span class="line"><span class="comment">/* oom_reason be sure to make the corresponding */</span></span><br><span class="line"><span class="comment">/* changes in ClrMD.                            */</span></span><br><span class="line"><span class="comment">/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/</span></span><br><span class="line"><span class="keyword">enum</span> failure_get_memory</span><br><span class="line">&#123;</span><br><span class="line">    fgm_no_failure = <span class="number">0</span>,</span><br><span class="line">    fgm_reserve_segment = <span class="number">1</span>,</span><br><span class="line">    fgm_commit_segment_beg = <span class="number">2</span>,</span><br><span class="line">    fgm_commit_eph_segment = <span class="number">3</span>,</span><br><span class="line">    fgm_grow_table = <span class="number">4</span>,</span><br><span class="line">    fgm_commit_table = <span class="number">5</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// A record of the last OOM that occurred in the GC, with some</span></span><br><span class="line"><span class="comment">// additional information as to what triggered the OOM.</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">oom_history</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    oom_reason reason;</span><br><span class="line">    <span class="keyword">size_t</span> alloc_size;</span><br><span class="line">    <span class="keyword">uint8_t</span>* reserved;</span><br><span class="line">    <span class="keyword">uint8_t</span>* allocated;</span><br><span class="line">    <span class="keyword">size_t</span> gc_index;</span><br><span class="line">    failure_get_memory fgm;</span><br><span class="line">    <span class="keyword">size_t</span> size;</span><br><span class="line">    <span class="keyword">size_t</span> available_pagefile_mb;</span><br><span class="line">    BOOL loh_p;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>看到以上定义就太亲切了。根据目前了解到的信息，这个结构体应该是当发生 <code>OOM</code> 时，<code>runtime</code> 设置的结构体。可以在代码中搜索使用 <code>fgm_reserve_segment</code> 的地方，一共就搜到两处，一处是其定义的地方，一处是使用的地方，使用的代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">heap_segment*</span><br><span class="line">gc_heap::get_segment (<span class="keyword">size_t</span> size, gc_oh_num oh)</span><br><span class="line">&#123;</span><br><span class="line">    assert(oh != gc_oh_num::unknown);</span><br><span class="line">    BOOL uoh_p = (oh == gc_oh_num::loh) || (oh == gc_oh_num::poh);</span><br><span class="line">    <span class="keyword">if</span> (heap_hard_limit)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">    heap_segment* result = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (segment_standby_list != <span class="number">0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        result = segment_standby_list;</span><br><span class="line">        heap_segment* last = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (result)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">size_t</span> hs = (<span class="keyword">size_t</span>)(heap_segment_reserved (result) - (<span class="keyword">uint8_t</span>*)result);</span><br><span class="line">            <span class="keyword">if</span> ((hs &gt;= size) &amp;&amp; ((hs / <span class="number">2</span>) &lt; size))</span><br><span class="line">            &#123;</span><br><span class="line">                dprintf (<span class="number">2</span>, (<span class="string">"Hoarded segment %zx found"</span>, (<span class="keyword">size_t</span>) result));</span><br><span class="line">                <span class="keyword">if</span> (last)</span><br><span class="line">                &#123;</span><br><span class="line">                    heap_segment_next (last) = heap_segment_next (result);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">else</span></span><br><span class="line">                &#123;</span><br><span class="line">                    segment_standby_list = heap_segment_next (result);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                last = result;</span><br><span class="line">                result = heap_segment_next (result);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!result)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">void</span>* mem = virtual_alloc (size);</span><br><span class="line">        <span class="keyword">if</span> (!mem)</span><br><span class="line">        &#123;</span><br><span class="line">            fgm_result.set_fgm (fgm_reserve_segment, size, uoh_p); <span class="comment">//&lt;---</span></span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现，当 <code>virtual_alloc (size)</code> 的返回值是空时，会设置 <code>fgm_reserve_segment</code>。再看看 <code>virtual_alloc</code> 的实现，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">virtual_alloc</span> <span class="params">(<span class="keyword">size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> virtual_alloc(size, <span class="literal">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">virtual_alloc</span> <span class="params">(<span class="keyword">size_t</span> size, <span class="keyword">bool</span> use_large_pages_p, <span class="keyword">uint16_t</span> numa_node)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">size_t</span> requested_size = size;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((gc_heap::reserved_memory_limit - gc_heap::reserved_memory) &lt; requested_size)</span><br><span class="line">    &#123;</span><br><span class="line">        gc_heap::reserved_memory_limit =</span><br><span class="line">            GCScan::AskForMoreReservedMemory (gc_heap::reserved_memory_limit, requested_size);</span><br><span class="line">        <span class="keyword">if</span> ((gc_heap::reserved_memory_limit - gc_heap::reserved_memory) &lt; requested_size)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>; <span class="comment">//&lt;---</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">uint32_t</span> flags = VirtualReserveFlags::None;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP</span></span><br><span class="line">    <span class="keyword">if</span> (virtual_alloc_hardware_write_watch)</span><br><span class="line">    &#123;</span><br><span class="line">        flags = VirtualReserveFlags::WriteWatch;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span> <span class="comment">// !FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">//&lt;--- use_large_pages_p 是 false，会调用 GCToOSInterface::VirtualReserve</span></span><br><span class="line">    <span class="keyword">void</span>* prgmem = use_large_pages_p ?</span><br><span class="line">        GCToOSInterface::VirtualReserveAndCommitLargePages(requested_size, numa_node) :</span><br><span class="line">        GCToOSInterface::VirtualReserve(requested_size, card_size * card_word_width, flags, numa_node);</span><br><span class="line">    <span class="keyword">void</span> *aligned_mem = prgmem;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// We don't want (prgmem + size) to be right at the end of the address space</span></span><br><span class="line">    <span class="comment">// because we'd have to worry about that everytime we do (address + size).</span></span><br><span class="line">    <span class="comment">// We also want to make sure that we leave loh_size_threshold at the end</span></span><br><span class="line">    <span class="comment">// so we allocate a small object we don't need to worry about overflow there</span></span><br><span class="line">    <span class="comment">// when we do alloc_ptr+size.</span></span><br><span class="line">    <span class="keyword">if</span> (prgmem)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">uint8_t</span>* end_mem = (<span class="keyword">uint8_t</span>*)prgmem + requested_size;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> ((end_mem == <span class="number">0</span>) || ((<span class="keyword">size_t</span>)(MAX_PTR - end_mem) &lt;= END_SPACE_AFTER_GC))</span><br><span class="line">        &#123;</span><br><span class="line">            GCToOSInterface::VirtualRelease (prgmem, requested_size);</span><br><span class="line">            dprintf (<span class="number">2</span>, (<span class="string">"Virtual Alloc size %zd returned memory right against 4GB [%zx, %zx[ - discarding"</span>,</span><br><span class="line">                        requested_size, (<span class="keyword">size_t</span>)prgmem, (<span class="keyword">size_t</span>)((<span class="keyword">uint8_t</span>*)prgmem+requested_size)));</span><br><span class="line">            prgmem = <span class="number">0</span>;</span><br><span class="line">            aligned_mem = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (prgmem)</span><br><span class="line">    &#123;</span><br><span class="line">        gc_heap::reserved_memory += requested_size;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dprintf (<span class="number">2</span>, (<span class="string">"Virtual Alloc size %zd: [%zx, %zx["</span>,</span><br><span class="line">                 requested_size, (<span class="keyword">size_t</span>)prgmem, (<span class="keyword">size_t</span>)((<span class="keyword">uint8_t</span>*)prgmem+requested_size)));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> aligned_mem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上代码，一共有三个地方会导致返回空，第一处代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ((gc_heap::reserved_memory_limit - gc_heap::reserved_memory) &lt; requested_size)</span><br><span class="line">&#123;</span><br><span class="line">    gc_heap::reserved_memory_limit =</span><br><span class="line">        GCScan::AskForMoreReservedMemory (gc_heap::reserved_memory_limit, requested_size);</span><br><span class="line">    <span class="keyword">if</span> ((gc_heap::reserved_memory_limit - gc_heap::reserved_memory) &lt; requested_size)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>; <span class="comment">//&lt;---</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>大概逻辑是，如果<strong>保留内存限值</strong>（<code>gc_heap::reserved_memory_limit</code>）- <strong>已保留的内存</strong>（<code>gc_heap::reserved_memory</code>）小于 <strong>请求字节数</strong>（<code>requested_size</code>），就调用 <code>GCScan::AskForMoreReservedMemory()</code> 请求保留更多内存，该函数会返回新的限值。如果 <strong>新限值</strong> - <strong>已保留的内存</strong> 还是小于 <strong>请求字节数</strong> 就返回空。</p>
+<p>第二处代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span>* prgmem = use_large_pages_p ?</span><br><span class="line">        GCToOSInterface::VirtualReserveAndCommitLargePages(requested_size, numa_node) :</span><br><span class="line">        GCToOSInterface::VirtualReserve(requested_size, card_size * card_word_width, flags, numa_node);</span><br><span class="line">    <span class="keyword">void</span> *aligned_mem = prgmem;</span><br></pre></td></tr></table></figure>
+
+<p>由于，<code>use_large_pages_p</code> 是 <code>false</code>，会调用 <code>GCToOSInterface::VirtualReserve()</code>，该函数底层又会直接调用 <code>VirtualAlloc()</code>。</p>
+<p>第三处代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (prgmem)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">uint8_t</span>* end_mem = (<span class="keyword">uint8_t</span>*)prgmem + requested_size;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((end_mem == <span class="number">0</span>) || ((<span class="keyword">size_t</span>)(MAX_PTR - end_mem) &lt;= END_SPACE_AFTER_GC))</span><br><span class="line">    &#123;</span><br><span class="line">        GCToOSInterface::VirtualRelease (prgmem, requested_size);</span><br><span class="line">        dprintf (<span class="number">2</span>, (<span class="string">"Virtual Alloc size %zd returned memory right against 4GB [%zx, %zx[ - discarding"</span>,</span><br><span class="line">                     requested_size, (<span class="keyword">size_t</span>)prgmem, (<span class="keyword">size_t</span>)((<span class="keyword">uint8_t</span>*)prgmem+requested_size)));</span><br><span class="line">        prgmem = <span class="number">0</span>;</span><br><span class="line">        aligned_mem = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>MAX_PTR</code> 为最大的无符号整数，<code>end_mem</code> 是此次分配的内存段的结束位置，如果结束位置后面的空间不能容纳大对象堆，也返回空。</p>
+<p>至此，本次折腾就告一段路了，第一张图片中的报错信息，基本上是 <code>virtual_alloc</code> 失败导致的问题。为什么 <code>virtual_alloc</code> 会失败，我到现在也没想明白。因为只尝试保留内存空间，并没有进行提交，按理说在有足够大的空闲内存空间时，不应该失败才对。什么情况下 <code>VirtualAlloc()</code> 会失败，还望各位大牛不吝赐教！</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>再次强烈推荐一下 <code>FileLocator</code> 文件内容搜索神器，你值得拥有</li>
+<li></li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><code>.net</code> 源码</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/analyze-oom-and-dive-into-dotnet-source/" title="深入.NET Runtime：一次 OOM 异常的分析与源码追踪之旅">https://bianchengnan.github.io/articles/analyze-oom-and-dive-into-dotnet-source/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/源码/" rel="tag"><i class="fa fa-tag"></i> 源码</a>
+          
+            <a href="/tags/net/" rel="tag"><i class="fa fa-tag"></i> .net</a>
+          
+            <a href="/tags/OOM/" rel="tag"><i class="fa fa-tag"></i> OOM</a>
+          
+            <a href="/tags/clr/" rel="tag"><i class="fa fa-tag"></i> clr</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" rel="next" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">
+                <i class="fa fa-chevron-left"></i> 调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/troubleshoot-another-compile-error/" rel="prev" title="排错实战 | 当编译器" 吃掉"函数声明：一次由宏冲突引发的离奇编译错误">
+                排错实战 | 当编译器"吃掉"函数声明：一次由宏冲突引发的离奇编译错误 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#摘要"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">2.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下载源码"><span class="nav-number">3.</span> <span class="nav-text">下载源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#追踪-OOM-来源"><span class="nav-number">4.</span> <span class="nav-text">追踪 OOM 来源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看-clr-runtime-实现"><span class="nav-number">5.</span> <span class="nav-text">查看 clr runtime 实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

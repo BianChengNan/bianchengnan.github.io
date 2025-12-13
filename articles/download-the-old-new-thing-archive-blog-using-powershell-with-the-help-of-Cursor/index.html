@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,工具,cursor,AI,TheOldNewThing,脚本,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="缘起今天查资料的时候，偶然发现了一位国外网友镜像了 TheOleNewThing 从 2003 年到 2019 年的博文，竟然有 5000 多篇（真是高产）。值得注意的是，微软官方博客中许多链接都已经失效了。为了防止这位网友的镜像链接也失效，我决定赶紧将这些内容下载保存下来。手动保存显然不现实，毕竟有 5000 多篇文章呢！所以，我决定写脚本来自动下载，这才是明智之举！如果是几年前，我肯定要亲自动">
+<meta name="keywords" content="原,工具,cursor,AI,TheOldNewThing,脚本">
+<meta property="og:type" content="article">
+<meta property="og:title" content="感受 AI 的力量——利用 Cursor 自动生成 powershell 脚本下载 TheOldNewThing 博文">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="缘起今天查资料的时候，偶然发现了一位国外网友镜像了 TheOleNewThing 从 2003 年到 2019 年的博文，竟然有 5000 多篇（真是高产）。值得注意的是，微软官方博客中许多链接都已经失效了。为了防止这位网友的镜像链接也失效，我决定赶紧将这些内容下载保存下来。手动保存显然不现实，毕竟有 5000 多篇文章呢！所以，我决定写脚本来自动下载，这才是明智之举！如果是几年前，我肯定要亲自动">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.581Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="感受 AI 的力量——利用 Cursor 自动生成 powershell 脚本下载 TheOldNewThing 博文">
+<meta name="twitter:description" content="缘起今天查资料的时候，偶然发现了一位国外网友镜像了 TheOleNewThing 从 2003 年到 2019 年的博文，竟然有 5000 多篇（真是高产）。值得注意的是，微软官方博客中许多链接都已经失效了。为了防止这位网友的镜像链接也失效，我决定赶紧将这些内容下载保存下来。手动保存显然不现实，毕竟有 5000 多篇文章呢！所以，我决定写脚本来自动下载，这才是明智之举！如果是几年前，我肯定要亲自动">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>感受 AI 的力量——利用 Cursor 自动生成 powershell 脚本下载 TheOldNewThing 博文 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">感受 AI 的力量——利用 Cursor 自动生成 powershell 脚本下载 TheOldNewThing 博文</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-08-06T20:24:04+08:00">
+                2023-08-06
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/AI/" itemprop="url" rel="index">
+                    <span itemprop="name">AI</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>今天查资料的时候，偶然发现了一位国外网友镜像了 <code>TheOleNewThing</code> 从 <code>2003</code> 年到 <code>2019</code> 年的<a href="https://bytepointer.com/resources/old_new_thing/index.htm" target="_blank" rel="noopener">博文</a>，竟然有 <code>5000</code> 多篇（真是高产）。值得注意的是，微软官方博客中许多链接都已经失效了。为了防止这位网友的镜像链接也失效，我决定赶紧将这些内容下载保存下来。手动保存显然不现实，毕竟有 <code>5000</code> 多篇文章呢！所以，我决定写脚本来自动下载，这才是明智之举！如果是几年前，我肯定要亲自动手写脚本，不过如今，<code>AI</code> 这么强大，我无需再费力。幸运的是，我利用 <a href="https://www.cursor.so/" target="_blank" rel="noopener">Cursor</a> 自动生成下载脚本的全过程，并对其进行了简单的修改，成功地将全部 <code>5000</code> 多篇文章下载并压缩存档，并按年月分类打包好了！不得不赞叹一句，<code>AI</code> 真是太强大了。</p>
+<a id="more"></a>
+
+
+
+<h2 id="下载地址"><a href="#下载地址" class="headerlink" title="下载地址"></a>下载地址</h2><p>所有文章已经按年压缩，感兴趣的朋友可以自行下载。</p>
+<p>百度云盘：<a href="https://pan.baidu.com/s/1gGx7mvLsumbtzoQbatPsfw?pwd=dbqt" target="_blank" rel="noopener">https://pan.baidu.com/s/1gGx7mvLsumbtzoQbatPsfw?pwd=dbqt</a> 提取码: dbqt</p>
+<p><code>gitee</code>:</p>
+<p><a href="https://gitee.com/bianchengnan/my-blog/tree/master/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor" target="_blank" rel="noopener">https://gitee.com/bianchengnan/my-blog/tree/master/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor</a></p>
+<p><code>github:</code></p>
+<p><a href="https://github.com/BianChengNan/MyBlogStuff/tree/master/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor" target="_blank" rel="noopener">https://github.com/BianChengNan/MyBlogStuff/tree/master/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor</a></p>
+<blockquote>
+<p><strong>注：</strong> 所有文章版权归原作者所有，我只是为了防止失联，转存一份。侵删！</p>
+</blockquote>
+<h2 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h2><p>Q:</p>
+<p>download url and save to disk and then parse inner urls and then save these urls to disk</p>
+<p>A:</p>
+<p>To download a URL, save it to disk, parse inner URLs, and then save these URLs to disk in PowerShell, you can use the Invoke-WebRequest cmdlet to download the webpage, Out-File cmdlet to save it to disk, and then use a regular expression to parse the inner URLs. Here is a simple example:</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Define the URL</span></span><br><span class="line"><span class="variable">$url</span> = <span class="string">"http://example.com"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Define the output file for the webpage</span></span><br><span class="line"><span class="variable">$outfile</span> = <span class="string">"output.html"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Define the output file for the inner URLs</span></span><br><span class="line"><span class="variable">$urlfile</span> = <span class="string">"urls.txt"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Download the webpage and save to disk</span></span><br><span class="line"><span class="built_in">Invoke-WebRequest</span> -Uri <span class="variable">$url</span> -OutFile <span class="variable">$outfile</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Read the saved file</span></span><br><span class="line"><span class="variable">$content</span> = <span class="built_in">Get-Content</span> -Path <span class="variable">$outfile</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Parse the inner URLs</span></span><br><span class="line"><span class="variable">$innerUrls</span> = <span class="variable">$content</span> | <span class="built_in">Where-Object</span> &#123; <span class="variable">$_</span> <span class="nomarkup">-match</span> <span class="string">"(http|https)://[a-zA-Z0-9\-\.]+\.[a-zA-Z]&#123;2,3&#125;(/\S*)?"</span> &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Save the inner URLs to disk</span></span><br><span class="line"><span class="variable">$innerUrls</span> | <span class="built_in">Out-File</span> -FilePath <span class="variable">$urlfile</span></span><br></pre></td></tr></table></figure>
+
+<p>This script will download the webpage, save it to output.html, read the saved file, parse the inner URLs, and then save these URLs to urls.txt. You can adjust the regular expression in the Where-Object cmdlet to match the URLs you are interested in.</p>
+<blockquote>
+<p><strong>画外音：</strong> 我发现解析出来的内部 <code>urls</code> 不太对，于是查看了原始网页中的链接形式，又对 <code>Cursor</code> 提出了进一步的要求，这次是用中文提的。</p>
+</blockquote>
+<p>Q:</p>
+<p>解析匹配 <code>href=&quot;xxx&quot;</code> 模式的字符串。</p>
+<p>A:</p>
+<p>要在 <code>PowerShell</code> 中下载 <code>URL</code>，将其保存到磁盘，然后解析内部 <code>URL</code>，并将这些 <code>URL</code> 保存到磁盘，您可以使用 <code>Invoke-WebRequest cmdlet</code> 下载网页，使用 <code>Out-File cmdlet</code> 将其保存到磁盘，然后使用正则表达式解析内部 <code>URL</code>。以下是一个简单的示例：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 省略 N 行</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析内部 URL</span></span><br><span class="line"><span class="variable">$innerUrls</span> = <span class="variable">$content</span> | <span class="built_in">Where-Object</span> &#123; <span class="variable">$_</span> <span class="nomarkup">-match</span> <span class="string">'href="([^"]*)"'</span> &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 保存内部 URL 到磁盘</span></span><br><span class="line"><span class="variable">$innerUrls</span> | <span class="built_in">Out-File</span> -FilePath <span class="variable">$urlfile</span></span><br></pre></td></tr></table></figure>
+
+<p>此脚本将下载网页，将其保存到 <code>output.html</code>，读取保存的文件，解析内部 <code>URL</code>，然后将这些 <code>URL</code> 保存到 <code>urls.txt</code>。您可以调整 <code>Where-Object cmdlet</code> 中的正则表达式以匹配您感兴趣的 <code>URL</code>。</p>
+<blockquote>
+<p><strong>画外音：</strong> 非常不错，可以记住上下文。</p>
+</blockquote>
+<p>Q:</p>
+<p>解析内部 <code>url</code> 的语句有问题，没有只保存 <code>href=&quot;&quot;</code> 内部的内容</p>
+<p>A:</p>
+<p>对不起，我之前的回答中的正则表达式确实有误。我们应该使用一个捕获组来只获取 <code>href=&quot;&quot;</code> 内部的内容。以下是修正后的代码：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 省略 N 行</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析内部 URL</span></span><br><span class="line"><span class="variable">$innerUrls</span> = <span class="variable">$content</span> | <span class="built_in">Select-String</span> -Pattern <span class="string">'href="([^"]*)"'</span> -AllMatches | % &#123; <span class="variable">$_</span>.Matches &#125; | % &#123; <span class="variable">$_</span>.Groups[<span class="number">1</span>].Value &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 保存内部 URL 到磁盘</span></span><br><span class="line"><span class="variable">$innerUrls</span> | <span class="built_in">Out-File</span> -FilePath <span class="variable">$urlfile</span></span><br></pre></td></tr></table></figure>
+
+<p>这段脚本将下载网页，将其保存到 <code>output.html</code>，读取保存的文件，解析内部 <code>URL</code>，然后将这些 <code>URL</code> 保存到 <code>urls.txt</code>。<code>Select-String cmdlet</code> 中的正则表达式已经被修改，现在它只会匹配 <code>href=&quot;&quot;</code> 内部的内容。</p>
+<blockquote>
+<p><strong>画外音：</strong> 看了生成的内容，已经无限接近最终想要的结果了，但是没想到居然写了 <code>5000</code> 多篇文章，手动拼接网址还是需要操作一会的。于是继续优化脚本。</p>
+</blockquote>
+<p>Q:</p>
+<p>需要在解析出来的 url 前加上前缀 <a href="https://bytepointer.com/resources/old_new_thing/" target="_blank" rel="noopener">https://bytepointer.com/resources/old_new_thing/</a> 再保存</p>
+<p>A:</p>
+<p>在解析出来的 <code>URL</code> 前加上前缀并保存的 <code>PowerShell</code> 代码如下：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 省略 N 行</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加前缀</span></span><br><span class="line"><span class="variable">$prefix</span> = <span class="string">"https://bytepointer.com/resources/old_new_thing/"</span></span><br><span class="line"><span class="variable">$innerUrls</span> = <span class="variable">$innerUrls</span> | <span class="built_in">ForEach-Object</span> &#123; <span class="variable">$prefix</span> + <span class="variable">$_</span> &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 保存内部 URL 到磁盘</span></span><br><span class="line"><span class="variable">$innerUrls</span> | <span class="built_in">Out-File</span> -FilePath <span class="variable">$urlfile</span></span><br></pre></td></tr></table></figure>
+
+<p>这段脚本将下载网页，将其保存到 <code>output.html</code>，读取保存的文件，解析内部 <code>URL</code>，然后在每个 <code>URL</code> 前添加前缀，最后将这些 <code>URL</code> 保存到 <code>urls.txt</code>。</p>
+<p>至此，已经把需要下载的 <code>url</code> 保存到了 <code>urls.txt</code>。接下来就要写脚本下载这些 <code>url</code> 了。最终载脚本如下：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义 URL</span></span><br><span class="line"><span class="variable">$url</span> = <span class="string">"https://bytepointer.com/resources/old_new_thing/index.htm"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义网页的输出文件</span></span><br><span class="line"><span class="variable">$outfile</span> = <span class="string">"output.html"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义内部 URL 的输出文件</span></span><br><span class="line"><span class="variable">$urlfile</span> = <span class="string">"urls.txt"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 下载网页并保存到磁盘</span></span><br><span class="line"><span class="built_in">Invoke-WebRequest</span> -Uri <span class="variable">$url</span> -OutFile <span class="variable">$outfile</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 读取保存的文件</span></span><br><span class="line"><span class="variable">$content</span> = <span class="built_in">Get-Content</span> -Path <span class="variable">$outfile</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析内部 URL</span></span><br><span class="line"><span class="variable">$innerUrls</span> = <span class="variable">$content</span> | <span class="built_in">Select-String</span> -Pattern <span class="string">'href="([^"]*)"'</span> -AllMatches | % &#123; <span class="variable">$_</span>.Matches &#125; | % &#123; <span class="variable">$_</span>.Groups[<span class="number">1</span>].Value &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加前缀</span></span><br><span class="line"><span class="variable">$prefix</span> = <span class="string">"https://bytepointer.com/resources/old_new_thing/"</span></span><br><span class="line"><span class="variable">$innerUrls</span> = <span class="variable">$innerUrls</span> | <span class="built_in">ForEach-Object</span> &#123; <span class="variable">$prefix</span> + <span class="variable">$_</span> &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 保存内部 URL 到磁盘</span></span><br><span class="line"><span class="variable">$innerUrls</span> | <span class="built_in">Out-File</span> -FilePath <span class="variable">$urlfile</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="解析-url-并下载"><a href="#解析-url-并下载" class="headerlink" title="解析 url 并下载"></a>解析 url 并下载</h2><p>Q:</p>
+<p>遍历 <code>urls.txt</code> 并下载里面的每个 <code>url</code>，如果下载失败需要有提示，并且记录下载的位置。</p>
+<p>A:</p>
+<p>在 <code>PowerShell</code> 中，你可以使用 <code>Invoke-WebRequest cmdlet</code> 来下载 <code>URL</code>，并使用 <code>try/catch</code> 语句来处理可能的错误。以下是一个简单的示例：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义 URL 文件</span></span><br><span class="line"><span class="variable">$urlfile</span> = <span class="string">"urls.txt"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 读取 URL 文件</span></span><br><span class="line"><span class="variable">$urls</span> = <span class="built_in">Get-Content</span> -Path <span class="variable">$urlfile</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 遍历每个 URL</span></span><br><span class="line"><span class="keyword">foreach</span> (<span class="variable">$url</span> <span class="keyword">in</span> <span class="variable">$urls</span>) &#123;</span><br><span class="line">  <span class="comment"># 定义输出文件</span></span><br><span class="line">  <span class="variable">$outfile</span> = <span class="string">"downloaded_"</span> + [System.IO.Path]::GetFileName(<span class="variable">$url</span>)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment"># 下载 URL 并保存到磁盘</span></span><br><span class="line">    <span class="built_in">Invoke-WebRequest</span> -Uri <span class="variable">$url</span> -OutFile <span class="variable">$outfile</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 打印下载的位置</span></span><br><span class="line">    <span class="built_in">Write-Output</span> <span class="string">"Downloaded <span class="variable">$url</span> to <span class="variable">$outfile</span>"</span></span><br><span class="line">  &#125; catch &#123;</span><br><span class="line">    <span class="comment"># 如果下载失败，打印错误信息</span></span><br><span class="line">    <span class="built_in">Write-Output</span> <span class="string">"Failed to download <span class="variable">$url:</span> <span class="variable">$_</span>"</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段脚本将读取 <code>urls.txt</code> 文件中的每个 <code>URL</code>，然后尝试下载每个 <code>URL</code> 并保存到磁盘。如果下载失败，它将打印一个错误信息。下载成功的文件将被保存为 <code>&quot;downloaded_&quot;</code> 加上原始文件名。</p>
+<blockquote>
+<p><strong>画外音：</strong></p>
+<ol>
+<li>最后面的 <code>Write-Output &quot;Failed to download $url: $_&quot;</code> 会报错，需要在 <code>$url</code> 与 <code>:</code> 之间加空格。</li>
+<li>保存的文件名我去掉了 <code>downloaded_</code> 前缀，而是保存到了 <code>d:/downloaded/</code> 目录下。</li>
+</ol>
+</blockquote>
+<p>因为文件数量太多，全部放到一个目录下会比较乱，于是想着按年月进行分组整理。</p>
+<h2 id="按年月分组"><a href="#按年月分组" class="headerlink" title="按年月分组"></a>按年月分组</h2><p>Q: </p>
+<p>遍历文件夹中的文件，文件名前 <code>8</code> 个字符是年月日，比如 <code>20030722_001_why_do_you_have_to_click_the_start_button_to_shut_down.html</code>。从中提取出年份，月份，并且根据年份创建文件夹，然后根据月份创建子文件夹，并把对应的文件放到新建的文件夹中。</p>
+<p>A:</p>
+<p>这是一个 <code>PowerShell</code> 脚本的示例，它可以遍历文件夹中的文件，提取文件名前 <code>8</code> 个字符作为年份和月份，然后根据年份创建文件夹，根据月份创建子文件夹，并将对应的文件移动到新建的文件夹中。</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sourceDir</span> = <span class="string">"C:\path\to\your\source\directory"</span> <span class="comment"># 源文件夹路径</span></span><br><span class="line"></span><br><span class="line"><span class="variable">$destDir</span> = <span class="string">"C:\path\to\your\destination\directory"</span> <span class="comment"># 目标文件夹路径</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">Get-ChildItem</span> <span class="variable">$sourceDir</span> -File | <span class="built_in">ForEach-Object</span> &#123;</span><br><span class="line">  <span class="variable">$year</span> = <span class="variable">$_</span>.Name.Substring(<span class="number">0</span>, <span class="number">4</span>) <span class="comment"># 提取年份</span></span><br><span class="line">  <span class="variable">$month</span> = <span class="variable">$_</span>.Name.Substring(<span class="number">4</span>, <span class="number">2</span>) <span class="comment"># 提取月份</span></span><br><span class="line">  <span class="variable">$newDir</span> = <span class="built_in">Join-Path</span> -Path <span class="variable">$destDir</span> -ChildPath <span class="variable">$year</span> -AdditionalChildPath <span class="variable">$month</span> <span class="comment"># 新文件夹路径</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!(<span class="built_in">Test-Path</span> <span class="variable">$newDir</span>)) &#123; <span class="comment"># 如果文件夹不存在，则创建</span></span><br><span class="line">  <span class="built_in">New-Item</span> -ItemType Directory -Path <span class="variable">$newDir</span> | <span class="built_in">Out-Null</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">Move-Item</span> -Path <span class="variable">$_</span>.FullName -Destination <span class="variable">$newDir</span> <span class="comment"># 移动文件到新文件夹</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>请将 <code>$sourceDir</code> 和 <code>$destDir</code> 替换为你的实际路径。这个脚本会遍历 <code>$sourceDir</code> 中的所有文件，提取文件名前 <code>4</code> 个字符作为年份，接着的 <code>2</code> 个字符作为月份，然后在 <code>$destDir</code> 中创建一个以年份命名的新文件夹，再在该文件夹下创建以月份命名的子文件夹，并将文件移动到新文件夹中。如果新文件夹已经存在，它将不会再次创建。</p>
+<blockquote>
+<p><strong>画外音：</strong> <code>-AdditionalChildPath</code> 好像不是一个合法的选项，是 <code>AI</code> 自己臆想出来的。于是手动修改代码如下：</p>
+<p><code>$newDir = Join-Path -Path $destDir -ChildPath $year</code></p>
+<p><code>$newDir = Join-Path -Path $newDir -ChildPath $month</code></p>
+</blockquote>
+<h2 id="压缩"><a href="#压缩" class="headerlink" title="压缩"></a>压缩</h2><p>Q:</p>
+<p>遍历文件夹，并压缩</p>
+<p>A:</p>
+<p>你可以使用 <code>PowerShell</code> 的 <code>Compress-Archive</code> 命令来遍历文件夹并压缩文件。以下是一个示例：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$sourceDir</span> = <span class="string">"C:\path\to\your\source\directory"</span> <span class="comment"># 源文件夹路径</span></span><br><span class="line"><span class="variable">$destDir</span> = <span class="string">"C:\path\to\your\destination\directory"</span> <span class="comment"># 目标文件夹路径</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">Get-ChildItem</span> <span class="variable">$sourceDir</span> -Recurse | <span class="built_in">ForEach-Object</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable">$_</span>.PSIsContainer) &#123;</span><br><span class="line">    <span class="variable">$zipFilePath</span> = <span class="built_in">Join-Path</span> -Path <span class="variable">$destDir</span> -ChildPath (<span class="variable">$_</span>.Name + <span class="string">".zip"</span>) <span class="comment"># 压缩文件路径</span></span><br><span class="line">    <span class="built_in">Compress-Archive</span> -Path <span class="variable">$_</span>.FullName -DestinationPath <span class="variable">$zipFilePath</span> <span class="comment"># 压缩文件夹</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>请将 <code>$sourceDir</code> 和 <code>$destDir</code> 替换为你的实际路径。这个脚本会遍历 <code>$sourceDir</code> 中的所有文件和文件夹，如果是文件夹，就将其压缩为 <code>.zip</code> 文件，并保存到 <code>$destDir</code> 中。</p>
+<blockquote>
+<p><strong>画外音：</strong> 实际上我并不需要递归处理，去掉 <code>-Recurse</code> 选项即可。</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>整个过程很舒服，基本上没写一行代码，只是做了一些改动及细节微调。就把整个功能实现了。整个过程不到 <code>20</code> 分钟。</p>
+<p>关于 <code>Cursor</code> 的用法，也很简单，网上随便一搜就能搜到。<code>ctrl+L</code> 即可开启魔法！</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor/" title="感受 AI 的力量——利用 Cursor 自动生成 powershell 脚本下载 TheOldNewThing 博文">https://bianchengnan.github.io/articles/download-the-old-new-thing-archive-blog-using-powershell-with-the-help-of-Cursor/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/工具/" rel="tag"><i class="fa fa-tag"></i> 工具</a>
+          
+            <a href="/tags/cursor/" rel="tag"><i class="fa fa-tag"></i> cursor</a>
+          
+            <a href="/tags/AI/" rel="tag"><i class="fa fa-tag"></i> AI</a>
+          
+            <a href="/tags/TheOldNewThing/" rel="tag"><i class="fa fa-tag"></i> TheOldNewThing</a>
+          
+            <a href="/tags/脚本/" rel="tag"><i class="fa fa-tag"></i> 脚本</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/translation-windbg-the-fun-way-part2/" rel="next" title="难译 | windbg 乐趣之道（下）">
+                <i class="fa fa-chevron-left"></i> 难译 | windbg 乐趣之道（下）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/find-the-right-exception-context-in-x64-dump/" rel="prev" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">
+                如何快速从 64 位转储文件中找到异常发生时的线程上下文 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">1.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下载地址"><span class="nav-number">2.</span> <span class="nav-text">下载地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下载"><span class="nav-number">3.</span> <span class="nav-text">下载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解析-url-并下载"><span class="nav-number">4.</span> <span class="nav-text">解析 url 并下载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#按年月分组"><span class="nav-number">5.</span> <span class="nav-text">按年月分组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#压缩"><span class="nav-number">6.</span> <span class="nav-text">压缩</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

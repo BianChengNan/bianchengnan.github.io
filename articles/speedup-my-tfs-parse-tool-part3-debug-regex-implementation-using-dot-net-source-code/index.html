@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,工具,性能优化,dotNET,regex,正则表达式,perfview,part3,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言前两篇文章 part1 和 part2 基本上理清了 IsSplitter() 运行缓慢的原因 —— 在函数内部使用了带 Compile 选项的正则表达式。 但是没想到在 IsSplitter() 内部使用不带 Compiled 选项的正则表达式，整个程序运行起来非常快，跟静态函数版本的运行速度不相上下。又有了如下疑问：  为什么使用不带 Compiled 选项实例化的 Regex 速度会这么">
+<meta name="keywords" content="原,总结,工具,性能优化,dotNET,regex,正则表达式,perfview,part3">
+<meta property="og:type" content="article">
+<meta property="og:title" content="性能优化 | 记一次 .NET 程序的性能优化实战（3）—— 深入 .NET 源码">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言前两篇文章 part1 和 part2 基本上理清了 IsSplitter() 运行缓慢的原因 —— 在函数内部使用了带 Compile 选项的正则表达式。 但是没想到在 IsSplitter() 内部使用不带 Compiled 选项的正则表达式，整个程序运行起来非常快，跟静态函数版本的运行速度不相上下。又有了如下疑问：  为什么使用不带 Compiled 选项实例化的 Regex 速度会这么">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/view-no-compiled-option-events.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/view-filter-event-with-etwlogger.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/view-global-regex-events.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/class-relationship-and-call-sequence.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/compiled-regex-constructor.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/MatchCollection-count-dynamic-FindFirstChar.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/MatchCollection-count-none-dynamic-FindFirstChar.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/runner.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.715Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="性能优化 | 记一次 .NET 程序的性能优化实战（3）—— 深入 .NET 源码">
+<meta name="twitter:description" content="前言前两篇文章 part1 和 part2 基本上理清了 IsSplitter() 运行缓慢的原因 —— 在函数内部使用了带 Compile 选项的正则表达式。 但是没想到在 IsSplitter() 内部使用不带 Compiled 选项的正则表达式，整个程序运行起来非常快，跟静态函数版本的运行速度不相上下。又有了如下疑问：  为什么使用不带 Compiled 选项实例化的 Regex 速度会这么">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/view-no-compiled-option-events.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>性能优化 | 记一次 .NET 程序的性能优化实战（3）—— 深入 .NET 源码 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">性能优化 | 记一次 .NET 程序的性能优化实战（3）—— 深入 .NET 源码</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-12-26T21:10:33+08:00">
+                2021-12-26
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/性能优化/" itemprop="url" rel="index">
+                    <span itemprop="name">性能优化</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前两篇文章 <a href="https://bianchengnan.github.io/articles/speedup-my-tfs-parse-tool-part1-findout-the-slowest-function-using-process-explorer/">part1</a> 和 <a href="https://bianchengnan.github.io/articles/speedup-my-tfs-parse-tool-part2-findout-why-dot-net-regex-so-show/">part2</a> 基本上理清了 <code>IsSplitter()</code> 运行缓慢的原因 —— 在函数内部使用了带 <code>Compile</code> 选项的正则表达式。</p>
+<p>但是没想到在 <code>IsSplitter()</code> 内部使用不带 <code>Compiled</code> 选项的正则表达式，整个程序运行起来非常快，跟静态函数版本的运行速度不相上下。又有了如下疑问：</p>
+<ol>
+<li>为什么使用不带 <code>Compiled</code> 选项实例化的 <code>Regex</code> 速度会这么快？</li>
+<li>为什么把  <code>Regex</code> 变量从局部改成全局变量后运行速度有了极大提升？除了避免重复实例化，还有哪些提升？</li>
+<li>为什么 <code>PerfView</code> 收集到的采样数据，大部分发生在 <code>MatchCollections.Count</code> 内部，极少发生在 <code>Regex</code> 的构造函数内部？（使用带 <code>Compiled</code> 选项的正则表达式的时候）</li>
+<li><code>Regex.IsMatch()</code> 是如何使用缓存的？</li>
+<li>直接实例化的 <code>Regex</code> 对象会使用正则表达式引擎内部的缓存吗？</li>
+<li>正则表达式引擎内部根据什么缓存的？</li>
+<li>什么时候会生成动态方法？生成的动态方法是在哪里调用的？</li>
+</ol>
+<p>本文会继续使用 <code>Perfview</code> 抓取一些关键数据进行分析，有些疑问需要到 <code>.NET</code> 源码中寻找答案。在查看代码的过程中，发现有些逻辑单纯看源码不太容易理解，于是又调试跟踪了 <code>.NET</code> 中正则表达式相关源码。由于篇幅原因，本篇不会介绍如何下载 <code>.NET</code> 源码，如何调试 <code>.NET</code> 源码的方法。但是会单独写一篇简单的介绍文章 。</p>
+<a id="more"></a>
+
+
+
+<h2 id="解惑"><a href="#解惑" class="headerlink" title="解惑"></a>解惑</h2><ol>
+<li><p><strong>为什么使用不带 <code>Compiled</code> 选项实例化的 <code>Regex</code> 速度会这么快？</strong></p>
+<p>还是使用 <code>PerfView</code> 采集性能数据并分析，如下图：<img src="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/view-no-compiled-option-events.png" alt></p>
+<p>可以发现， <code>IsSplitter()</code> 函数只在第一次被调用时发生了一次 <code>JIT</code>，后续调用耗时不到 <code>0.1ms</code>（图中最后一次调用耗时：<code>4090.629-4090.597 = 0.032ms</code>）。</p>
+<p>使用带 <code>Compiled</code> 选项实例化的 <code>Regex</code> 的 <code>IsSplitter()</code> 函数，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/view-filter-event-with-etwlogger.png" alt="view-filter-event-with-etwlogger"></p>
+<p>每次调用大概要消耗 <code>11ms</code> （<code>5616.375 - 5604.637 = 11.738 ms</code>）。</p>
+</li>
+</ol>
+<p>   至于为什么不带 <code>Compiled</code> 选项的正则表达式在调用过程中没有多余的 <code>JIT</code>，与<strong>疑问7</strong>一起到源码中找答案。</p>
+<ol start="2">
+<li><p><strong>为什么把  <code>Regex</code> 变量从局部改成全局变量后运行速度有了极大提升？除了避免重复实例化，还有哪些提升？</strong></p>
+<p>修改代码，把局部变量改成全局变量，编译。再次使用 <code>PerfView</code> 采集性能数据并分析，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/view-global-regex-events.png" alt></p>
+<p>可以发现与使用不带 <code>Compiled</code> 选项的局部变量版本一样，只发生了一次 <code>JIT</code>。所以把局部变量改成全局变量后，除了避免了重复实例化的开销（很小），更重要的是避免了多余的 <code>JIT</code> 操作。</p>
+</li>
+</ol>
+<ol start="3">
+<li><p><strong>为什么 <code>PerfView</code> 收集到的采样数据，大部分发生在 <code>MatchCollections.Count</code> 内部，极少发生在 <code>Regex</code> 的构造函数内部？（使用带 <code>Compiled</code> 选项的正则表达式的时候）</strong></p>
+<p><code>Regex</code> 构造函数只被 <code>JIT</code> 了一次，后面的调用都是在执行原生代码，执行速度非常快。而 <code>MatchCollections.Count</code> 每次执行的时候都需要执行 <code>JIT</code>（每次都需要 <code>10ms</code> 以 上），所以大部分数据在 <code>MatchCollections.Count</code> 内部，是非常合理的。</p>
+</li>
+</ol>
+<ol start="4">
+<li><p><strong><code>Regex.IsMatch()</code> 是如何使用缓存的？</strong></p>
+<p><code>Regex.IsMatch()</code> 有很多重载版本，最后都会调用下面的版本：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">IsMatch</span>(<span class="params">String input, String pattern, RegexOptions options, TimeSpan matchTimeout</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> Regex(pattern, options, matchTimeout, <span class="literal">true</span>).IsMatch(input);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该函数会在内部构造一个临时的 <code>Regex</code> 对象，并且构造函数的最后一个参数 <code>useCaChe</code> 的值是 <code>true</code>，表示使用缓存。</p>
+</li>
+</ol>
+<p><strong>疑问5</strong> 和 <strong>疑问6</strong> 的答案在 <code>Regex</code> 的构造函数中，先看看 <code>Regex</code> 的构造函数。</p>
+<h2 id="Regex-构造函数"><a href="#Regex-构造函数" class="headerlink" title="Regex 构造函数"></a>Regex 构造函数</h2><p><code>Regex</code> 有很多个构造函数，列举如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Regex</span>(<span class="params">String pattern</span>)</span></span><br><span class="line"><span class="function">  : <span class="title">this</span>(<span class="params">pattern, RegexOptions.None, DefaultMatchTimeout, <span class="literal">false</span></span>)</span> &#123;&#125;</span><br><span class="line">  </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Regex</span>(<span class="params">String pattern, RegexOptions options</span>)</span></span><br><span class="line"><span class="function">  : <span class="title">this</span>(<span class="params">pattern, options, DefaultMatchTimeout, <span class="literal">false</span></span>)</span> &#123;&#125;</span><br><span class="line">        </span><br><span class="line">Regex(String pattern, RegexOptions options, TimeSpan matchTimeout)</span><br><span class="line">  : <span class="keyword">this</span>(pattern, options, matchTimeout, <span class="literal">false</span>) &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>注意：</strong> 以上构造函数的最后一个参数都是 <code>false</code>，表示不使用缓存。</p>
+</blockquote>
+<p>这些构造函数最后都会调用下面的<strong>私有</strong>构造函数（代码有所精简调整）：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">Regex</span>(<span class="params">String pattern, RegexOptions options, TimeSpan matchTimeout, <span class="keyword">bool</span> useCache</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">string</span> cultureKey = <span class="literal">null</span>;</span><br><span class="line">  <span class="keyword">if</span> ((options &amp; RegexOptions.CultureInvariant) != <span class="number">0</span>)</span><br><span class="line">      cultureKey = CultureInfo.InvariantCulture.ToString(); <span class="comment">// "English (United States)"</span></span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">      cultureKey = CultureInfo.CurrentCulture.ToString();</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 构造缓存用到的 key，包含 options，culture 和 pattern</span></span><br><span class="line">  String key = ((<span class="keyword">int</span>) options).ToString(NumberFormatInfo.InvariantInfo) + <span class="string">":"</span> + cultureKey + <span class="string">":"</span> + pattern;</span><br><span class="line">  CachedCodeEntry cached = LookupCachedAndUpdate(key);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">this</span>.pattern = pattern;</span><br><span class="line">  <span class="keyword">this</span>.roptions = options;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (cached == <span class="literal">null</span>) &#123;</span><br><span class="line">      <span class="comment">// 如果没找到缓存就生成类型为 RegexCodes 的 code，包含了字节码等信息</span></span><br><span class="line">      RegexTree tree = RegexParser.Parse(pattern, roptions);</span><br><span class="line">      code = RegexWriter.Write(tree);</span><br><span class="line">      <span class="comment">// 如果指定了 useCache 参数就缓存起来，下次就能在缓存中找到了</span></span><br><span class="line">      <span class="keyword">if</span> (useCache)</span><br><span class="line">          cached = CacheCode(key);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 如果找到了缓存就使用缓存中的信息</span></span><br><span class="line">      code       = cached._code;</span><br><span class="line">      factory    = cached._factory;</span><br><span class="line">      runnerref  = cached._runnerref;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 如果指定了 Compiled 选项，并且 factory 是空（没使用缓存，或者缓存中的 _factory 是空）</span></span><br><span class="line">  <span class="keyword">if</span> (UseOptionC() &amp;&amp; factory == <span class="literal">null</span>) &#123;</span><br><span class="line">      <span class="comment">// 根据 code 和 roptions 生成 factory</span></span><br><span class="line">      factory = Compile(code, roptions);</span><br><span class="line">  </span><br><span class="line">      <span class="comment">// 需要缓存就缓存起来</span></span><br><span class="line">      <span class="keyword">if</span> (useCache &amp;&amp; cached != <span class="literal">null</span>)</span><br><span class="line">          cached.AddCompiled(factory);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>注意：</strong> 带 <code>bool useCache</code> 标记的构造函数是私有的，也就是说不能直接使用此构造函数实例化 <code>Regex</code>。 </p>
+</blockquote>
+<p>首先会根据 <code>option + culture + pattern</code> 到缓存中查找。如果没找到缓存就生成类型为 <code>RegexCodes</code> 的 <code>code</code>（包含了字节码等信息），如果找到了缓存就使用缓存中的信息。 如果指定了 <code>Compiled</code> 选项（<code>UseOptionC()</code> 会返回 <code>true</code>），并且 <code>factory</code> 是空（没使用缓存或者缓存中的 <code>_factory</code> 是空），就会执行 <code>Compile()</code> 函数，并把返回值保存到 <code>factory</code> 成员中。</p>
+<p>至此，可以回答第 <code>5 6</code> 两个疑问了。</p>
+<ol start="5">
+<li><p><strong>直接实例化的 <code>Regex</code> 对象会使用正则表达式引擎内部的缓存吗？</strong></p>
+<p>会优先根据 <code>option + culture + pattern</code> 到缓存中<strong>查找</strong>，但是否<strong>更新缓存</strong>是由最后一个参数 <code>useCache</code> 决定的，与是否指定 <code>Compiled</code> 选项无关。</p>
+</li>
+</ol>
+<ol start="6">
+<li><p><strong>正则表达式引擎内部根据什么缓存的？</strong></p>
+<p>根据 <code>option + culture + pattern</code> 缓存。</p>
+</li>
+</ol>
+<p><strong>疑问7</strong> 与由 <strong>疑问1</strong> 引申出来的 <code>JIT</code> 问题是一个问题。之所以会 <code>JIT</code>，是因为有需要 <code>JIT</code> 的代码，如果不断有新的动态方法产生出来并执行，那么就需要不断地 <code>JIT</code>。由于此问题涉及到的代码量比较大，逻辑比较复杂，需要深入 <code>.NET</code> 源码进行查看。为了更好的理解整个过程，我简单梳理了 <code>IsSpitter()</code> 函数中涉及到的关键类以及类之间的关系，整理成下图，供参考。</p>
+<h2 id="流程-amp-类关系梳理"><a href="#流程-amp-类关系梳理" class="headerlink" title="流程 &amp; 类关系梳理"></a>流程 &amp; 类关系梳理</h2><p><img src="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/class-relationship-and-call-sequence.png" alt></p>
+<p>看完上图后，可以继续看剩下的 <code>JIT</code> 问题了。因为大多数 <code>JIT</code> 都出现在 <code>MatchCollection.Count</code> 中，可以由此切入。</p>
+<h2 id="MatchCollection-Count"><a href="#MatchCollection-Count" class="headerlink" title="MatchCollection.Count"></a>MatchCollection.Count</h2><p>实现代码如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">int</span> Count &#123;</span><br><span class="line">  <span class="keyword">get</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (_done)</span><br><span class="line">      <span class="keyword">return</span> _matches.Count;</span><br><span class="line">    GetMatch(infinite);</span><br><span class="line">    <span class="keyword">return</span> _matches.Count;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Count</code> 会调用 <code>GetMatch()</code> 函数，而 <code>GetMatch()</code> 函数会不断调用 <code>_regex.Run()</code> 函数。</p>
+<p><code>_regex</code> 是哪来的呢？在构造 <code>MatchCollection</code> 实例时传过来的。</p>
+<p><code>MatchCollection</code> 是由 <code>Regex.Matches()</code> 实例化的，代码如下（去掉了判空逻辑）：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> MatchCollection <span class="title">Matches</span>(<span class="params">String input, <span class="keyword">int</span> startat</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> MatchCollection(<span class="keyword">this</span>, input, <span class="number">0</span>, input.Length, startat);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该函数会实例化一个 <code>MatchCollection</code> 对象，并把当前 <code>Regex</code> 实例作为第一个参数传给 <code>MatchCollection</code> 的构造函数。该参数会被保存到 <code>MatchCollection</code> 实例的 <code>_regex</code> 成员中。</p>
+<p>接下来继续查看 <code>Regex.Run</code> 函数的实现。</p>
+<h2 id="Regex-Run"><a href="#Regex-Run" class="headerlink" title="Regex.Run()"></a>Regex.Run()</h2><p>具体实现代码如下（代码有精简）：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">internal</span> Match <span class="title">Run</span>(<span class="params"><span class="keyword">bool</span> quick, <span class="keyword">int</span> prevlen, String input, <span class="keyword">int</span> beginning, <span class="keyword">int</span> length, <span class="keyword">int</span> startat</span>)</span> &#123;</span><br><span class="line">    Match match;</span><br><span class="line">    <span class="comment">// 使用缓存的时候，可能从缓存中拿到一个有效的 runner，其它情况下都是 null。</span></span><br><span class="line">    RegexRunner runner = (RegexRunner)runnerref.Get();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 不使用缓存的时候 runner是 null</span></span><br><span class="line">    <span class="keyword">if</span> (runner == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="comment">// 如果 factory 不为空就通过 factory 创建一个 runner。</span></span><br><span class="line">        <span class="comment">// 使用了 Compiled 标志创建的 Regex 实例的 factory 不为空</span></span><br><span class="line">        <span class="keyword">if</span> (factory != <span class="literal">null</span>)</span><br><span class="line">            runner = factory.CreateInstance();</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            runner = <span class="keyword">new</span> RegexInterpreter(code, UseOptionInvariant() ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 调用 RegexRunner.Scan 扫描匹配项。</span></span><br><span class="line">        match = runner.Scan(<span class="keyword">this</span>, input, beginning, beginning + length, startat, prevlen, quick, internalMatchTimeout);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        runnerref.Release(runner);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> match;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>逻辑还是非常清晰的，先找到或者创建（通过 <code>factory.CreateInstance()</code> 或者直接 <code>new</code>）一个类型为 <code>RegexRunner</code> 实例 <code>runner</code>，然后调用 <code>runner-&gt;Scan()</code> 进行匹配。</p>
+<p>对于使用 <code>Compiled</code> 选项创建的 <code>Regex</code>，其 <code>factory</code> 成员变量会在 <code>Regex</code> 构造函数中赋值，对应的语句是 <code>factory = Compile(code, roptions);</code> ，类型是 <code>CompiledRegexRunnerFactory</code>。 </p>
+<p>我们先来看看 <code>CompiledRegexRunnerFactory.CreateInstance()</code> 的实现。</p>
+<h2 id="CompiledRegexRunnerFactory-CreateInstance"><a href="#CompiledRegexRunnerFactory-CreateInstance" class="headerlink" title="CompiledRegexRunnerFactory.CreateInstance()"></a>CompiledRegexRunnerFactory.CreateInstance()</h2><p>代码如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">internal</span> <span class="keyword">override</span> RegexRunner <span class="title">CreateInstance</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">  CompiledRegexRunner runner = <span class="keyword">new</span> CompiledRegexRunner();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">new</span> ReflectionPermission(PermissionState.Unrestricted).Assert();</span><br><span class="line">  <span class="comment">// 设置关键的动态函数，这三个函数是在 `RegexLWCGCompiler`</span></span><br><span class="line">  <span class="comment">// 类的 `FactoryInstanceFromCode()` 中生成的。</span></span><br><span class="line">  runner.SetDelegates(</span><br><span class="line">    (NoParamDelegate) goMethod.CreateDelegate(<span class="keyword">typeof</span>(NoParamDelegate)),</span><br><span class="line">    (FindFirstCharDelegate) findFirstCharMethod.CreateDelegate(<span class="keyword">typeof</span>(FindFirstCharDelegate)),</span><br><span class="line">    (NoParamDelegate) initTrackCountMethod.CreateDelegate(<span class="keyword">typeof</span>(NoParamDelegate))</span><br><span class="line">  );</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> runner;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该函数返回的是 <code>CompiledRegexRunner</code> 类型的 <code>runner</code>。在返回之前会先调用 <code>runner.SetDelegates</code> 为对应的关键函数（<code>Go</code>, <code>FindFirstChar</code>, <code>InitTrackCount</code>）赋值。参数中的 <code>goMethod, findFirstCharMethod, initTrackCountMethod</code> 是在哪里赋值的呢？在 <code>Regex.Compile()</code> 函数中赋值的。</p>
+<h2 id="Regex-Compile"><a href="#Regex-Compile" class="headerlink" title="Regex.Compile()"></a>Regex.Compile()</h2><p><code>Regex.Compile()</code> 会直接转调 <code>RegexCompiler</code> 的静态函数 <code>Compile()</code>，相关代码如下（有调整）:</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">internal</span> <span class="keyword">static</span> RegexRunnerFactory <span class="title">Compile</span>(<span class="params">RegexCode code, RegexOptions options</span>)</span> &#123;</span><br><span class="line">  RegexLWCGCompiler c = <span class="keyword">new</span> RegexLWCGCompiler();</span><br><span class="line">  <span class="keyword">return</span> c.FactoryInstanceFromCode(code, options);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该函数直接调用了 <code>RegexLWCGCompiler</code> 类的 <code>FactoryInstanceFromCode()</code> 成员函数。相关代码如下（有删减）：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">internal</span> RegexRunnerFactory <span class="title">FactoryInstanceFromCode</span>(<span class="params">RegexCode code, RegexOptions options</span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 获取唯一标识符，也就是FindFirstChar后面的数字</span></span><br><span class="line">  <span class="keyword">int</span> regexnum = Interlocked.Increment(<span class="keyword">ref</span> _regexCount);</span><br><span class="line">  <span class="keyword">string</span> regexnumString = regexnum.ToString(CultureInfo.InvariantCulture);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 生成动态函数Go</span></span><br><span class="line">  DynamicMethod goMethod = DefineDynamicMethod(<span class="string">"Go"</span> + regexnumString, <span class="literal">null</span>, <span class="keyword">typeof</span>(CompiledRegexRunner));</span><br><span class="line">  GenerateGo();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 生成动态函数FindFirstChar</span></span><br><span class="line">  DynamicMethod firstCharMethod = DefineDynamicMethod(<span class="string">"FindFirstChar"</span> + regexnumString, <span class="keyword">typeof</span>(<span class="keyword">bool</span>), <span class="keyword">typeof</span>(CompiledRegexRunner));</span><br><span class="line">  GenerateFindFirstChar();</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 生成动态函数InitTrackCount  </span></span><br><span class="line">  DynamicMethod trackCountMethod = DefineDynamicMethod(<span class="string">"InitTrackCount"</span> + regexnumString, <span class="literal">null</span>, <span class="keyword">typeof</span>(CompiledRegexRunner));</span><br><span class="line">  GenerateInitTrackCount();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> CompiledRegexRunnerFactory(goMethod, firstCharMethod, trackCountMethod);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>该函数非常清晰易懂，但却是<strong>非常关键</strong>的一个函数，会生成三个动态函数（也就是通过 <code>PerfView</code> 采集到的 <code>FindFirstCharXXX</code>，<code>GoXXX</code>，<code>InitTrackCountXXX</code>），最后会构造一个类型为 <code>CompiledRegexRunnerFactory</code> 的实例，并把生成的动态函数作为参数传递给 <code>CompiledRegexRunnerFactory</code> 的构造函数。  </p>
+<p>至此，已经找到<strong>生成动态函数</strong>的地方了。动态函数是什么时候被调用的呢？在 <code>runner.Scan()</code> 函数中被调用的。</p>
+<h2 id="RegexRunner-Scan"><a href="#RegexRunner-Scan" class="headerlink" title="RegexRunner.Scan()"></a>RegexRunner.Scan()</h2><p>关键代码如下（做了大量删减）：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Match <span class="title">Scan</span>(<span class="params">Regex regex, String text, <span class="keyword">int</span> textbeg, <span class="keyword">int</span> textend, <span class="keyword">int</span> textstart, <span class="keyword">int</span> prevlen, <span class="keyword">bool</span> quick, TimeSpan timeout</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">for</span> (; ; ) &#123;</span><br><span class="line">    <span class="keyword">if</span> (FindFirstChar()) &#123;</span><br><span class="line">      Go();</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (runmatch._matchcount [<span class="number">0</span>] &gt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> TidyMatch(quick);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，<code>Scan()</code> 函数内部会调用 <code>FindFirstChar()</code> 和 <code>Go()</code>，而且只有当 <code>FindFirstChar()</code> 返回 <code>true</code> 的时候，才会调用 <code>Go()</code>。这两个函数是虚函数，具体的子类会重写。对于 <code>Compiled</code> 类型的正则表达式，对应的 <code>runner</code> 类型是 <code>CompiledRegexRunner</code>。这三个关键的函数实现如下：</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">CompiledRegexRunner</span> : <span class="title">RegexRunner</span> &#123;</span><br><span class="line">  NoParamDelegate goMethod;</span><br><span class="line">  FindFirstCharDelegate findFirstCharMethod;</span><br><span class="line">  NoParamDelegate initTrackCountMethod;</span><br><span class="line">        </span><br><span class="line">  <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">Go</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    goMethod(<span class="keyword">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">bool</span> <span class="title">FindFirstChar</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> findFirstCharMethod(<span class="keyword">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">InitTrackCount</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    initTrackCountMethod(<span class="keyword">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在可以回答<strong>疑问7</strong> 及<strong>疑问1</strong> 引申出来的 <code>JIT</code> 问题了。</p>
+<ol start="7">
+<li><p><strong>什么时候会生成动态方法？生成的动态方法是在哪里调用的？</strong></p>
+<p>在指定了 <code>Compiled</code> 标志的 <code>Regex</code> 的构造函数内部会调用 <code>RegexCompiler.Compile()</code> 函数，<code>Compile()</code> 函数又会调用 <code>RegexLWCGCompiler.FactoryInstanceFromCode()</code>，<code>FactoryInstanceFromCode()</code> 函数内部会分别调用 <code>GenerateFindFirstChar()</code>, <code>GenerateGo()</code>, <code>GenerateInitTrackCount()</code> 生成对应的动态方法。</p>
+</li>
+</ol>
+<p>   在执行 <code>MatchCollection.Count</code> 的时候，会调用 <code>MatchCollection.GetMatch()</code> 函数，<code>GetMatch()</code> 函数会调用对应 <code>RegexRunner</code> 的 <code>Scan()</code> 函数。<code>Scan()</code> 函数会调用 <code>RegexRunner.FindFirstChar()</code>，而 <code>CompiledRegexRunner</code> 类型中的 <code>FindFirstChar()</code> 函数调用的是设置好的动态函数。</p>
+<h2 id="Compiled-与-非-Compiled-对比"><a href="#Compiled-与-非-Compiled-对比" class="headerlink" title="Compiled 与 非 Compiled 对比"></a>Compiled 与 非 Compiled 对比</h2><h3 id="1-构造函数"><a href="#1-构造函数" class="headerlink" title="1. 构造函数"></a>1. 构造函数</h3><p>*<em>带 <code>Compiled</code> 选项的 <code>Regex</code> *</em></p>
+<p><code>useCache</code> 传递的是 <code>false</code>，表示不使用缓存。因为指定了 <code>RegexOptions.Compiled</code> 选项， <code>Regex</code> 的构造函数内部会调用 <code>RegexCompiler.Compile()</code> 函数，<code>Compile()</code> 函数又会调用 <code>RegexLWCGCompiler.FactoryInstanceFromCode()</code>，<code>FactoryInstanceFromCode()</code> 函数内部会分别调用 <code>GenerateFindFirstChar()</code>, <code>GenerateGo()</code>, <code>GenerateInitTrackCount()</code> 生成对应的动态方法，然后返回 <code>CompiledRegexRunnerFactory</code> 类型的实例。如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/compiled-regex-constructor.png" alt="compiled-regex-constructor"></p>
+<p>*<em>不带 <code>Compiled</code> 选项的 <code>Regex</code> *</em></p>
+<p>构造函数与 <code>Compiled</code> 的基本一致，<code>useCache</code> 传递的也是 <code>false</code>，不使用缓存。因为 <code>UseOptionC()</code> 返回的是 <code>false</code>，所以不会执行 <code>Compile()</code> 函数。所以 <code>factory</code> 成员变量是 <code>null</code>。</p>
+<p>这里就不贴图了。</p>
+<h3 id="2-matches-Count"><a href="#2-matches-Count" class="headerlink" title="2. matches.Count"></a>2. matches.Count</h3><p>*<em>带 <code>Compiled</code> 选项的 <code>Regex</code> *</em></p>
+<p><img src="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/MatchCollection-count-dynamic-FindFirstChar.png" alt="MatchCollection-count-dynamic-FindFirstChar"></p>
+<p><code>MatchCollection.Count</code> 内部会调用 <code>GetMatch()</code> 函数，<code>GetMatch()</code> 函数会调用对应 <code>RegexRunner</code> 的 <code>Scan()</code> 函数（这里的 <code>runner</code> 类型是 <code>CompiledRegexRunner</code>）。<code>Scan()</code> 内部会调用 <code>FindFirstChar()</code> 函数，而 <code>CompiledRegexRunner</code> 类型的 <code>FindFirstChar()</code> 函数内部调用的是设置好的动态方法。</p>
+<p>*<em>不带 <code>Compiled</code> 选项的 <code>Regex</code> *</em></p>
+<p><img src="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/MatchCollection-count-none-dynamic-FindFirstChar.png" alt="MatchCollection-count-none-dynamic-FindFirstChar"></p>
+<p>与带 <code>Compiled</code> 版本的调用栈基本一致，不一样的是这里 <code>runner</code> 的类型是 <code>RegexInterpreter</code>，该类型的 <code>FindFirstChar()</code> 函数调用的代码不是动态生成的。</p>
+<h3 id="3-runner-赋值"><a href="#3-runner-赋值" class="headerlink" title="3. runner 赋值"></a>3. runner 赋值</h3><p>当 <code>runner</code> 是 <code>null</code> 的时候，需要根据情况获取对应的 <code>runner</code>。</p>
+<p>*<em>带 <code>Compiled</code> 选项的 <code>Regex</code> *</em></p>
+<p><code>factory</code> 成员在 <code>Regex</code> 构造函数里通过 <code>Compile()</code> 赋过值，<code>runner</code> 会通过下图 <code>1306</code> 行的 <code>factory.CreateInstance()</code> 赋值。</p>
+<p>*<em>不带 <code>Compiled</code> 选项的 <code>Regex</code> *</em></p>
+<p><code>factory</code> 成员没有被赋过值，因此是空的，<code>runner</code> 会通过下图 <code>1308</code> 行的 <code>new RegexInterpreter()</code> 赋值。</p>
+<p><img src="http://resources.bianchengnan.tech/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/runner.png" alt="runner"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>不要在循环内部创建编译型的正则表达式（带 <code>Compiled</code> 选项），会频繁导致 <code>JIT</code> 的发生进而影响效率。</li>
+<li><code>Regex.IsMatch()</code> 也会创建 Regex 实例，但是最后一个参数 <code>bUseCache</code> 是 <code>true</code>，表示使用缓存。</li>
+<li><code>Regex</code> 构造函数的最后一个参数 <code>bUseCache</code> 是 <code>true</code> 的时候才会更新缓存。</li>
+<li>正则表达式引擎内部会根据 <code>option + culture + pattern</code> 查找缓存。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://referencesource.microsoft.com/" target="_blank" rel="noopener">.NET源码</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/" title="性能优化 | 记一次 .NET 程序的性能优化实战（3）—— 深入 .NET 源码">https://bianchengnan.github.io/articles/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/工具/" rel="tag"><i class="fa fa-tag"></i> 工具</a>
+          
+            <a href="/tags/性能优化/" rel="tag"><i class="fa fa-tag"></i> 性能优化</a>
+          
+            <a href="/tags/dotNET/" rel="tag"><i class="fa fa-tag"></i> dotNET</a>
+          
+            <a href="/tags/regex/" rel="tag"><i class="fa fa-tag"></i> regex</a>
+          
+            <a href="/tags/正则表达式/" rel="tag"><i class="fa fa-tag"></i> 正则表达式</a>
+          
+            <a href="/tags/perfview/" rel="tag"><i class="fa fa-tag"></i> perfview</a>
+          
+            <a href="/tags/part3/" rel="tag"><i class="fa fa-tag"></i> part3</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/speedup-my-tfs-parse-tool-part2-findout-why-dot-net-regex-so-show/" rel="next" title="性能优化 | 记一次 .NET 程序的性能优化实战（2）—— 使用 perfview 找出 Regex 慢的根本原因">
+                <i class="fa fa-chevron-left"></i> 性能优化 | 记一次 .NET 程序的性能优化实战（2）—— 使用 perfview 找出 Regex 慢的根本原因
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/2022-startup/" rel="prev" title="2022 开工喽">
+                2022 开工喽 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/speedup-my-tfs-parse-tool-part1-findout-the-slowest-function-using-process-explorer/" title="性能优化 | 记一次 .NET 程序的性能优化实战（1）—— 使用 process explorer 快速定位问题代码">性能优化 | 记一次 .NET 程序的性能优化实战（1）—— 使用 process explorer 快速定位问题代码</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/speedup-my-tfs-parse-tool-part2-findout-why-dot-net-regex-so-show/" title="性能优化 | 记一次 .NET 程序的性能优化实战（2）—— 使用 perfview 找出 Regex 慢的根本原因">性能优化 | 记一次 .NET 程序的性能优化实战（2）—— 使用 perfview 找出 Regex 慢的根本原因</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/speedup-my-tfs-parse-tool-part4-download-dot-net-source-code-and-setup-debug-in-vs/" title="性能优化 | 记一次 .NET 程序的性能优化实战（4）—— .NET 源码查看及使用 vs 调试">性能优化 | 记一次 .NET 程序的性能优化实战（4）—— .NET 源码查看及使用 vs 调试</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解惑"><span class="nav-number">2.</span> <span class="nav-text">解惑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Regex-构造函数"><span class="nav-number">3.</span> <span class="nav-text">Regex 构造函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流程-amp-类关系梳理"><span class="nav-number">4.</span> <span class="nav-text">流程 &amp; 类关系梳理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MatchCollection-Count"><span class="nav-number">5.</span> <span class="nav-text">MatchCollection.Count</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Regex-Run"><span class="nav-number">6.</span> <span class="nav-text">Regex.Run()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CompiledRegexRunnerFactory-CreateInstance"><span class="nav-number">7.</span> <span class="nav-text">CompiledRegexRunnerFactory.CreateInstance()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Regex-Compile"><span class="nav-number">8.</span> <span class="nav-text">Regex.Compile()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RegexRunner-Scan"><span class="nav-number">9.</span> <span class="nav-text">RegexRunner.Scan()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Compiled-与-非-Compiled-对比"><span class="nav-number">10.</span> <span class="nav-text">Compiled 与 非 Compiled 对比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-构造函数"><span class="nav-number">10.1.</span> <span class="nav-text">1. 构造函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-matches-Count"><span class="nav-number">10.2.</span> <span class="nav-text">2. matches.Count</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-runner-赋值"><span class="nav-number">10.3.</span> <span class="nav-text">3. runner 赋值</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">11.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">12.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

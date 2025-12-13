@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,调试,debug,windbg,kernel debug,bcdedit,SysReq,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言内核调试默认是关闭的，需要手动开启。本文将简单介绍如何在 Vista 及后续版本的系统中开启本地内核调试，并简要介绍使用 windbg 连接内核的方法。在 xp 系统中，对应的设置保存在 boot.ini 中，感兴趣的小伙伴儿请自行搜索设置方法。">
+<meta name="keywords" content="原,总结,调试,debug,windbg,kernel debug,bcdedit,SysReq">
+<meta property="og:type" content="article">
+<meta property="og:title" content="本地内核调试环境搭建，就这么简单！">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言内核调试默认是关闭的，需要手动开启。本文将简单介绍如何在 Vista 及后续版本的系统中开启本地内核调试，并简要介绍使用 windbg 连接内核的方法。在 xp 系统中，对应的设置保存在 boot.ini 中，感兴趣的小伙伴儿请自行搜索设置方法。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/windbg-kernel-debug-setting-dialog.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/windbg-kernel-debug-fail-dialog.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/local-kernel-debug.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/msconfig-setting.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/bcdedit-debug-on.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/turn-on-local-kernel-debug-failed.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/security-boot-enable-status.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/bcdedit-debug-on.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/bcdedit-basic-usage.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/PrtSc-SysRq.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/advdbg.org-forumn-post-screen-record.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.722Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="本地内核调试环境搭建，就这么简单！">
+<meta name="twitter:description" content="前言内核调试默认是关闭的，需要手动开启。本文将简单介绍如何在 Vista 及后续版本的系统中开启本地内核调试，并简要介绍使用 windbg 连接内核的方法。在 xp 系统中，对应的设置保存在 boot.ini 中，感兴趣的小伙伴儿请自行搜索设置方法。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/windbg-kernel-debug-setting-dialog.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>本地内核调试环境搭建，就这么简单！ | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">本地内核调试环境搭建，就这么简单！</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-03-05T18:30:37+08:00">
+                2020-03-05
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/转储/" itemprop="url" rel="index">
+                    <span itemprop="name">转储</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>内核调试默认是关闭的，需要手动开启。本文将简单介绍如何在 <code>Vista</code> 及后续版本的系统中开启本地内核调试，并简要介绍使用 <code>windbg</code> 连接内核的方法。在 <code>xp</code> 系统中，对应的设置保存在 <code>boot.ini</code> 中，感兴趣的小伙伴儿请自行搜索设置方法。</p>
+<a id="more"></a>
+
+
+
+<h2 id="本地内核调试"><a href="#本地内核调试" class="headerlink" title="本地内核调试"></a>本地内核调试</h2><p><code>windbg</code> 不仅可以作为用户态调试器使用，还可以作为内核调试器使用。相较于命令行版本的 <code>kd.exe</code>，<code>windbg</code> 更友好。在 <code>windbg</code> 中，通过菜单 <code>File</code> -&gt; <code>Kernel Debug (Ctrl + K)</code> 可以打开内核调试设置界面，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/windbg-kernel-debug-setting-dialog.png" alt="windbg 本地内核调试界面"></p>
+<p><code>NET</code>，<code>USB</code>，<code>1394</code>，<code>COM</code> 这四个选项是针对双机内核调试的，本文不涉及。<code>Local</code> 是本地内核调试用的，我们发现不用进行任何设置。点击 <code>确定</code> 按钮即可进行本地内核调试。</p>
+<p>如果觉得上述操作太繁琐，我们可以以管理员权限运行 <code>windbg.exe -kl</code> 直接开启本地内核调试。</p>
+<h2 id="可能遇到的问题"><a href="#可能遇到的问题" class="headerlink" title="可能遇到的问题"></a>可能遇到的问题</h2><p>我们可能遇到下面的错误提示：</p>
+<blockquote>
+<p>Local kernel debugging requires Administrative<br>privileges, and is not supported by WOW64.<br>Only a single local kernel debugging session can run at a time.<br>Local kernel debugging is disabled by default. You must run ‘bcdedit -debug on’ and reboot to enable it.</p>
+</blockquote>
+<p>具体错误提示如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/windbg-kernel-debug-fail-dialog.png" alt="windbg 本地内核调试时遇到的错误提示"></p>
+<p>根据错误提示，我们可以知道进行本地内核调试需要注意以下几点：</p>
+<ol>
+<li>本地内核调试需要管理员权限。</li>
+<li>不支持 <code>WOW64</code>。如果是 <code>64</code> 位系统，必须使用 <code>64</code> 位的 <code>windbg</code>。</li>
+<li>同一时间只能建立一个本地内核调试会话。</li>
+<li>本地内核调试默认是关闭的。需要通过 <code>bcdedit /debug on</code> 开启，重启生效。</li>
+</ol>
+<h2 id="通过命令行开启"><a href="#通过命令行开启" class="headerlink" title="通过命令行开启"></a>通过命令行开启</h2><p>按照提示，以管理员权限执行 <code>bcdedit /debug on</code> 。重启系统后，以管理员权限运行 <code>windbg -kl</code> 进行本地内核调试。如果顺利，我们就可以进行本地内核调试了。</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/local-kernel-debug.png" alt="windbg 本地内核调试"></p>
+<h2 id="通过界面开启"><a href="#通过界面开启" class="headerlink" title="通过界面开启"></a>通过界面开启</h2><p>我们也可以通过 <code>msconfig</code> 打开系统配置，在 <code>引导高级选项</code> 对话框中开启本地内核调试。具体设置过程请参考下图。</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/msconfig-setting.gif" alt="引导高级选项设置"></p>
+<h2 id="关闭安全启动"><a href="#关闭安全启动" class="headerlink" title="关闭安全启动"></a>关闭安全启动</h2><p>以管理员权限执行 <code>bcdedit /debug on</code>，如果顺利，会有操作成功的提示，如下图。</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/bcdedit-debug-on.png" alt="开启本地内核调试"></p>
+<p>在某些机器的 <code>win10</code> 系统中，可能会遇到如下的提示。</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/turn-on-local-kernel-debug-failed.png" alt="开启本地内核调试失败"></p>
+<p>正如 <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-local-kernel-debugging-of-a-single-computer-manually" target="_blank" rel="noopener">微软官方文档</a> 里介绍的那样：</p>
+<blockquote>
+<p>Before using bcdedit to change boot information you may need to  temporarily suspend Windows security features such as BitLocker and  Secure Boot on the test PC. You can re-enable Secure Boot once you’re done debugging and you’ve  disabled kernel debugging on the local computer.</p>
+</blockquote>
+<p>在使用 <code>bcdedit</code> 更改启动信息之前，我们可能需要暂时关闭 <code>Windows</code> 的安全特性，比如 <code>BitLocker</code> 和安全启动。</p>
+<p>我电脑上的安全启动选项是启用的，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/security-boot-enable-status.jpg" alt="安全启动开启状态"></p>
+<p>在 <code>BIOS</code> 里禁用安全启动后，重新执行 <code>bcdedit /debug on</code> 即可成功开启本地内核调试。</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/bcdedit-debug-on.png" alt="开启本地内核调试"></p>
+<h2 id="bcdedit-用法简介"><a href="#bcdedit-用法简介" class="headerlink" title="bcdedit 用法简介"></a>bcdedit 用法简介</h2><p>可以直接运行 <code>bcdedit /?</code> 查看帮助，通过 <code>bcdedit /? command</code> 查看每个命令的用法。</p>
+<p>其实， <code>bcdedit /debug on</code> 的完整版是 <code>bcdedit /debug [{ID}] { on | off }</code>，如果省略 <code>{ID}</code>，默认取 <code>{current}</code>。如果想为其它系统设置，可以指定对应启动项的标识符。</p>
+<ul>
+<li><p>执行 <code>bcdedit /enum [{ID}]</code> 可以列出指定 <code>ID</code> 对应的启动项， 如不指定 <code>ID</code> 可以列出所有的启动项。</p>
+</li>
+<li><p>执行 <code>bcdedit /copy {ID} /d &quot;description&quot;</code> 可以把当前的启动项复制一份。</p>
+</li>
+<li><p>执行 <code>bcdedit /delete {ID}</code> 可以删除指定 <code>ID</code> 对应的启动项。</p>
+</li>
+</ul>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/bcdedit-basic-usage.png" alt="bcdedit 基本命令"></p>
+<h2 id="本地内核调试的限制"><a href="#本地内核调试的限制" class="headerlink" title="本地内核调试的限制"></a>本地内核调试的限制</h2><p>在进行本地内核调试的时候，下面这些命令是不能执行的：</p>
+<ul>
+<li>执行命令，比如 <code>g (Go)</code>，<code>p (Step)</code>，<code>t (Trace)</code>，<code>wt (Trace and Watch Data)</code>，<code>tb (Trace to Next Branch)</code>，<code>gh (Go with Exception Handled)</code>，<code>gn (Go with Exception Not Handled)</code>。</li>
+<li>关机和转储命令。比如，<code>.crash</code>， <code>.dump</code> ，<code>.reboot</code> 等。</li>
+<li>断点命令。比如，<code>b</code> 系列命令。<code>bp</code> ，<code>bu</code>，<code>ba</code>，<code>bc</code>，<code>bd</code>，<code>be</code>，<code>bl</code>等。</li>
+<li>寄存器显示命令。比如 <code>r</code> 系列命令。</li>
+<li>栈命令。比如，<code>k</code> 系列命令。</li>
+</ul>
+<h2 id="小知识"><a href="#小知识" class="headerlink" title="小知识"></a>小知识</h2><p>不知道大家平时是怎么截图的。是否用过键盘上的 <code>PrtSc</code> 键（一般在 <code>F12</code> 右侧）截图呢？也许有的小伙伴会问，截图键跟内核调试有什么关系？其实，在很多键盘上，<code>PrtSc</code> 和 <code>SysRq</code> 是同一个键。</p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/PrtSc-SysRq.png" alt="键盘布局图-转自维基百科"></p>
+<p>当我们开启本地内核调试后，如果我们按 <code>SysRq</code> 键，系统会挂起。具体可以参考张老师的回帖。<a href="http://advdbg.org/forums/6537/ShowPost.aspx#6537。前几天访问高端调试论坛，发现挂了，今日终于能访问了，赶紧截图保存一份。" target="_blank" rel="noopener">http://advdbg.org/forums/6537/ShowPost.aspx#6537。前几天访问高端调试论坛，发现挂了，今日终于能访问了，赶紧截图保存一份。</a></p>
+<p><img src="http://resources.bianchengnan.tech/summary-of-local-kernel-debug-setup/advdbg.org-forumn-post-screen-record.png" alt="高端调试论坛相关帖子"></p>
+<p><code>SysRq</code> 在 <code>Linux</code> 下也有类似的作用，可以参考网址 <a href="https://www.ibm.com/developerworks/cn/linux/l-cn-sysrq/。" target="_blank" rel="noopener">https://www.ibm.com/developerworks/cn/linux/l-cn-sysrq/。</a></p>
+<blockquote>
+<p><strong>温馨提示：</strong></p>
+<p>一定要记住这个小知识。我被这个“虐”了很久。当年在公司机器上开启内核调试后，不知道这回事。在开发过程中需要截图，一按<code>PrtSc</code> 系统就挂起，一按 <code>PrtSc</code> 系统就挂起。害我重启了 N 次。说多了都是泪。</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p><code>bcdedit /debug on|off</code> 可以开启（关闭）本地内核调试。</p>
+</li>
+<li><p>如果开启本地内核调试失败，提示 <code>该值受安全引导策略保护，无法进行修改或删除</code>，可以在 <code>BIOS</code> 中关闭安全引导。</p>
+</li>
+<li><p>运行 <code>kd.exe -kl</code> 或者 <code>windbg.exe -kl</code> 可以进行本地内核调试。</p>
+</li>
+<li><p>本地内核调试需要管理员权限，如果遇到错误，请先检查权限。</p>
+</li>
+<li><p><code>bcdedit</code> 的用法大家需要熟悉，在配置双机内核调试的时候还会用到。</p>
+</li>
+</ul>
+<p>本以为在本地内核调试的时候，可以很方便的保存一份转储文件，没想到居然不支持！如果有哪位小伙伴儿知道如何在本地内核调试的时候比较方便的保存一份系统转储文件，烦请告知。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-local-kernel-debugging-of-a-single-computer-manually" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-local-kernel-debugging-of-a-single-computer-manually</a></p>
+</li>
+<li><p><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/performing-local-kernel-debugging" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/performing-local-kernel-debugging</a></p>
+</li>
+<li><p><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/boot-parameters-to-enable-debugging" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/devtest/boot-parameters-to-enable-debugging</a></p>
+</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/" title="本地内核调试环境搭建，就这么简单！">https://bianchengnan.github.io/articles/summary-of-local-kernel-debug-setup/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/kernel-debug/" rel="tag"><i class="fa fa-tag"></i> kernel debug</a>
+          
+            <a href="/tags/bcdedit/" rel="tag"><i class="fa fa-tag"></i> bcdedit</a>
+          
+            <a href="/tags/SysReq/" rel="tag"><i class="fa fa-tag"></i> SysReq</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/how-to-force-system-to-crash/" rel="next" title="系统蓝屏的几种姿势，确定不了解下么？">
+                <i class="fa fa-chevron-left"></i> 系统蓝屏的几种姿势，确定不了解下么？
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/summary-of-remote-kernel-debug-setup/" rel="prev" title="双机内核调试 101">
+                双机内核调试 101 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/something-you-should-know-about-process-dump/" title="转储文件知多少">转储文件知多少</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/process-dump-tools-you-should-know/" title="你需要知道的 N 种抓取 dump 的工具">你需要知道的 N 种抓取 dump 的工具</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/brief-introduction-to-jit-debug-info/" title="JIT Debug Info 简介">JIT Debug Info 简介</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-dump-our-own-process/" title="向大厂看齐！为自己的程序增加自动转储的功能！">向大厂看齐！为自己的程序增加自动转储的功能！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-mode-dump-begins/" title="内核转储，开抓啦！">内核转储，开抓啦！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-memory-dump-setting/" title="蓝屏（BSOD）转储设置，看本文就够了！">蓝屏（BSOD）转储设置，看本文就够了！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-force-system-to-crash/" title="系统蓝屏的几种姿势，确定不了解下么？">系统蓝屏的几种姿势，确定不了解下么？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-remote-kernel-debug-setup/" title="双机内核调试 101">双机内核调试 101</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-virtualkd-windbg-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境">使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-vs2019-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + vs2019 从零搭建双机内核调试环境">使用 VMware + win10 + vs2019 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-dump-series-articles/" title="转储系列文章总结">转储系列文章总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#本地内核调试"><span class="nav-number">2.</span> <span class="nav-text">本地内核调试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可能遇到的问题"><span class="nav-number">3.</span> <span class="nav-text">可能遇到的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过命令行开启"><span class="nav-number">4.</span> <span class="nav-text">通过命令行开启</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通过界面开启"><span class="nav-number">5.</span> <span class="nav-text">通过界面开启</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关闭安全启动"><span class="nav-number">6.</span> <span class="nav-text">关闭安全启动</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#bcdedit-用法简介"><span class="nav-number">7.</span> <span class="nav-text">bcdedit 用法简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#本地内核调试的限制"><span class="nav-number">8.</span> <span class="nav-text">本地内核调试的限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小知识"><span class="nav-number">9.</span> <span class="nav-text">小知识</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">10.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">11.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

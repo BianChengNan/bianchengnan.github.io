@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,UEFI,GPT,VHD,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="1. 缘起最近因为不小心中招了(一直在裸奔)，又面临着重装系统的尴尬，虽然之前有备份，但是时间已经很久了，而且恢复一次跟重装一遍差不多，没有多大优势。之前同事帮我弄过从vhd文件启动系统，很是方便，可以备份vhd文件即可。借此机会，决定好好研究下来龙去脉。">
+<meta name="keywords" content="原,总结,UEFI,GPT,VHD">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[原]UEFI+GPT启动VHD">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="1. 缘起最近因为不小心中招了(一直在裸奔)，又面临着重装系统的尴尬，虽然之前有备份，但是时间已经很久了，而且恢复一次跟重装一遍差不多，没有多大优势。之前同事帮我弄过从vhd文件启动系统，很是方便，可以备份vhd文件即可。借此机会，决定好好研究下来龙去脉。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531746737127.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747066183.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747183984.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747356975.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747431865.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747504303.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747942112.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748094256.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748300388.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748371867.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748794883.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531749737993.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531749979049.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531750374864.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748960458.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.769Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[原]UEFI+GPT启动VHD">
+<meta name="twitter:description" content="1. 缘起最近因为不小心中招了(一直在裸奔)，又面临着重装系统的尴尬，虽然之前有备份，但是时间已经很久了，而且恢复一次跟重装一遍差不多，没有多大优势。之前同事帮我弄过从vhd文件启动系统，很是方便，可以备份vhd文件即可。借此机会，决定好好研究下来龙去脉。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531746737127.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>[原]UEFI+GPT启动VHD | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">[原]UEFI+GPT启动VHD</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-09-01T06:30:54+08:00">
+                2019-09-01
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/运维/" itemprop="url" rel="index">
+                    <span itemprop="name">运维</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="1-缘起"><a href="#1-缘起" class="headerlink" title="1. 缘起"></a>1. 缘起</h2><p>最近因为不小心中招了(一直在裸奔)，又面临着重装系统的尴尬，虽然之前有备份，但是时间已经很久了，而且恢复一次跟重装一遍差不多，没有多大优势。之前同事帮我弄过从vhd文件启动系统，很是方便，可以备份vhd文件即可。借此机会，决定好好研究下来龙去脉。 </p>
+<a id="more"></a>
+
+<h2 id="2-创建VHD文件并写入系统镜像到VHD文件"><a href="#2-创建VHD文件并写入系统镜像到VHD文件" class="headerlink" title="2. 创建VHD文件并写入系统镜像到VHD文件"></a>2. 创建VHD文件并写入系统镜像到VHD文件</h2><h3 id="2-1-制作VHD文件"><a href="#2-1-制作VHD文件" class="headerlink" title="2.1 制作VHD文件"></a>2.1 制作VHD文件</h3><p>创建VHD文件比较简单，有两种创建方式：</p>
+<h4 id="2-1-1-纯界面创建"><a href="#2-1-1-纯界面创建" class="headerlink" title="2.1.1 纯界面创建"></a>2.1.1 纯界面创建</h4><p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531746737127.png" alt="我的电脑-右键-管理"></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747066183.png" alt="存储-磁盘管理-创建VHD"></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747183984.png" alt="创建100GB大小的可动态扩展的VHD文件"></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747356975.png" alt="初始化磁盘"></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747431865.png" alt="使用GPT分区格式"></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747504303.png" alt="新建简单卷"></p>
+<p>然后一直下一步就行了。</p>
+<h4 id="2-1-2-命令行创建"><a href="#2-1-2-命令行创建" class="headerlink" title="2.1.2 命令行创建"></a>2.1.2 命令行创建</h4><p>可以参考<a href="https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-7/gg318049%28v%3dws.10%29#using-the-disk-management-tools" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-7/gg318049%28v%3dws.10%29#using-the-disk-management-tools</a></p>
+<p>主要命令如下（需要以管理员权限运行）：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">rem 先执行diskpart进入diskpart交互界面</span><br><span class="line">Diskpart</span><br><span class="line">rem 创建一个最大<span class="number">102408</span>MB的类型为动态扩展的VHD文件，保存到E:\VHDs\win10.vhd</span><br><span class="line">create vdisk file=E:\VHDs\win10.vhd maximum=<span class="number">102408</span> type=expandable</span><br><span class="line">rem 选择需要操作的vhd文件</span><br><span class="line">select vdisk file=E:\VHDs\win10.vhd</span><br><span class="line">rem 附加之</span><br><span class="line">attach vdisk</span><br><span class="line">rem 创建分区</span><br><span class="line">create partition primary</span><br><span class="line">rem 分配盘符</span><br><span class="line">assign letter=z</span><br><span class="line">rem 格式化</span><br><span class="line">format quick FS=NTFS label=My-VHD</span><br><span class="line">rem 退出diskpart</span><br><span class="line"><span class="keyword">exit</span></span><br></pre></td></tr></table></figure>
+
+<div class="note info"><p>如果虚拟磁盘类型是动态扩展，那么从VHD启动的时候要保证该VHD所在的分区的空闲空间要大于你创建VHD文件时指定的大小。比如我这里指定的是102408MB，存放在E盘。那么我想从win10.vhd启动的话，我需要确保E盘空闲区域要大于102408MB。</p></div>
+
+<div class="note success"><p>2019-09-10 更新：<code>虚拟磁盘大小(S):</code> 的单位也可以切换成<code>GB</code>，直接输入<code>100</code>就可以了。 :smirk:</p></div>
+
+<h3 id="2-2-把系统镜像写入VHD文件"><a href="#2-2-把系统镜像写入VHD文件" class="headerlink" title="2.2 把系统镜像写入VHD文件"></a>2.2 把系统镜像写入VHD文件</h3><p>win10下可以使用dism命令部署镜像。先从<a href="https://msdn.itellyou.cn/" target="_blank" rel="noopener">msdn i tell you</a>上下载想要安装的系统镜像，并用iso工具加载, 我用的是<a href="http://www.elby.ch/en/download.html" target="_blank" rel="noopener">virtual clonedrive</a></p>
+<p>先用<code>dism /get-imageinfo /imagefile:path_to_your_wim_file</code>查看下信息，主要为了得到各个版本系统的index号，如下图</p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531747942112.png" alt="get image info"></p>
+<p>然后运行<code>dism /apply-image /imagefile:path_to_your_wim_file /index:4 /applydir:your_vhd_mounted_volume</code></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748094256.png" alt="apply image"></p>
+<p>耐心等待完成即可。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><ol>
+<li>dism命令需要管理员权限</li>
+<li>不清楚低版本系统自带的dism是否支持部署，可以通过dism /?来查看帮助，如果dism不支持，还可以通过imagex等工具来部署。</li>
+<li>wim文件一般要使用镜像文件中的\sources\install.wim文件，大约有几GB大小。</li>
+<li>我这里以win10为例，其实从win7开始就支持从VHD文件启动了。</li>
+</ol>
+<h2 id="3-添加VHD文件到系统引导"><a href="#3-添加VHD文件到系统引导" class="headerlink" title="3. 添加VHD文件到系统引导"></a>3. 添加VHD文件到系统引导</h2><p>添加启动项需要用到工具<a href="http://www.ipauly.com/" target="_blank" rel="noopener">bootice</a>。我们可以在当前系统下添加一个新的引导项, 也可以从0开始(适用于当前没有系统的情况)新建引导项。</p>
+<h3 id="3-1-添加新的引导项"><a href="#3-1-添加新的引导项" class="headerlink" title="3.1 添加新的引导项"></a>3.1 添加新的引导项</h3><p>适用于当前有系统，需要添加一个新的启动项的情况</p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748300388.png" alt="编辑当前系统的BCD"></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748371867.png" alt="新建VHD启动项"></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748794883.png" alt="编辑启动项"></p>
+<p>编辑好之后，点击 保存当前系统设置(S)，再点击 保存全局设置(G)即可。</p>
+<h3 id="3-2-新建引导项"><a href="#3-2-新建引导项" class="headerlink" title="3.2 新建引导项"></a>3.2 新建引导项</h3><p>如果你有一块新硬盘, 想为该硬盘装系统, 那么请耐心往下看。</p>
+<h4 id="3-2-1-硬盘分区"><a href="#3-2-1-硬盘分区" class="headerlink" title="3.2.1 硬盘分区"></a>3.2.1 硬盘分区</h4><p>分区的时候要选GPT分区，可以手动分区也可以使用DiskGenius帮助我们分区。<br><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531749737993.png" alt="使用DiskGenius快速分区"></p>
+<div class="note info"><p>UEFI要求有一个FAT格式的分区（FAT16或者FAT32均可）, 系统启动的时候会在FAT格式的分区下找启动文件。这里的FAT分区就是上图中的ESP分区。</p></div>
+
+<h4 id="3-2-2-拷贝UEFI启动文件到ESP分区"><a href="#3-2-2-拷贝UEFI启动文件到ESP分区" class="headerlink" title="3.2.2 拷贝UEFI启动文件到ESP分区"></a>3.2.2 拷贝UEFI启动文件到ESP分区</h4><p>建立好ESP分区后, 我们就可以拷贝UEFI启动文件到该分区。需要拷贝什么文件呢? 从哪里可以找到这些文件呢?</p>
+<p>我们只需要把安装镜像下面的EFI文件夹整个拷贝到刚刚新建好的ESP分区即可。<br><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531749979049.png" alt="EFI文件夹"></p>
+<p>win10 64位镜像中EFI文件夹中的文件树如下：<br><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531750374864.png" alt="EFI文件夹下文件"></p>
+<div class="note warning"><p>注意：拷贝文件需要有盘符才能拷贝，可以手动或者通过DiskGenius为ESP分区分配一个临时的盘符。</p></div>
+
+<div class="note info"><p>有些教程说需要拷贝与EFI文件夹平行的boot文件夹。经过亲自测试，与EFI文件夹平行的boot文件夹不需要拷贝。当然拷贝了也没坏处。</p></div>
+
+<h4 id="3-2-3-拷贝装有系统镜像的VHD文件到指定目录下"><a href="#3-2-3-拷贝装有系统镜像的VHD文件到指定目录下" class="headerlink" title="3.2.3 拷贝装有系统镜像的VHD文件到指定目录下"></a>3.2.3 拷贝装有系统镜像的VHD文件到指定目录下</h4><p>因为创建的时候我已经把文件生成到了<strong>E:\VHDs\win10.vhd</strong>，我不打算放到其它目录下，这一步就省了。大家可以根据自己的需要灵活调整。</p>
+<h4 id="3-2-4-修改BCD-添加VHD启动项"><a href="#3-2-4-修改BCD-添加VHD启动项" class="headerlink" title="3.2.4 修改BCD, 添加VHD启动项"></a>3.2.4 修改BCD, 添加VHD启动项</h4><p>我们需要修改ESP分区下的<strong>EFI\microsoft\boot\bcd</strong>文件。<br>大体步骤和3.1中一样，只有第一步的时候不一样，BCD编辑的时候要选择 <strong>其它BCD文件(O)</strong> 而不是 <strong>当前系统BCD(S)</strong></p>
+<p><img src="http://resources.bianchengnan.tech/UEFI-GPT-boot-VHD/1531748960458.png" alt="编辑其它BCD文件"></p>
+<p>以上步骤都做好以后, 就可以拷贝做好的vhd系统镜像到指定目录, 然后重启了。</p>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4. 总结"></a>4. 总结</h2><p>整个过程比较清晰，主要分两大步：</p>
+<ol>
+<li>创建VHD文件并写入系统镜像到VHD文件</li>
+<li>添加VHD文件到系统引导</li>
+</ol>
+<div class="note info"><p>UEFI启动 关键是要有一个ESP分区，该分区是FAT (FAT16或者FAT32均可)格式的，ESP分区下要按照UEFI规范放好需要的启动文件。</p></div>
+
+<h2 id="5-参考资料"><a href="#5-参考资料" class="headerlink" title="5. 参考资料"></a>5. 参考资料</h2><ul>
+<li><a href="https://blog.csdn.net/jonathan321/article/details/51987680" target="_blank" rel="noopener">操作系统引导过程</a></li>
+<li><a href="https://www.tuicool.com/articles/NNf26jB" target="_blank" rel="noopener">(译) UEFI 启动：实际工作原理</a></li>
+<li><a href="https://www.iruanmi.com/what-is-gpt-and-what-is-uefi/" target="_blank" rel="noopener">UEFI+GPT引导基础篇（一）：什么是GPT，什么是UEFI？</a></li>
+<li><a href="https://blog.csdn.net/u013201439/article/details/50195743" target="_blank" rel="noopener">计算机到底如何启动？(UEFI boot)</a></li>
+<li><a href="http://www.chinaz.com/server/2016/1017/595444.shtml" target="_blank" rel="noopener">装机、做系统必备：秒懂MBR和GPT分区表</a></li>
+<li><a href="http://www.ruanyifeng.com/blog/2013/02/booting.html" target="_blank" rel="noopener">计算机是如何启动的？</a></li>
+<li><a href="http://bbs.wuyou.net/forum.php?mod=viewthread&tid=299643&fromuid=396698" target="_blank" rel="noopener">UEFI启动视频详解：启动分析+N项操作实例，赶紧学习，不要落伍啦，该给自己充电啦…</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/" title="[原]UEFI+GPT启动VHD">https://bianchengnan.github.io/articles/UEFI-GPT-boot-VHD/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/UEFI/" rel="tag"><i class="fa fa-tag"></i> UEFI</a>
+          
+            <a href="/tags/GPT/" rel="tag"><i class="fa fa-tag"></i> GPT</a>
+          
+            <a href="/tags/VHD/" rel="tag"><i class="fa fa-tag"></i> VHD</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/cpp11-thread/" rel="prev" title="[原]C++新标准之std::thread">
+                [原]C++新标准之std::thread <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-缘起"><span class="nav-number">1.</span> <span class="nav-text">1. 缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-创建VHD文件并写入系统镜像到VHD文件"><span class="nav-number">2.</span> <span class="nav-text">2. 创建VHD文件并写入系统镜像到VHD文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-制作VHD文件"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 制作VHD文件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-1-纯界面创建"><span class="nav-number">2.1.1.</span> <span class="nav-text">2.1.1 纯界面创建</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-2-命令行创建"><span class="nav-number">2.1.2.</span> <span class="nav-text">2.1.2 命令行创建</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-把系统镜像写入VHD文件"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 把系统镜像写入VHD文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">2.3.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-添加VHD文件到系统引导"><span class="nav-number">3.</span> <span class="nav-text">3. 添加VHD文件到系统引导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-添加新的引导项"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 添加新的引导项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-新建引导项"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 新建引导项</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-1-硬盘分区"><span class="nav-number">3.2.1.</span> <span class="nav-text">3.2.1 硬盘分区</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-2-拷贝UEFI启动文件到ESP分区"><span class="nav-number">3.2.2.</span> <span class="nav-text">3.2.2 拷贝UEFI启动文件到ESP分区</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-3-拷贝装有系统镜像的VHD文件到指定目录下"><span class="nav-number">3.2.3.</span> <span class="nav-text">3.2.3 拷贝装有系统镜像的VHD文件到指定目录下</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-4-修改BCD-添加VHD启动项"><span class="nav-number">3.2.4.</span> <span class="nav-text">3.2.4 修改BCD, 添加VHD启动项</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-总结"><span class="nav-number">4.</span> <span class="nav-text">4. 总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-参考资料"><span class="nav-number">5.</span> <span class="nav-text">5. 参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

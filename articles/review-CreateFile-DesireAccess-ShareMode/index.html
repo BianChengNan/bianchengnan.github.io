@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="开发,基础知识,win10,xp,权限,CreateFile,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言前一阵子，我在编写文件变化监控程序的时候遇到了文件被占用的问题。很早之前写过一篇关于 CreateFile 函数的 dwDesiredAccess 和 dwShareMode 参数的笔记。我发现之前的理解不够全面、准确。为了更好的理解这两个参数的作用，我搜索了大量资料，编写了测试程序及测试脚本，参考了 xp 源码，终于搞清楚这两个参数的作用。简而言之，需要遵循以下两个规则： 规则 1：后续的访">
+<meta name="keywords" content="开发,基础知识,win10,xp,权限,CreateFile">
+<meta property="og:type" content="article">
+<meta property="og:title" content="开发常识 | 彻底理清 CreateFile 读写权限与共享模式的关系">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/review-CreateFile-DesireAccess-ShareMode/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言前一阵子，我在编写文件变化监控程序的时候遇到了文件被占用的问题。很早之前写过一篇关于 CreateFile 函数的 dwDesiredAccess 和 dwShareMode 参数的笔记。我发现之前的理解不够全面、准确。为了更好的理解这两个参数的作用，我搜索了大量资料，编写了测试程序及测试脚本，参考了 xp 源码，终于搞清楚这两个参数的作用。简而言之，需要遵循以下两个规则： 规则 1：后续的访">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/review-CreateFile-DesireAccess-ShareMode/open-result-2.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/review-CreateFile-DesireAccess-ShareMode/open-result-3.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/review-CreateFile-DesireAccess-ShareMode/open-result-4.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.692Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="开发常识 | 彻底理清 CreateFile 读写权限与共享模式的关系">
+<meta name="twitter:description" content="前言前一阵子，我在编写文件变化监控程序的时候遇到了文件被占用的问题。很早之前写过一篇关于 CreateFile 函数的 dwDesiredAccess 和 dwShareMode 参数的笔记。我发现之前的理解不够全面、准确。为了更好的理解这两个参数的作用，我搜索了大量资料，编写了测试程序及测试脚本，参考了 xp 源码，终于搞清楚这两个参数的作用。简而言之，需要遵循以下两个规则： 规则 1：后续的访">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/review-CreateFile-DesireAccess-ShareMode/open-result-2.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/review-CreateFile-DesireAccess-ShareMode/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>开发常识 | 彻底理清 CreateFile 读写权限与共享模式的关系 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/review-CreateFile-DesireAccess-ShareMode/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">开发常识 | 彻底理清 CreateFile 读写权限与共享模式的关系</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-12-23T15:44:22+08:00">
+                2023-12-23
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/开发/" itemprop="url" rel="index">
+                    <span itemprop="name">开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前一阵子，我在编写文件变化监控程序的时候遇到了文件被占用的问题。很早之前写过一篇关于 <code>CreateFile</code> 函数的 <code>dwDesiredAccess</code> 和 <code>dwShareMode</code> 参数的笔记。我发现之前的理解不够全面、准确。为了更好的理解这两个参数的作用，我搜索了大量资料，编写了测试程序及测试脚本，参考了 <code>xp</code> 源码，终于搞清楚这两个参数的作用。简而言之，需要遵循以下两个规则：</p>
+<p><strong>规则 1</strong>：后续的<strong>访问权限</strong>与先前的<strong>共享模式</strong>不能冲突。</p>
+<p><strong>规则 2</strong>：后续的<strong>共享模式</strong>与先前的<strong>访问权限</strong>不能冲突。</p>
+<p>如果你对下面的几个问题有明确的答案并且清楚的知道原因，那么可以跳过本文了。</p>
+<ol>
+<li>第一次以<strong>读</strong>访问权限，<strong>写</strong>共享模式打开文件，会成功吗？</li>
+<li>如果第一次打开成功了，第二次以<strong>写</strong>访问权限，<strong>读</strong>共享模式打开。会成功吗？</li>
+<li>如果第二次打开成功了，第三次以<strong>读</strong> / <strong>写</strong> / <strong>读写</strong>访问权限，<strong>读写</strong>共享模式打开，会成功吗？</li>
+<li>第一次以<strong>读</strong>访问权限，<strong>写</strong>共享模式打开文件，第二次以<strong>写</strong>访问权限，<strong>读写</strong>共享模式打开。第三次以<strong>写</strong>访问权限，<strong>读写</strong>共享模式打开，会成功吗？</li>
+</ol>
+<a id="more"></a>
+
+
+
+<p>在总结之前，先看一下关键的权限检查代码。</p>
+<h2 id="参考源码"><a href="#参考源码" class="headerlink" title="参考源码"></a>参考源码</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">NTSTATUS <span class="title">IoCheckShareAccess</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  IN ACCESS_MASK DesiredAccess,</span></span></span><br><span class="line"><span class="function"><span class="params">  IN ULONG DesiredShareAccess,</span></span></span><br><span class="line"><span class="function"><span class="params">  IN OUT PFILE_OBJECT FileObject,</span></span></span><br><span class="line"><span class="function"><span class="params">  IN OUT PSHARE_ACCESS ShareAccess,</span></span></span><br><span class="line"><span class="function"><span class="params">  IN BOOLEAN Update</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  PAGED_CODE();</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 获取本次调用时，指定的 读/写/删除 访问权限标志</span></span><br><span class="line">  FileObject-&gt;ReadAccess = (BOOLEAN) ((DesiredAccess &amp; (FILE_EXECUTE | FILE_READ_DATA)) != <span class="number">0</span>);</span><br><span class="line">  FileObject-&gt;WriteAccess = (BOOLEAN) ((DesiredAccess &amp; (FILE_WRITE_DATA | FILE_APPEND_DATA)) != <span class="number">0</span>);</span><br><span class="line">  FileObject-&gt;DeleteAccess = (BOOLEAN) ((DesiredAccess &amp; DELETE) != <span class="number">0</span>);</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">if</span> (FileObject-&gt;ReadAccess || FileObject-&gt;WriteAccess || FileObject-&gt;DeleteAccess)</span><br><span class="line">  &#123;      </span><br><span class="line">    <span class="comment">// 获取本次调用时，指定的 读/写/删除 共享模式标志</span></span><br><span class="line">    FileObject-&gt;SharedRead = (BOOLEAN) ((DesiredShareAccess &amp; FILE_SHARE_READ) != <span class="number">0</span>);</span><br><span class="line">    FileObject-&gt;SharedWrite = (BOOLEAN) ((DesiredShareAccess &amp; FILE_SHARE_WRITE) != <span class="number">0</span>);</span><br><span class="line">    FileObject-&gt;SharedDelete = (BOOLEAN) ((DesiredShareAccess &amp; FILE_SHARE_DELETE) != <span class="number">0</span>);</span><br><span class="line">  </span><br><span class="line">    <span class="keyword">if</span> (FileObject-&gt;Flags &amp; FO_FILE_OBJECT_HAS_EXTENSION)</span><br><span class="line">    &#123;</span><br><span class="line">      PIOP_FILE_OBJECT_EXTENSION  fileObjectExtension =(PIOP_FILE_OBJECT_EXTENSION)(FileObject + <span class="number">1</span>);</span><br><span class="line">      <span class="keyword">if</span> (fileObjectExtension-&gt;FileObjectExtensionFlags &amp; FO_EXTENSION_IGNORE_SHARE_ACCESS_CHECK)</span><br><span class="line">        <span class="keyword">return</span> STATUS_SUCCESS;</span><br><span class="line">    &#125;</span><br><span class="line">  </span><br><span class="line">    ULONG ocount = ShareAccess-&gt;OpenCount;</span><br><span class="line">  </span><br><span class="line">    <span class="keyword">if</span> ( <span class="comment">// 本次调用时 DesiredAccess 包含了读/写/删除标志，并且</span></span><br><span class="line">         <span class="comment">// 在之前的调用中，DesiredShareAccess 缺少对应的读/写/删除标志（ShareXXX &lt; ocount）</span></span><br><span class="line">         (FileObject-&gt;ReadAccess &amp;&amp; (ShareAccess-&gt;SharedRead &lt; ocount))</span><br><span class="line">      || (FileObject-&gt;WriteAccess &amp;&amp; (ShareAccess-&gt;SharedWrite &lt; ocount))</span><br><span class="line">      || (FileObject-&gt;DeleteAccess &amp;&amp; (ShareAccess-&gt;SharedDelete &lt; ocount))</span><br><span class="line">         <span class="comment">// 之前的调用中 DesiredAccess 包含了读/写/删除标志，并且</span></span><br><span class="line">         <span class="comment">// 本次调用时 DesiredShareAccess 缺少对应读/写/删除标志 </span></span><br><span class="line">      || ((ShareAccess-&gt;Readers != <span class="number">0</span>) &amp;&amp; !FileObject-&gt;SharedRead)</span><br><span class="line">      || ((ShareAccess-&gt;Writers != <span class="number">0</span>) &amp;&amp; !FileObject-&gt;SharedWrite)</span><br><span class="line">      || ((ShareAccess-&gt;Deleters != <span class="number">0</span>) &amp;&amp; !FileObject-&gt;SharedDelete)</span><br><span class="line">    )</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">return</span> STATUS_SHARING_VIOLATION;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (Update)</span><br><span class="line">    &#123;</span><br><span class="line">      ShareAccess-&gt;OpenCount++; <span class="comment">// 每次权限检查通过后，打开计数 +1</span></span><br><span class="line">    </span><br><span class="line">      <span class="comment">// 本次调用时 DesiredAccess 包含了读/写/删除标志，对应的计数 +1</span></span><br><span class="line">      ShareAccess-&gt;Readers += FileObject-&gt;ReadAccess;</span><br><span class="line">      ShareAccess-&gt;Writers += FileObject-&gt;WriteAccess;</span><br><span class="line">      ShareAccess-&gt;Deleters += FileObject-&gt;DeleteAccess;</span><br><span class="line">    </span><br><span class="line">      <span class="comment">// 本次调用时 DesiredShareAccess 包含了读/写/删除标志，对应的计数 +1</span></span><br><span class="line">      ShareAccess-&gt;SharedRead += FileObject-&gt;SharedRead;</span><br><span class="line">      ShareAccess-&gt;SharedWrite += FileObject-&gt;SharedWrite;</span><br><span class="line">      ShareAccess-&gt;SharedDelete += FileObject-&gt;SharedDelete;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> STATUS_SUCCESS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>说明：</strong> <code>DesiredAccess</code> 表示 访问权限，<code>DesiredShareAccess</code> 表示 共享模式。</p>
+</blockquote>
+<p>代码中的注释已经写的很清楚了，再整体梳理一下：</p>
+<p><strong>更新逻辑（else if 分支）：</strong></p>
+<p>每次权限检查成功后，如果指定了 <code>Update</code> 参数，<code>SharedAccess-&gt;OpenCount</code> 计数会加一。</p>
+<p>当 <code>DesiredAccess</code> 包含<strong>读</strong> / <strong>写</strong> / <strong>删除</strong>标志的时候，<code>SharedAccess-&gt;Readers / Writers / Deleters</code> 计数会加一。</p>
+<p>当 <code>DesiredShareAccess</code> 包含<strong>读</strong> / <strong>写</strong> / <strong>删除</strong>标志的时候，<code>ShareAccess-&gt;SharedRead / SharedWrite / SharedDelete</code> 计数会加一。</p>
+<p><strong>检查逻辑（if 分支）：</strong></p>
+<ul>
+<li><p>如果本次调用时 <code>DesiredAccess</code> 包含了<strong>读</strong> / <strong>写</strong> / <strong>删除</strong>标志（<code>FileObject-&gt;ReadAccess / WriteAccess / DeleteAccess</code> 为真）并且在之前的调用中 <code>DesiredShareAccess</code> 缺少对应的<strong>读</strong> / <strong>写</strong> / <strong>删除</strong>标志（<code>ShareAccess-&gt;SharedRead / SharedWrite / SharedDelete &lt; ocount</code>），违反<strong>规则 1</strong>，权限检查会失败。</p>
+</li>
+<li><p>如果在之前的调用中 <code>DesiredAccess</code> 包含了<strong>读</strong> / <strong>写</strong> / <strong>删除</strong>标志（<code>ShareAccess-&gt;Readers / Writers / Deleters != 0</code>），并且本次调用时 <code>DesiredShareAccess</code> 缺少对应<strong>读</strong> / <strong>写</strong> / <strong>删除</strong>标志（<code>FileObject-&gt;SharedRead / SharedWrite / SharedDelete</code> 为假），违反<strong>规则 2</strong>，权限检查会失败。</p>
+</li>
+</ul>
+<p>我把各种情况下的打开结果整理成了表格，供大家参考。</p>
+<h2 id="结果表"><a href="#结果表" class="headerlink" title="结果表"></a>结果表</h2><table>
+<thead>
+<tr>
+<th>访问权限 1</th>
+<th>共享模式 1</th>
+<th>访问权限 2</th>
+<th>共享模式 2</th>
+<th>结果</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>—</td>
+<td>N</td>
+<td>R / W / RW</td>
+<td>—</td>
+<td>失败</td>
+<td>违反了 <strong>规则1</strong></td>
+</tr>
+<tr>
+<td>—</td>
+<td>R</td>
+<td>W / RW</td>
+<td>—</td>
+<td>失败</td>
+<td>违反了 <strong>规则1</strong></td>
+</tr>
+<tr>
+<td>—</td>
+<td>W</td>
+<td>R / RW</td>
+<td>—</td>
+<td>失败</td>
+<td>违反了 <strong>规则1</strong></td>
+</tr>
+<tr>
+<td>R / W / RW</td>
+<td>—</td>
+<td>—</td>
+<td>N</td>
+<td>失败</td>
+<td>违反了 <strong>规则2</strong></td>
+</tr>
+<tr>
+<td>W / RW</td>
+<td>—</td>
+<td>—</td>
+<td>R</td>
+<td>失败</td>
+<td>违反了 <strong>规则2</strong></td>
+</tr>
+<tr>
+<td>R / RW</td>
+<td>—</td>
+<td>—</td>
+<td>W</td>
+<td>失败</td>
+<td>违反了 <strong>规则2</strong></td>
+</tr>
+<tr>
+<td>R</td>
+<td>R</td>
+<td>R</td>
+<td>R / RW</td>
+<td>成功</td>
+<td>第二次的<strong>访问权限</strong>与第一次的<strong>共享模式</strong>不冲突。 <br>第二次的<strong>共享模式</strong>与第一次的<strong>访问权限</strong>不冲突。</td>
+</tr>
+<tr>
+<td>R</td>
+<td>W</td>
+<td>W</td>
+<td>R / RW</td>
+<td>成功</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>R</td>
+<td>RW</td>
+<td>R / W / RW</td>
+<td>R / RW</td>
+<td>成功</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>W</td>
+<td>W</td>
+<td>W</td>
+<td>W / RW</td>
+<td>成功</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>W</td>
+<td>R</td>
+<td>R</td>
+<td>W / RW</td>
+<td>成功</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>W</td>
+<td>RW</td>
+<td>R / W / RW</td>
+<td>W / RW</td>
+<td>成功</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>RW</td>
+<td>R</td>
+<td>R</td>
+<td>RW</td>
+<td>成功</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>RW</td>
+<td>W</td>
+<td>W</td>
+<td>RW</td>
+<td>成功</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>RW</td>
+<td>RW</td>
+<td>R / W / RW</td>
+<td>RW</td>
+<td>成功</td>
+<td>同上</td>
+</tr>
+</tbody></table>
+<p>各项的意义解释如下：</p>
+<ul>
+<li><p><code>访问权限</code> 代表 <code>dwDesiredAccess</code> 参数，<code>共享模式</code> 代表 <code>dwShareAccess</code> 参数。<code>1</code> 表示第一次调用，<code>2</code> 表示第二次调用。</p>
+</li>
+<li><p><code>R</code> <code>Read</code>，表示<strong>读</strong>。<code>W</code> <code>Write</code>，表示<strong>写</strong>。<code>RW</code> <code>ReadWrite</code>，表示<strong>读写</strong>。<code>N</code> <code>None</code>， 表示<strong>独占</strong>。</p>
+</li>
+<li><p><code>/</code> 表示或者。为了减少组合数量。比如第一行中的 <strong>访问权限 2</strong> 可以是<strong>读</strong> / <strong>写</strong> / <strong>读写</strong>中的任意一种。</p>
+</li>
+<li><p><code>---</code> 表示对应位置是什么都可以，不影响结果。比如，第一行的 <strong>访问权限 1</strong> 可以是<strong>读</strong> / <strong>写</strong> / <strong>读写</strong>中的任意一种，不论是哪种都会打开失败。</p>
+</li>
+<li><p><strong>结果</strong>列只统计了第二次的结果，因为第一次总是成功的。</p>
+</li>
+</ul>
+<p>以上结论我在 <code>win10</code> 系统上亲自验证过，整体验证思路是用不同的参数调用 <code>CreateFile</code> 打开同一个文件。关键验证代码如下：</p>
+<h2 id="验证代码"><a href="#验证代码" class="headerlink" title="验证代码"></a>验证代码</h2><figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> System.Collections.Generic;</span><br><span class="line"><span class="keyword">using</span> System.CommandLine;</span><br><span class="line"><span class="keyword">using</span> System.IO;</span><br><span class="line"><span class="keyword">using</span> System.Linq;</span><br><span class="line"><span class="keyword">using</span> System.Text;</span><br><span class="line"><span class="keyword">using</span> System.Threading.Tasks;</span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="title">CreateFile</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// ref https://learn.microsoft.com/en-us/dotnet/standard/commandline/define-commands</span></span><br><span class="line">        <span class="function"><span class="keyword">static</span> Command <span class="title">SetupCommandHandler</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">var</span> filePathOption = <span class="keyword">new</span> Option&lt;<span class="keyword">string</span>&gt;(name: <span class="string">"--path"</span>, getDefaultValue: () =&gt; <span class="string">"test.txt"</span>, description: <span class="string">"file path"</span>);</span><br><span class="line">            filePathOption.AddAlias(<span class="string">"-f"</span>);</span><br><span class="line">            filePathOption.AddAlias(<span class="string">"-p"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">var</span> fileModeOption = <span class="keyword">new</span> Option&lt;<span class="keyword">string</span>&gt;(name: <span class="string">"--mode"</span>, getDefaultValue: () =&gt; <span class="string">"Open"</span>, description: <span class="string">"file mode"</span>)</span><br><span class="line">                .FromAmong(<span class="string">"CreateNew"</span>, <span class="string">"Create"</span>, <span class="string">"Open"</span>, <span class="string">"OpenOrCreate"</span>, <span class="string">"Truncate"</span>, <span class="string">"Append"</span>);</span><br><span class="line">            fileModeOption.AddAlias(<span class="string">"-m"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">var</span> fileShareOption = <span class="keyword">new</span> Option&lt;<span class="keyword">string</span>&gt;(<span class="string">"--share"</span>, <span class="string">"file share"</span>) &#123; IsRequired = <span class="literal">true</span> &#125;</span><br><span class="line">                .FromAmong(<span class="string">"None"</span>, <span class="string">"Read"</span>, <span class="string">"Write"</span>, <span class="string">"ReadWrite"</span>, <span class="string">"Delete"</span>, <span class="string">"Inheritable"</span>);</span><br><span class="line">            fileShareOption.AddAlias(<span class="string">"-s"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">var</span> fileAccessOption = <span class="keyword">new</span> Option&lt;<span class="keyword">string</span>&gt;(<span class="string">"--access"</span>, <span class="string">"file access"</span>) &#123; IsRequired = <span class="literal">true</span> &#125;</span><br><span class="line">                .FromAmong(<span class="string">"Read"</span>, <span class="string">"Write"</span>, <span class="string">"ReadWrite"</span>);</span><br><span class="line">            fileAccessOption.AddAlias(<span class="string">"-a"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">var</span> autoQuitOption = <span class="keyword">new</span> Option&lt;<span class="keyword">bool</span>&gt;(name: <span class="string">"--autoquit"</span>, getDefaultValue: () =&gt; <span class="literal">false</span>, description: <span class="string">"auto quit"</span>);</span><br><span class="line">            autoQuitOption.AddAlias(<span class="string">"-q"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">var</span> command = <span class="keyword">new</span> RootCommand();</span><br><span class="line">            command.Add(filePathOption);</span><br><span class="line">            command.Add(fileModeOption);</span><br><span class="line">            command.Add(fileShareOption);</span><br><span class="line">            command.Add(fileAccessOption);</span><br><span class="line">            command.Add(autoQuitOption);</span><br><span class="line"></span><br><span class="line">            command.SetHandler((filePath, fileMode, fileShare, fileAccess, autoQuit) =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                OpenFileAndWait(filePath, fileMode, fileShare, fileAccess, autoQuit);</span><br><span class="line">            &#125;, filePathOption, fileModeOption, fileShareOption, fileAccessOption, autoQuitOption);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> command;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">var</span> command = SetupCommandHandler();</span><br><span class="line">            command.Invoke(args);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">OpenFileAndWait</span>(<span class="params"><span class="keyword">string</span> strFilePath, <span class="keyword">string</span> strFileMode, <span class="keyword">string</span> strFileShare, <span class="keyword">string</span> strFileAccess, <span class="keyword">bool</span> autoQuit</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            FileStream stream = <span class="literal">null</span>;</span><br><span class="line">            <span class="keyword">try</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">var</span> fileMode = (FileMode)System.Enum.Parse(<span class="keyword">typeof</span>(FileMode), strFileMode);</span><br><span class="line">                <span class="keyword">var</span> fileShare = (FileShare)System.Enum.Parse(<span class="keyword">typeof</span>(FileShare), strFileShare);</span><br><span class="line">                <span class="keyword">var</span> fileAccess = (FileAccess)System.Enum.Parse(<span class="keyword">typeof</span>(FileAccess), strFileAccess);</span><br><span class="line"></span><br><span class="line">                System.Console.WriteLine(<span class="keyword">string</span>.Format(<span class="string">"[&#123;0&#125;] file:&#123;1&#125;, mode: &#123;2&#125;, share: &#123;3&#125;, access: &#123;4&#125;!"</span></span><br><span class="line">                  , System.DateTime.Now.ToString(<span class="string">"yyyy-MM-dd HH:mm:ss.fff"</span>), strFilePath, strFileMode, strFileShare, strFileAccess));</span><br><span class="line"></span><br><span class="line">                stream = File.Open(strFilePath, fileMode, fileAccess, fileShare);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">catch</span> (Exception ex)</span><br><span class="line">            &#123;</span><br><span class="line">                System.Console.WriteLine(<span class="keyword">string</span>.Format(<span class="string">"opening file [&#123;0&#125;] failed with &#123;1&#125;!"</span>, strFilePath, ex));</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!autoQuit)</span><br><span class="line">            &#123;</span><br><span class="line">                System.Console.WriteLine(<span class="string">"press any key to continue..."</span>);</span><br><span class="line">                System.Console.ReadKey();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (stream != <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                stream.Dispose();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>生成的程序名是 <code>CreateFile.exe</code>，该程序可以接收命令行参数，通过 <code>-f</code> 指定文件名，通过 <code>-a</code> 指定访问权限，通过 <code>-s</code> 指定共享模式， 通过 <code>-h</code> 显示帮助。</p>
+<h2 id="验证脚本"><a href="#验证脚本" class="headerlink" title="验证脚本"></a>验证脚本</h2><p>为了更方便的验证，我又写了批处理脚本，关键脚本如下：</p>
+<figure class="highlight bat"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">:: read-readwrite-write-none.bat</span><br><span class="line">CreateFileBatchCaller.bat <span class="variable">%~n0%</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bat"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">:: CreateFileBatchCaller.bat</span><br><span class="line">@<span class="built_in">echo</span> off</span><br><span class="line"><span class="built_in">cd</span> /d %~dp0</span><br><span class="line"></span><br><span class="line"><span class="built_in">setlocal</span> enabledelayedexpansion</span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> AccessParams=<span class="variable">%1%</span></span><br><span class="line"><span class="built_in">set</span> AccessParams=<span class="variable">%AccessParams:read=Read%</span></span><br><span class="line"><span class="built_in">set</span> AccessParams=<span class="variable">%AccessParams:write=Write%</span></span><br><span class="line"><span class="built_in">set</span> AccessParams=<span class="variable">%AccessParams:none=None%</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">For</span> /f "tokens=<span class="number">1</span>-<span class="number">4</span> delims=_/. " <span class="variable">%%i</span> <span class="keyword">In</span> ("<span class="variable">%AccessParams%</span>") <span class="keyword">do</span> (</span><br><span class="line">  <span class="built_in">set</span> Access1=<span class="variable">%%i</span></span><br><span class="line">  <span class="built_in">set</span> SharedAccess1=<span class="variable">%%j</span></span><br><span class="line">  <span class="built_in">set</span> Access2=<span class="variable">%%k</span></span><br><span class="line">  <span class="built_in">set</span> SharedAccess2=<span class="variable">%%l</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="built_in">start</span> CreateFile -f test.txt -a <span class="variable">%Access1%</span> -s <span class="variable">%SharedAccess1%</span></span><br><span class="line"></span><br><span class="line">:: will this success?</span><br><span class="line">timeout /T <span class="number">1</span></span><br><span class="line"><span class="built_in">start</span> CreateFile -f test.txt -a <span class="variable">%Access2%</span> -s <span class="variable">%SharedAccess2%</span></span><br></pre></td></tr></table></figure>
+
+<p>脚本 <code>CreateFileBatchCaller.bat</code> 接收一个参数，内部会根据 <code>-</code> 分割参数，前四项有固定意义，分别表示第一次调用 <code>CreateFile.exe</code> 的访问权限和共享模式、第二次调用 <code>CreateFile.exe</code> 的访问权限和共享模式。</p>
+<p><code>read-readwrite-write-none-failed.bat</code> 是众多调用脚本中的一个，内部会把当前脚本的文件名（不包括扩展名）当作参数调用 <code>CreateFileBatchCaller.bat</code> 。 该脚本可以验证第一次以<strong>读</strong>访问权限、<strong>读写</strong>共享模式打开文件，第二次以<strong>写</strong>访问权限、<strong>独占</strong>共享模式打开文件的情况。 </p>
+<h2 id="亲自动手"><a href="#亲自动手" class="headerlink" title="亲自动手"></a>亲自动手</h2><p>所有脚本及源码我已经上传到我的个人仓库了。如果你也想亲自动手验证一下，可以从如下位置获取测试代码，编译好的程序及测试脚本。</p>
+<p>github:</p>
+<p><a href="https://github.com/BianChengNan/MyBlogStuff/tree/master/review-CreateFile-DesireAccess-ShareMode" target="_blank" rel="noopener">https://github.com/BianChengNan/MyBlogStuff/tree/master/review-CreateFile-DesireAccess-ShareMode</a></p>
+<p>gitee:</p>
+<p><a href="https://gitee.com/bianchengnan/my-blog-stuff/tree/master/review-CreateFile-DesireAccess-ShareMode" target="_blank" rel="noopener">https://gitee.com/bianchengnan/my-blog-stuff/tree/master/review-CreateFile-DesireAccess-ShareMode</a></p>
+<p>百度云盘：</p>
+<p><a href="https://pan.baidu.com/s/10BMMhPGiiBYjlMFrbQH-3g?pwd=tibm" target="_blank" rel="noopener">https://pan.baidu.com/s/10BMMhPGiiBYjlMFrbQH-3g?pwd=tibm</a></p>
+<p>至此，文章开头的几个问题的答案应该已经很明显了。一起来看一下。</p>
+<h2 id="解惑"><a href="#解惑" class="headerlink" title="解惑"></a>解惑</h2><ol>
+<li><p>第一次尝试以<strong>读</strong>访问权限，<strong>写</strong>共享模式打开文件，会成功吗？</p>
+<p><strong>答：会成功。</strong></p>
+<p>第一次打开时总会成功。</p>
+</li>
+</ol>
+<ol start="2">
+<li><p>如果第一次打开成功了，第二次尝试以<strong>写</strong>访问权限，<strong>读</strong>共享模式打开。会成功吗？</p>
+<p><strong>答：会成功。</strong></p>
+<p>第一次的共享模式是<strong>写</strong>，第二次的访问权限是<strong>写</strong>，第二次的访问权限与第一次的共享模式不冲突。</p>
+<p>第二次的共享模式是<strong>读</strong>，第一次的访问权限是<strong>读</strong>，第二次的共享模式与第一次的访问权限不冲突。</p>
+<p><img src="http://resources.bianchengnan.tech/review-CreateFile-DesireAccess-ShareMode/open-result-2.png" alt="open-result-2"></p>
+</li>
+</ol>
+<ol start="3">
+<li><p>如果第二次打开成功了，第三次尝试以<strong>读</strong>/<strong>写</strong>/<strong>读写</strong>访问权限，<strong>读写</strong>共享模式打开，会成功吗？</p>
+<p><strong>答：不会成功。</strong></p>
+<p>第三次的访问权限是<strong>读</strong>的话，与第一次的共享模式（<strong>写</strong>）冲突。</p>
+<p>第三次的访问权限是<strong>写</strong>的话，与第二次的共享模式（<strong>读</strong>）冲突。</p>
+<p>第三次的访问权限是<strong>读写</strong>的话，既与第一次的共享模式（<strong>写</strong>）冲突，又与第二次的共享模式（<strong>读</strong>）冲突。<br><img src="http://resources.bianchengnan.tech/review-CreateFile-DesireAccess-ShareMode/open-result-3.png" alt="open-result-3"></p>
+<p>这里只贴了第三次的访问权限是<strong>写</strong>的情况，其它两种情况也会失败。</p>
+</li>
+<li><p>第一次尝试以<strong>读</strong>访问权限，<strong>写</strong>共享模式打开文件，第二次尝试以<strong>写</strong>访问权限，<strong>读写</strong>共享模式打开。第三次尝试以<strong>写</strong>访问权限，<strong>读写</strong>共享模式打开，会成功吗？</p>
+<p><strong>答：会成功。</strong></p>
+<p>第三次的访问权限（<strong>写</strong>），既不与第一次的共享模式（<strong>写</strong>）冲突，又不与第二次的共享模式（<strong>读写</strong>）冲突。</p>
+<p>第三次的共享模式（<strong>读写</strong>），既不与第一次的访问权限（<strong>读</strong>）冲突，又不与第二次的访问权限（<strong>写</strong>）冲突。<br><img src="http://resources.bianchengnan.tech/review-CreateFile-DesireAccess-ShareMode/open-result-4.png" alt="open-result-4"></p>
+</li>
+</ol>
+<p>最后，贴一下之前整理的笔记，基本正确，但是不够全面，不够深刻。</p>
+<h2 id="CreateFile-参数"><a href="#CreateFile-参数" class="headerlink" title="CreateFile 参数"></a>CreateFile 参数</h2><p>一直对 <code>CreateFile</code> 的参数 <code>dwDesiredAccess</code> 和 <code>dwShareMode</code> 的具体作用不是很清楚，今天重读《windows 核心编程》的时候有了一些新感悟。 简要总结如下：</p>
+<ul>
+<li><code>dwDesiredAccess</code> 表示本次 <code>CreateFile</code> 想要获取的权限: 只读(<code>GENERIC_READ</code>)，只写(<code>GENERIC_WRITE</code>)，可读写 (<code>GENERIC_READ | GENERIC_WRITE</code>)。</li>
+<li><code>dwShareMode</code> 表示后续 <code>CreateFile</code> 可以取得什么权限。</li>
+</ul>
+<p>对 <code>dwDesiredAccess</code> 各种值及含义抄录如下（摘自 《Windows核心编程》第 <code>5</code> 版 第<code>10</code> 章 <code>p279</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>我们不希望从设备读取数据或向设备写入数据。如果只想改变设备的配置（比如只是修改文件的时间戳），那么可以传 <code>0</code></td>
+</tr>
+<tr>
+<td>GENERIC_READ</td>
+<td>允许对设备进行只读访问</td>
+</tr>
+<tr>
+<td>GENERIC_WRITE</td>
+<td>允许对设备进行只写访问。例如，备份软件会用到这个标志，如果想把数据发送到打印机，也可以使用这个标志。注意，<code>GENERIC_WRITE</code> 标志并没有隐式地包含 <code>GENERIC_READ</code> 标志</td>
+</tr>
+<tr>
+<td>GENERIC_READ | GENERIC_WRITE</td>
+<td>允许对设备进行读写操作。由于这个标志允许我们和设备之间自由地交换数据，因此最为常用</td>
+</tr>
+</tbody></table>
+<p>对 <code>dwShareMode</code> 的各种值及含义抄录如下（摘自 《Windows核心编程》第 <code>5</code> 版 第<code>10</code> 章 <code>p279</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>要求独占对设备的访问。 如果设备己经打开，<code>CreateFile</code> 调用会失败。如果我们成功地打开了设备，那么后续的 <code>CreateFile</code> 调用会失败</td>
+</tr>
+<tr>
+<td>FILE_SHARE_READ</td>
+<td>如果有其他内核对象要使用该设备，我们要求它们不得修改设备的数据。 如果设备已经以写入方式或独占方式打开，那么我们的 <code>CreateFile</code> 会失败。 如果我们成功地打开了设备，那么后续的使用了 <code>GENERIC_WRITE</code> 访问标志的 <code>CreateFile</code> 调用会失败</td>
+</tr>
+<tr>
+<td>FILE_SHARE_WRITE</td>
+<td>如果有其他内核对象要使用该设备，我们要求它们不得读取设备的数据。 如果设备已经以读取方式或独占方式打开，那么我们的 <code>CreateFile</code> 调用会失败。 如果我们成功地打开了设备，那么后续的使用了<code>GENERIC_READ</code> 访问标志的 <code>CreateFile</code> 调用会失畋</td>
+</tr>
+<tr>
+<td>FILE_SHARE_READ | FILE_SHARE_WRITE</td>
+<td>如果有其他内核对象要使用该设备，我们不关心它们会从设备读取数据还是会向设备写入数据。如果设备已经以独占方式打开，那么我们的 <code>CreateFile</code> 调用会失败。如果我们成功地打开了设备，那么后续的要求独占读取访问、独占写入访问或独占读写访问的 <code>CreateFile</code> 调用会失败</td>
+</tr>
+<tr>
+<td>FILE_SHARE_DELETE</td>
+<td>当对文件进行操作的时候，我们不关心文件是否被逻辑删除或是被移动。在 <code>Windows</code> 内部，系统会先将文件标记为待删除，然后当该文件所有已打开的句柄都被关闭的时候，再将其真正的删除</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>友情提示：</strong> 上表中的 <code>如果设备已经以 xxx 方式打开</code> 指的是先前调用的 <code>dwShareMode</code> 参数。</p>
+</blockquote>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="https://0cch.com/2011/05/22/e585b3e4ba8ee69687e4bbb6shareaccess/" target="_blank" rel="noopener">https://0cch.com/2011/05/22/e585b3e4ba8ee69687e4bbb6shareaccess/</a>  强烈推荐阅读！！！</li>
+<li><a href="https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea</a></li>
+<li><a href="https://community.osr.com/discussion/32329/file-object-fscontext9" target="_blank" rel="noopener">https://community.osr.com/discussion/32329/file-object-fscontext9</a></li>
+<li>《windows 核心编程》第 <code>5</code> 版 第<code>10</code> 章</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/review-CreateFile-DesireAccess-ShareMode/" title="开发常识 | 彻底理清 CreateFile 读写权限与共享模式的关系">https://bianchengnan.github.io/articles/review-CreateFile-DesireAccess-ShareMode/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/开发/" rel="tag"><i class="fa fa-tag"></i> 开发</a>
+          
+            <a href="/tags/基础知识/" rel="tag"><i class="fa fa-tag"></i> 基础知识</a>
+          
+            <a href="/tags/win10/" rel="tag"><i class="fa fa-tag"></i> win10</a>
+          
+            <a href="/tags/xp/" rel="tag"><i class="fa fa-tag"></i> xp</a>
+          
+            <a href="/tags/权限/" rel="tag"><i class="fa fa-tag"></i> 权限</a>
+          
+            <a href="/tags/CreateFile/" rel="tag"><i class="fa fa-tag"></i> CreateFile</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/how-to-check-thread-stack-base/" rel="next" title="如何确定线程栈的基址？">
+                <i class="fa fa-chevron-left"></i> 如何确定线程栈的基址？
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/findout-who-is-using-my-file-with-the-help-of-perfview-and-process-explorer/" rel="prev" title="调试实战 | 谁在偷偷占用我的文件？原来是我自己">
+                调试实战 | 谁在偷偷占用我的文件？原来是我自己 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考源码"><span class="nav-number">2.</span> <span class="nav-text">参考源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结果表"><span class="nav-number">3.</span> <span class="nav-text">结果表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证代码"><span class="nav-number">4.</span> <span class="nav-text">验证代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#验证脚本"><span class="nav-number">5.</span> <span class="nav-text">验证脚本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#亲自动手"><span class="nav-number">6.</span> <span class="nav-text">亲自动手</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解惑"><span class="nav-number">7.</span> <span class="nav-text">解惑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CreateFile-参数"><span class="nav-number">8.</span> <span class="nav-text">CreateFile 参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">9.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

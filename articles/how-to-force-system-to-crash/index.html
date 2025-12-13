@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,调试,debug,kernel debug,BSOD,蓝屏,win10,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言在 蓝屏（BSOD）转储设置，看本文就够了！ 这篇文章里比较详细的介绍了蓝屏转储设置。做好设置后，我们就可以在需要的时候使系统蓝屏了。这样我们就可以拿到一份系统转储，供我们分析问题了。本文介绍几种可以使系统蓝屏的办法。当然肯定还有其它办法，如果哪位小伙伴儿知道比较实用的方法，欢迎留言分享。">
+<meta name="keywords" content="原,总结,调试,debug,kernel debug,BSOD,蓝屏,win10">
+<meta property="og:type" content="article">
+<meta property="og:title" content="系统蓝屏的几种姿势，确定不了解下么？">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言在 蓝屏（BSOD）转储设置，看本文就够了！ 这篇文章里比较详细的介绍了蓝屏转储设置。做好设置后，我们就可以在需要的时候使系统蓝屏了。这样我们就可以拿到一份系统转储，供我们分析问题了。本文介绍几种可以使系统蓝屏的办法。当然肯定还有其它办法，如果哪位小伙伴儿知道比较实用的方法，欢迎留言分享。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/NotMyFault.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/NotMyFaultC-Usage.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/kill-csrss-bsod-screen-record.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/can-not-terminate-csrss-on-win10.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/critical-process-died-bsod-screen-record.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/device-manager-keyboard.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/control-panel-device-manager.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/101-102-keyboard-PS2-scan-code.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/part-of-scancode-translation-table.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/scancode-translation-table-note.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/manually-bsod-screen-record.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/windbg-analyze-user-manually-bsod-dump.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/windbg-open-memory-dump-failed.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.641Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="系统蓝屏的几种姿势，确定不了解下么？">
+<meta name="twitter:description" content="前言在 蓝屏（BSOD）转储设置，看本文就够了！ 这篇文章里比较详细的介绍了蓝屏转储设置。做好设置后，我们就可以在需要的时候使系统蓝屏了。这样我们就可以拿到一份系统转储，供我们分析问题了。本文介绍几种可以使系统蓝屏的办法。当然肯定还有其它办法，如果哪位小伙伴儿知道比较实用的方法，欢迎留言分享。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/how-to-force-system-to-crash/NotMyFault.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>系统蓝屏的几种姿势，确定不了解下么？ | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">系统蓝屏的几种姿势，确定不了解下么？</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-02-22T17:09:42+08:00">
+                2020-02-22
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/转储/" itemprop="url" rel="index">
+                    <span itemprop="name">转储</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 <a href="https://bianchengnan.github.io/articles/kernel-memory-dump-setting/">蓝屏（BSOD）转储设置，看本文就够了！</a> 这篇文章里比较详细的介绍了蓝屏转储设置。做好设置后，我们就可以在需要的时候使系统蓝屏了。这样我们就可以拿到一份系统转储，供我们分析问题了。本文介绍几种可以使系统蓝屏的办法。当然肯定还有其它办法，如果哪位小伙伴儿知道比较实用的方法，欢迎留言分享。</p>
+<a id="more"></a>
+
+
+
+<h2 id="几种蓝屏方法"><a href="#几种蓝屏方法" class="headerlink" title="几种蓝屏方法"></a>几种蓝屏方法</h2><p><strong>1、通过驱动</strong></p>
+<p>思路是：在内核执行有问题的代码（比如，在驱动的入口处加上简单的 <code>int* p = 0; *p = 0;</code> ，然后加载有问题的驱动即可）。<code>sysinternals</code> 系列工具中的 <code>NotMyFault</code> 就是加载驱动，然后在驱动中模拟各种非法操作来使系统蓝屏的。</p>
+<p>  <img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/NotMyFault.png" alt="NotMyFault"></p>
+<p>​    </p>
+<p>我们可以点击 <code>Colors...</code> 按钮，来看看其它颜色的 “蓝屏” 效果。可以通过 <code>Hang</code> 让系统挂起，还可以通过 <code>Leak</code> 模拟内核级内存泄漏。</p>
+<p>我们还可以在命令行执行 <code>notMyfault.exe /crash</code> 来直接使系统蓝屏。如果我们想指定崩溃类型，可以使用 <code>NotMyFault</code> 的命令行版本 —— <code>notmyfaultc.exe</code>。具体选项大家可以直接运行 <code>notmyfaultc.exe</code> 查看或者参考下图：</p>
+<p>  <img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/NotMyFaultC-Usage.png" alt="NotMyFaultC-Usage"></p>
+<p><strong>2、杀死系统关键进程</strong></p>
+<p>如果系统关键进程挂掉了（比如，<code>csrss.exe</code>），那么系统也会蓝屏。</p>
+<p><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/kill-csrss-bsod-screen-record.gif" alt="kill-csrss-bsod-screen-record"></p>
+<p>在 <code>win7</code> 系统中，具有管理员权限的进程可以杀死 <code>csrss</code> 进程，但是在 <code>win10</code> 中不能简单粗暴的杀死 <code>csrss</code> 进程了。</p>
+<p><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/can-not-terminate-csrss-on-win10.gif" alt="can-not-terminate-csrss-on-win10"></p>
+<p><strong>win10 变通方法：</strong>我们可以把其它进程设置为系统关键进程，然后杀掉。或者伪装成系统关键进程，然后自动退出。感谢 <a href="https://bytecode77.com/hacking/payloads/bsod" target="_blank" rel="noopener">https://bytecode77.com/hacking/payloads/bsod</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> _tmain(<span class="keyword">int</span> argc, _TCHAR* argv[])</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">typedef</span> <span class="title">NTSTATUS</span> <span class="params">(*pfnRtlSetProcessIsCritical)</span> <span class="params">(BOOLEAN, PBOOLEAN, BOOLEAN)</span></span>; <span class="comment">// __cdecl</span></span><br><span class="line">    <span class="function"><span class="keyword">typedef</span> <span class="title">BOOL</span><span class="params">(WINAPI * pfnRtlAdjustPrivilege)</span> <span class="params">(ULONG, BOOL, BOOL, PBOOLEAN)</span></span>;</span><br><span class="line">    <span class="keyword">auto</span> ntdll = ::LoadLibrary(TEXT(<span class="string">"ntdll.dll"</span>));</span><br><span class="line">    <span class="keyword">auto</span> RtlAdjustPrivilege = (pfnRtlAdjustPrivilege)GetProcAddress((HINSTANCE)ntdll, <span class="string">"RtlAdjustPrivilege"</span>);</span><br><span class="line">    <span class="keyword">auto</span> RtlSetProcessIsCritical = (pfnRtlSetProcessIsCritical)GetProcAddress((HINSTANCE)ntdll, <span class="string">"RtlSetProcessIsCritical"</span>);</span><br><span class="line"></span><br><span class="line">    BOOLEAN e = <span class="number">0</span>;</span><br><span class="line">    RtlAdjustPrivilege(<span class="number">20</span>, <span class="number">1</span>, <span class="number">0</span>, &amp;e);</span><br><span class="line">    RtlSetProcessIsCritical(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/critical-process-died-bsod-screen-record.gif" alt="关键进程结束导致蓝屏"></p>
+<p><strong>3、使用快捷键</strong></p>
+<p>如果系统由于某些原因挂起了，我们没办法杀死系统关键进程，也不能运行 <code>NotMyFault</code> 了。这时候我们还可以通过快捷键来使系统蓝屏！不过我们需要预先做一些设置才行。把下面的代码保存到 <code>.reg</code> 文件，然后双击导入注册表，<strong>重启生效</strong>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Windows Registry Editor Version 5.00</span><br><span class="line"></span><br><span class="line">;------------------------------------------------------------------------------</span><br><span class="line">; enable BSOD by right CTRL + SCROLL + SCROLL </span><br><span class="line">;------------------------------------------------------------------------------</span><br><span class="line">; For PS/2 keyboards</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\i8042prt\Parameters]</span><br><span class="line">"CrashOnCtrlScroll"=dword:00000001</span><br><span class="line"></span><br><span class="line">; For USB keyboards</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\kbdhid\Parameters]</span><br><span class="line">"CrashOnCtrlScroll"=dword:00000001</span><br><span class="line"></span><br><span class="line">; For Hyper-V keyboards (BCN:I never use this, copy it from document)</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\hyperkbd\Parameters]</span><br><span class="line">"CrashOnCtrlScroll"=dword:00000001</span><br></pre></td></tr></table></figure>
+
+<p>重启后，按住<strong>右侧</strong>的 <code>Ctrl</code> 键，然后按两下 <code>SCROLL LOCK</code> 键就可以使系统蓝屏了。这个方法在极少数的情况下会失效。比如，系统挂起在更高的中断请求级别（<code>IRQL</code>），没办法处理按键。不过，我们应该没那么点背。正如微软官方文档介绍的那样，有时候即使 <code>CTRL+ALT+DELETE</code> 不响应了，<code>RCTRL + SCROLL + SCROLL</code> 还能工作。</p>
+<p>如果键盘上没有 <code>Scroll Lock</code> 键，怎么办？</p>
+<p><strong>4、使用自定义快捷键</strong></p>
+<p>也许有的小伙伴使用的笔记本电脑的键盘上没有 <code>Scroll Lock</code> 键，该怎么办呢？<code>Windows</code> 已经考虑到了这种情况，允许我们自定义蓝屏快捷键。具体设置可以参考 <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/forcing-a-system-crash-from-the-keyboard" target="_blank" rel="noopener">微软官方文档 —— Forcing a System Crash from the Keyboard</a> 。保存下面的代码到 <code>.reg</code> 文件，双击导入注册表，<strong>重启生效</strong>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">Windows Registry Editor Version 5.00</span><br><span class="line"></span><br><span class="line">;------------------------------------------------------------------------------</span><br><span class="line">; enable BSOD by custom key, mutually exclusive with CrashOnCtrlScroll setting</span><br><span class="line">; Dump1Keys: 20 stands for LEFT CTRL</span><br><span class="line">; Dump2Key:  HEXadecimal INDEX in keyToScanTbl[134]</span><br><span class="line">;            01 stands for `/~ key (left of 1/! key)</span><br><span class="line">;            3d stands for space key.</span><br><span class="line">;            1f stands for A key. but after test, ctrl + a will not work. </span><br><span class="line">;            WARNING: not sure this works for all keyboards, try your luck :)</span><br><span class="line">;------------------------------------------------------------------------------</span><br><span class="line"></span><br><span class="line">; For PS/2 keyboards</span><br><span class="line">; disable CrashOnCtrlScroll first</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\i8042prt\Parameters]</span><br><span class="line">"CrashOnCtrlScroll"=-</span><br><span class="line"></span><br><span class="line">; setup custom key</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\i8042prt\crashdump]</span><br><span class="line">"Dump1Keys"=dword:00000020</span><br><span class="line">"Dump2Key"=dword:00000001</span><br><span class="line"></span><br><span class="line">; For USB keyboards</span><br><span class="line">; disable CrashOnCtrlScroll first</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\kbdhid\Parameters]</span><br><span class="line">"CrashOnCtrlScroll"=-</span><br><span class="line"></span><br><span class="line">; setup custom key</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\kbdhid\crashdump]</span><br><span class="line">"Dump1Keys"=dword:00000020</span><br><span class="line">"Dump2Key"=dword:00000001</span><br><span class="line"></span><br><span class="line">; For Hyper-V keyboards (BCN:I never use this, reference above setting)</span><br><span class="line">; disable CrashOnCtrlScroll first</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\hyperkbd\Parameters]</span><br><span class="line">"CrashOnCtrlScroll"=-</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\hyperkbd\crashdump]</span><br><span class="line">"Dump1Keys"=dword:00000020</span><br><span class="line">"Dump2Key"=dword:00000001</span><br></pre></td></tr></table></figure>
+
+<p>重启后，按住<strong>左侧</strong>的 <code>Ctrl</code> 键，然后连续按<strong>两下</strong> <code>`</code> 键就可以使系统蓝屏了。注意：<strong>一定要连续按两下！</strong> 按一下是不行的。</p>
+<p>想要正确设置自定义蓝屏快捷键，<strong>不是一件容易的事</strong>。需要了解以下几点：</p>
+<ol>
+<li><p>使用自定义快捷键需要先关闭 <code>CrashOnCtrlScroll</code> 设置，上面的代码已经做好了。</p>
+</li>
+<li><p>因为不同类型的键盘对应的注册表位置不一样，怎么知道自己的机器上的键盘是哪种类型的？</p>
+<p>我们可以打开设备管理器，查看当前机器上的键盘信息。<img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/device-manager-keyboard.png" alt="设备管理器——键盘设备"></p>
+<p>我们可以用如下方法打开 <code>设备管理器</code>：</p>
+<ul>
+<li><p><code>win10</code> 系统中，可以直接在搜索框（或者按一下 <code>windows</code> 键）输入 <code>设备管理器</code> 搜索打开。</p>
+</li>
+<li><p><code>win10</code> 系统中，按 <code>Windows + x</code> 快捷键，在弹出的系统菜单里点击 <code>设备管理器(M)</code> 打开。</p>
+</li>
+<li><p>输入 <code>devmgmt.msc</code> 打开。</p>
+</li>
+<li><p>通过控制面版打开（不同系统中可能不一样）。<br><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/control-panel-device-manager.png" alt="control-panel-device-manager"></p>
+</li>
+<li><p>还有很多其它方法，不一一列举了。</p>
+</li>
+</ul>
+</li>
+<li><p><code>Dump1Keys</code> 的值可以是组合值，比如，<code>0x70</code> 表示同时按下左侧的 <code>ALT + CTRL + SHIFT</code>。每一项的意义请参考下表（摘自微软官方文档）：</p>
+</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>意义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0x01</td>
+<td>Rightmost SHIFT key</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>Rightmost CTRL key</td>
+</tr>
+<tr>
+<td>0x04</td>
+<td>Rightmost ALT key</td>
+</tr>
+<tr>
+<td>0x10</td>
+<td>Leftmost SHIFT key</td>
+</tr>
+<tr>
+<td>0x20</td>
+<td>Leftmost CTRL key</td>
+</tr>
+<tr>
+<td>0x40</td>
+<td>Leftmost ALT key</td>
+</tr>
+</tbody></table>
+<ol start="4">
+<li><code>Dump2Key</code> 是按键的扫描码在数组 <code>keyToScanTbl[134]</code> 中的<strong>索引值</strong>，<code>keyToScanTbl[134]</code>的定义如下（摘自微软官方文档）：</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> UCHAR keyToScanTbl[<span class="number">134</span>] = &#123; </span><br><span class="line">        <span class="number">0x00</span>,<span class="number">0x29</span>,<span class="number">0x02</span>,<span class="number">0x03</span>,<span class="number">0x04</span>,<span class="number">0x05</span>,<span class="number">0x06</span>,<span class="number">0x07</span>,<span class="number">0x08</span>,<span class="number">0x09</span>,</span><br><span class="line">        <span class="number">0x0A</span>,<span class="number">0x0B</span>,<span class="number">0x0C</span>,<span class="number">0x0D</span>,<span class="number">0x7D</span>,<span class="number">0x0E</span>,<span class="number">0x0F</span>,<span class="number">0x10</span>,<span class="number">0x11</span>,<span class="number">0x12</span>,</span><br><span class="line">        <span class="number">0x13</span>,<span class="number">0x14</span>,<span class="number">0x15</span>,<span class="number">0x16</span>,<span class="number">0x17</span>,<span class="number">0x18</span>,<span class="number">0x19</span>,<span class="number">0x1A</span>,<span class="number">0x1B</span>,<span class="number">0x00</span>,</span><br><span class="line">        <span class="number">0x3A</span>,<span class="number">0x1E</span>,<span class="number">0x1F</span>,<span class="number">0x20</span>,<span class="number">0x21</span>,<span class="number">0x22</span>,<span class="number">0x23</span>,<span class="number">0x24</span>,<span class="number">0x25</span>,<span class="number">0x26</span>,</span><br><span class="line">        <span class="number">0x27</span>,<span class="number">0x28</span>,<span class="number">0x2B</span>,<span class="number">0x1C</span>,<span class="number">0x2A</span>,<span class="number">0x00</span>,<span class="number">0x2C</span>,<span class="number">0x2D</span>,<span class="number">0x2E</span>,<span class="number">0x2F</span>,</span><br><span class="line">        <span class="number">0x30</span>,<span class="number">0x31</span>,<span class="number">0x32</span>,<span class="number">0x33</span>,<span class="number">0x34</span>,<span class="number">0x35</span>,<span class="number">0x73</span>,<span class="number">0x36</span>,<span class="number">0x1D</span>,<span class="number">0x00</span>,</span><br><span class="line">        <span class="number">0x38</span>,<span class="number">0x39</span>,<span class="number">0xB8</span>,<span class="number">0x00</span>,<span class="number">0x9D</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,</span><br><span class="line">        <span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0xD2</span>,<span class="number">0xD3</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0xCB</span>,</span><br><span class="line">        <span class="number">0xC7</span>,<span class="number">0xCF</span>,<span class="number">0x00</span>,<span class="number">0xC8</span>,<span class="number">0xD0</span>,<span class="number">0xC9</span>,<span class="number">0xD1</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0xCD</span>,</span><br><span class="line">        <span class="number">0x45</span>,<span class="number">0x47</span>,<span class="number">0x4B</span>,<span class="number">0x4F</span>,<span class="number">0x00</span>,<span class="number">0xB5</span>,<span class="number">0x48</span>,<span class="number">0x4C</span>,<span class="number">0x50</span>,<span class="number">0x52</span>,</span><br><span class="line">        <span class="number">0x37</span>,<span class="number">0x49</span>,<span class="number">0x4D</span>,<span class="number">0x51</span>,<span class="number">0x53</span>,<span class="number">0x4A</span>,<span class="number">0x4E</span>,<span class="number">0x00</span>,<span class="number">0x9C</span>,<span class="number">0x00</span>,</span><br><span class="line">        <span class="number">0x01</span>,<span class="number">0x00</span>,<span class="number">0x3B</span>,<span class="number">0x3C</span>,<span class="number">0x3D</span>,<span class="number">0x3E</span>,<span class="number">0x3F</span>,<span class="number">0x40</span>,<span class="number">0x41</span>,<span class="number">0x42</span>,</span><br><span class="line">        <span class="number">0x43</span>,<span class="number">0x44</span>,<span class="number">0x57</span>,<span class="number">0x58</span>,<span class="number">0x00</span>,<span class="number">0x46</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,</span><br><span class="line">        <span class="number">0x00</span>,<span class="number">0x7B</span>,<span class="number">0x79</span>,<span class="number">0x70</span> &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>上面的例子中，<code>`</code> 键的扫描码是 <code>0x29</code>，在<code>keyToScanTbl[134]</code>的索引是 <code>1</code> 。</p>
+<ol start="5">
+<li><p>关于扫描码，按下和抬起按键时会产生不同的扫描码，我们需要关注的是按下时对应的扫描码。同时，不同的键盘可能有不同的扫描码。下面给出 <code>101/102键 键盘（PC/AT 和 PS/2）</code> 的扫描码。</p>
+<p><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/101-102-keyboard-PS2-scan-code.png" alt="101/102键 键盘（PC/AT 和 PS/2）图，摘自Defrag-Tools-179"></p>
+</li>
+<li><p>我们参考相关文档的时候需要注意 按下按键对应的术语是（<code>Make</code>），抬起按键对应的术语是（<code>Break</code>）。下面贴一张扫描码表的部分截图：<img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/part-of-scancode-translation-table.png" alt="扫描码对照表"></p>
+<p>表格最后的说明非常重要：</p>
+<p><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/scancode-translation-table-note.png" alt="scancode-translation-table-note"></p>
+<p>高亮部分的意思是：操作系统的其它部分和所有的应用程序按 <code>Scan Code Set 1</code> 里的值处理扫描码。所以我猜测微软官方文档里的 <code>keyToScanTbl[134]</code> 的值是按照 <code>Scan Code Set 1</code> 给出的。实在没精力调查的更清楚了，如果哪位小伙伴儿熟悉相关内容，请务必指点！我特意录制了使用自定义快捷键 <code>CTRL + ` + `</code> 触发蓝屏的过程。按一次 <code>`</code> 是不行的，<strong>一定要按两次</strong>。</p>
+</li>
+</ol>
+<p><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/manually-bsod-screen-record.gif" alt="使用 CTRL + ` + ` 手动蓝屏"></p>
+<p><strong>5、借助硬件</strong></p>
+<p>如果以上方法都行不通，还可以使用 <code>PCI Express Dump Switch Card</code> 使系统蓝屏，<code>Windows 7, Windows Server 2008 R2</code> 及更早的系统需要设置如下注册表项：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">"NMICrashDump"=dword:00000001</span><br></pre></td></tr></table></figure>
+
+<p><strong>6、内核调试器</strong></p>
+<p>如果已经用内核调试器附加到目标系统了，我们可以直接使用 <code>.dump</code> 命令保存转储文件，没必要使系统蓝屏再保存转储文件。当然，如果我们喜欢，也可以使用 <code>.crash</code> 命令使系统蓝屏，如果执行完该命令后，系统没蓝屏，请执行 <code>g</code> 命令。<strong>说明：</strong>如果当前正在执行 <code>bug check</code>处理函数，不要使用 <code>.crash</code> 命令。</p>
+<div class="note warning"><p><strong>注意：</strong></p>
+<p>需要双机内核调试的时候才行。在本地内核调试的时候，不能使用 <code>.dump</code> 命令，也不能使用 <code>.crash</code> 命令！真是个坏消息！！！</p></div>
+
+
+
+<p><strong>7、其它</strong></p>
+<ul>
+<li><p>利用 <code>NtRaiseHardError</code>，参考 <a href="https://github.com/peewpw/Invoke-BSOD/blob/master/Invoke-BSOD.ps1" target="_blank" rel="noopener">github 上的 Invoke-BSOD 项目</a>。</p>
+</li>
+<li><p>利用系统漏洞。这方面我不擅长，欢迎搞安全的小伙伴儿分享。</p>
+</li>
+</ul>
+<h2 id="蓝屏转储一瞥"><a href="#蓝屏转储一瞥" class="headerlink" title="蓝屏转储一瞥"></a>蓝屏转储一瞥</h2><p>杀死系统关键进程导致的蓝屏，对应的 <code>Bug Check Code</code> 是 <code>0xF4（CRITICAL_OBJECT_TERMINATION）</code>。 通过 <code>NMI</code>  导致的蓝屏，对应的 <code>Bug Check Code</code> 是 <code>0x80（NMI_HARDWARE_FAILURE）</code>，表示这个蓝屏是由于硬件错误触发的。通过系统快捷键导致的蓝屏，对应的 <code>Bug Check Code</code> 是 <code>0xe2（MANUALLY_INITIATED_CRASH）</code>，表示这个蓝屏是用户手动触发的。</p>
+<p>我们可以用 <code>!analyze -show</code> 来查看转储文件中的 <code>bug check code</code> 信息。</p>
+<p><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/windbg-analyze-user-manually-bsod-dump.png" alt="windbg !analyze -show &amp; k"></p>
+<p>从输出结果可知，这个蓝屏是用户手动触发蓝屏产生的。从调用栈可知，是 <code>i8042prt.sys</code> 处理了我们的按键，从而导致的蓝屏。</p>
+<div class="note info"><p><strong>友情提示：</strong></p>
+<p>如果直接用 <code>windbg</code> 打开 <code>%SystemRoot%\MEMORY.DMP</code> 会提示权限不够。可以以管理员权限运行 <code>windbg</code> 后再打开。或者<strong>拷贝</strong>转储文件到其它目录后再打开即可。注意一定是<strong>拷贝</strong>，而不是<strong>剪切</strong>。</p>
+<p><img src="http://resources.bianchengnan.tech/how-to-force-system-to-crash/windbg-open-memory-dump-failed.png" alt="windbg 打开 MEMORY.dmp 失败"></p></div>
+
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>特殊情况下，我们可能会主动使系统蓝屏来保存一份转储文件，供我们事后分析。</li>
+<li>我们可以通过本文介绍的几种方法来使系统蓝屏。我个人偏向使用 <code>NotMyFault</code> 或者蓝屏快捷键使系统蓝屏。</li>
+<li>使用自定义的蓝屏快捷键的时候，需要关闭 <code>CrashOnCtrlScroll</code> 设置。</li>
+<li><code>Dump1Keys</code> 的值可以是组合值，比如，<code>0x70</code> 表示同时按下左侧的 <code>ALT + CTRL + SHIFT</code>。</li>
+<li><code>Dump2Key</code> 的值是对应按键的扫描码在数组 <code>keyToScanTbl[134]</code> 中的<strong>索引值</strong>，而且是 <code>16</code> 进制的。</li>
+<li>需要连续按<strong>两次</strong>设置的按键才能蓝屏！比如，我们需要按 <code>CTRL + ` + `</code>，而不是 <code>CTRL + `</code> 。 </li>
+<li>尽量不要设置已经被占用的快捷键。我尝试使用 <code>CTRL + A + A</code> 作为快捷键，但是不能触发蓝屏，猜测是因为 <code>CTRL + A</code> 被占用了。但是 <code>ALT + CTRL+ SHIFT + A + A</code> 是可以的。</li>
+<li>在 <code>windbg</code> 中通过 <code>!analyze -show</code> 可以查看转储文件中的 <code>bug check code</code> 信息。</li>
+<li>对于手动蓝屏得到的转储文件，使用 <code>!analyze -v</code> 不能得到更多有效的信息，我们需要分析转储文件中的其它信息。</li>
+<li><code>%SystemRoot%\MEMORY.DMP</code> 需要管理员权限才能打开，可以<strong>拷贝</strong>（而不是剪切）一份到其它目录，就可以正常打开了。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="https://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-179-Manually-Forcing-a-Crash-Dump" target="_blank" rel="noopener">https://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-179-Manually-Forcing-a-Crash-Dump</a></p>
+</li>
+<li><p><a href="https://support.microsoft.com/en-us/help/2750146/nmi-hardware-failure-error-when-an-nmi-is-triggered-on-windows-8-and-w" target="_blank" rel="noopener">NMI_HARDWARE_FAILURE error when an NMI is triggered on Windows 8 and Windows Server 2012</a></p>
+</li>
+<li><p><a href="https://docs.microsoft.com/en-us/windows/client-management/generate-kernel-or-complete-crash-dump#use-nmi" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows/client-management/generate-kernel-or-complete-crash-dump#use-nmi</a></p>
+</li>
+<li><p><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/forcing-a-system-crash-from-the-debugger" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/forcing-a-system-crash-from-the-debugger</a></p>
+</li>
+<li><p><a href="https://www.scs.stanford.edu/10wi-cs140/pintos/specs/kbd/scancodes-9.html" target="_blank" rel="noopener">https://www.scs.stanford.edu/10wi-cs140/pintos/specs/kbd/scancodes-9.html</a></p>
+</li>
+<li><p><a href="https://codertw.com/伺服器/135227/" target="_blank" rel="noopener">https://codertw.com/%E4%BC%BA%E6%9C%8D%E5%99%A8/135227/</a></p>
+</li>
+<li><p><a href="http://advdbg.org/forums/3067/PrintPost.aspx" target="_blank" rel="noopener">http://advdbg.org/forums/3067/PrintPost.aspx</a></p>
+</li>
+<li><p><a href="https://en.wikipedia.org/wiki/Scancode" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Scancode</a></p>
+</li>
+<li><p><a href="https://en.wikipedia.org/wiki/Keyboard_layout" target="_blank" rel="noopener">https://en.wikipedia.org/wiki/Keyboard_layout</a></p>
+</li>
+<li><p><a href="http://www.philipstorr.id.au/pcbook/book3/scancode.htm" target="_blank" rel="noopener">http://www.philipstorr.id.au/pcbook/book3/scancode.htm</a></p>
+</li>
+<li><p><a href="https://www.scs.stanford.edu/10wi-cs140/pintos/specs/kbd/scancodes-9.html" target="_blank" rel="noopener">https://www.scs.stanford.edu/10wi-cs140/pintos/specs/kbd/scancodes-9.html</a></p>
+</li>
+<li><p><a href="http://www.geoffchappell.com/studies/windows/win32/ntdll/api/rtl/peb/setprocessiscritical.htm" target="_blank" rel="noopener">http://www.geoffchappell.com/studies/windows/win32/ntdll/api/rtl/peb/setprocessiscritical.htm</a></p>
+</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/how-to-force-system-to-crash/" title="系统蓝屏的几种姿势，确定不了解下么？">https://bianchengnan.github.io/articles/how-to-force-system-to-crash/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/kernel-debug/" rel="tag"><i class="fa fa-tag"></i> kernel debug</a>
+          
+            <a href="/tags/BSOD/" rel="tag"><i class="fa fa-tag"></i> BSOD</a>
+          
+            <a href="/tags/蓝屏/" rel="tag"><i class="fa fa-tag"></i> 蓝屏</a>
+          
+            <a href="/tags/win10/" rel="tag"><i class="fa fa-tag"></i> win10</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/kernel-memory-dump-setting/" rel="next" title="蓝屏（BSOD）转储设置，看本文就够了！">
+                <i class="fa fa-chevron-left"></i> 蓝屏（BSOD）转储设置，看本文就够了！
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/summary-of-local-kernel-debug-setup/" rel="prev" title="本地内核调试环境搭建，就这么简单！">
+                本地内核调试环境搭建，就这么简单！ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/something-you-should-know-about-process-dump/" title="转储文件知多少">转储文件知多少</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/process-dump-tools-you-should-know/" title="你需要知道的 N 种抓取 dump 的工具">你需要知道的 N 种抓取 dump 的工具</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/brief-introduction-to-jit-debug-info/" title="JIT Debug Info 简介">JIT Debug Info 简介</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-dump-our-own-process/" title="向大厂看齐！为自己的程序增加自动转储的功能！">向大厂看齐！为自己的程序增加自动转储的功能！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-mode-dump-begins/" title="内核转储，开抓啦！">内核转储，开抓啦！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-memory-dump-setting/" title="蓝屏（BSOD）转储设置，看本文就够了！">蓝屏（BSOD）转储设置，看本文就够了！</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-local-kernel-debug-setup/" title="本地内核调试环境搭建，就这么简单！">本地内核调试环境搭建，就这么简单！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-remote-kernel-debug-setup/" title="双机内核调试 101">双机内核调试 101</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-virtualkd-windbg-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境">使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-vs2019-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + vs2019 从零搭建双机内核调试环境">使用 VMware + win10 + vs2019 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-dump-series-articles/" title="转储系列文章总结">转储系列文章总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#几种蓝屏方法"><span class="nav-number">2.</span> <span class="nav-text">几种蓝屏方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#蓝屏转储一瞥"><span class="nav-number">3.</span> <span class="nav-text">蓝屏转储一瞥</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

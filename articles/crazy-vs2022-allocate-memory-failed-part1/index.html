@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,调试,dump,转储,vs2022,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言之前一直以为 64 位进程很难出现内存分配异常，因为 64 位进程的虚拟内存空间非常大（总共 64 位，目前只用了 48 位，也就是 256TB，用户态可以使用一半，也就是 128TB）。没想到，前一阵子居然遇到了 vs2022（ vs 终于有了 64 位的版本）分配内存失败的情况。分析到最后是因为分配 MEM_COMMIT 类型的内存失败导致的异常。一起来看看吧。  说明： 本文很早就写了草">
+<meta name="keywords" content="原,调试,dump,转储,vs2022">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/crazy-vs2022-allocate-memory-failed-part1/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言之前一直以为 64 位进程很难出现内存分配异常，因为 64 位进程的虚拟内存空间非常大（总共 64 位，目前只用了 48 位，也就是 256TB，用户态可以使用一半，也就是 128TB）。没想到，前一阵子居然遇到了 vs2022（ vs 终于有了 64 位的版本）分配内存失败的情况。分析到最后是因为分配 MEM_COMMIT 类型的内存失败导致的异常。一起来看看吧。  说明： 本文很早就写了草">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/vs2022-dump-file.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/callstack-of-new-memory-throw-exception.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/search-new-size.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/get-allocate-size-pass-to-new.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/address-summary.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/get-address-region-larger-than-0x80000000.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/c000012d_status_commitment_limit.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/test-max-reserve-memory.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/allocate-memory-commit-1.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/allocate-memory-commit-2.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/allocate-memory-commit-3.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/view-AllocationType-param.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/show-system-and-process-running-time.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.538Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">
+<meta name="twitter:description" content="前言之前一直以为 64 位进程很难出现内存分配异常，因为 64 位进程的虚拟内存空间非常大（总共 64 位，目前只用了 48 位，也就是 256TB，用户态可以使用一半，也就是 128TB）。没想到，前一阵子居然遇到了 vs2022（ vs 终于有了 64 位的版本）分配内存失败的情况。分析到最后是因为分配 MEM_COMMIT 类型的内存失败导致的异常。一起来看看吧。  说明： 本文很早就写了草">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/vs2022-dump-file.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/crazy-vs2022-allocate-memory-failed-part1/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/crazy-vs2022-allocate-memory-failed-part1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-10-15T17:25:42+08:00">
+                2023-10-15
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>之前一直以为 <code>64</code> 位进程很难出现内存分配异常，因为 <code>64</code> 位进程的虚拟内存空间非常大（总共 <code>64</code> 位，目前只用了 <code>48</code> 位，也就是 <code>256TB</code>，用户态可以使用一半，也就是 <code>128TB</code>）。没想到，前一阵子居然遇到了 <code>vs2022</code>（ <code>vs</code> 终于有了 <code>64</code> 位的版本）分配内存失败的情况。分析到最后是因为分配 <code>MEM_COMMIT</code> 类型的内存失败导致的异常。一起来看看吧。</p>
+<blockquote>
+<p><strong>说明：</strong> 本文很早就写了草稿，一直没时间整理发布，Finally~</p>
+</blockquote>
+<a id="more"></a>
+
+
+
+<h2 id="vs2022-卡死了"><a href="#vs2022-卡死了" class="headerlink" title="vs2022 卡死了"></a>vs2022 卡死了</h2><p>前一阵子，我在使用 <code>vs2022</code> 编辑代码的时候，不知道做了什么操作导致 <code>vs2022</code> 卡住了。过了一段时间后，<code>procdump</code> 自动运行起来了（因为我把 <code>procdump</code> 设置为了 <code>JIT</code> 调试器。当有进程崩溃的时候，<code>procdump</code> 会自动执行转储操作），等了好一会儿才退出。查看 <code>d:\dumps\</code> 目录下的转储文件，真是不看不知道，一看吓一跳，对应的转储文件居然有将近 <code>20GB</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/vs2022-dump-file.png" alt="vs2022-dump-file"></p>
+<p>看来，<code>vs2022</code> 应该是遇到了内存方面的异常。</p>
+<h2 id="查看调用栈"><a href="#查看调用栈" class="headerlink" title="查看调用栈"></a>查看调用栈</h2><p>使用 <code>windbg</code> 打开对应的转储文件，执行 <code>k</code> 查看调用栈。如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/callstack-of-new-memory-throw-exception.png" alt="callstack-of-new-memory-throw-exception"></p>
+<p>可以很明显的看到是在调用 <code>new()</code> 分配内存失败后抛出了异常。再多查看几个栈帧，可以发现是由 <code>vector</code> 的 <code>_Emplace_reallocate()</code> 函数触发的内存分配。<code>vs2022</code> 是 <code>64</code> 位的进程，虚拟内存空间可以说是大的离谱。居然内存分配会失败！有点意思，那到底分配了多大内存呢？</p>
+<h2 id="分配了多大内存？"><a href="#分配了多大内存？" class="headerlink" title="分配了多大内存？"></a>分配了多大内存？</h2><p> 查看栈帧 <code>0a</code> 和 <code>0b</code> 的反汇编代码，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/search-new-size.png" alt="search-new-size"></p>
+<p>从上图可知，<code>new()</code> 的参数 <code>rcx</code> 来自栈帧 <code>0a</code> 中的 <code>rax</code>，<code>rax</code> 又来自 <code>rcx+0x27</code>。<code>rcx</code> 来自栈帧 <code>0b</code> 中的 <code>rax</code>，<code>rax</code> 是 <code>vcpkg!std::_Get_size_of_n&lt;16&gt;()</code> 的返回值，<code>vcpkg!std::_Get_size_of_n&lt;16&gt;()</code> 的参数 <code>rcx</code> 来自 <code>rax</code>，而这个 <code>rax</code> 保存到栈上 <code>rsp+0x78</code> 的位置。可以先拿到  <code>rsp+0x78</code> 处的值，然后一步步推导出传递给 <code>new()</code> 的参数。</p>
+<p>在开始之前，先了解一下 <code>vcpkg!std::_Get_size_of_n&lt;size_t&gt;()</code> 的逻辑。<code>vcpkg!std::_Get_size_of_n&lt;size_t&gt;()</code> 是一个模板函数，模板参数是元素类型的大小，这里是 <code>0n16</code>。该函数的实现很简单，就是返回 <code>_Count * _Ty_size</code> （当然还有一些界限检查，下面是精简后的代码）。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">size_t</span> _Ty_size&gt;</span><br><span class="line"><span class="keyword">constexpr</span> <span class="keyword">size_t</span> _Get_size_of_n(<span class="keyword">const</span> <span class="keyword">size_t</span> _Count) &#123;</span><br><span class="line">    <span class="keyword">return</span> _Count * _Ty_size;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以通过查看栈帧 <code>0b</code> <code>rsp+0x78</code> 位置的值得到要分配的元素个数，然后乘以 <code>0n16</code> 就可以得到最终传递给 <code>new()</code> 的值。</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/get-allocate-size-pass-to-new.png" alt="get-allocate-size-pass-to-new"></p>
+<p>计算后得知，本次分配的空间大约为 <code>923MB</code> 。</p>
+<blockquote>
+<p><strong>注意：</strong> 虽然分配的内存空间不是超级大，但是本次尝试分配的元素个数是 <code>0x039bc719</code>，通过 <code>.formats 0x039bc719</code> 可以查看对应的十进制数是 <code>60540697</code>，也就是大约 <code>6</code> 千万个对象！</p>
+</blockquote>
+<p>说实话，分析到这里的时候，我是有点儿没底气的。<code>vs2022</code> 可是 <code>64</code> 位的进程啊！没想到只分配大概 <code>923MB</code> 就失败了！带着这个疑问，继续查看当前进程的地址空间情况。</p>
+<h2 id="查看空闲空间"><a href="#查看空闲空间" class="headerlink" title="查看空闲空间"></a>查看空闲空间</h2><p>可以使用 <code>!address -summary</code> 看一下内存使用情况，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/address-summary.png" alt="address-summary"></p>
+<p>可以发现最大的空闲空间大概有 <code>119.96TB</code> 这么大。</p>
+<blockquote>
+<p><strong>说明：</strong> 既可以通过上面的 <code>Largest Region by Usage</code> 查看最大的空闲空间，还可以通过 <code>!address -f:Free -c:&quot;.if(%3 &gt; 0x80000000) {.echo %1 %2 %3}&quot;</code> 显示出大于 <code>0x80000000</code> 的空闲段，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/get-address-region-larger-than-0x80000000.png" alt="get-address-region-larger-than-0x80000000"></p>
+<p>顺便说一句，第一次执行的时候是真的慢！</p>
+</blockquote>
+<p>既然有足够大的空闲空间，为什么分配内存还会失败呢？看到这里我更疑惑了，同时心里有了另外一个疑问—— 在 <code>x64</code> 进程中，用户态代码到底可以分配多大内存？</p>
+<h2 id="测试内存分配"><a href="#测试内存分配" class="headerlink" title="测试内存分配"></a>测试内存分配</h2><p>于是我写了一段使用 <code>malloc</code> 分配内存的测试代码。如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">size_t</span> size = <span class="number">1024</span> * <span class="number">1024</span> * <span class="number">1024</span>;</span><br><span class="line">    size *= <span class="number">20</span>;</span><br><span class="line">    <span class="keyword">auto</span> p = <span class="built_in">malloc</span>(size);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>经过几次调整后发现，大概分配 <code>20GB</code> 的时候就失败了。</p>
+<p>当使用 <code>malloc()</code> 分配大块内存时，会调用 <code>ntdll!NtAllocateVirtualMemory()</code> 进行分配。使用 <code>windbg</code> 运行程序，当执行到 <code>auto p = malloc(size);</code> 这一行的时候，执行 <code>bp ntdll!NtAllocateVirtualMemory</code> 设置好断点。然后执行 <code>g</code> 让程序继续运行，很快就中断下来了。执行 <code>gu</code> 跳出当前函数，使用 <code>r</code> 命令查看寄存器，主要关注 <code>rax</code>，因为它保存了函数的返回值。发现 <code>rax</code> 的值是 <code>00000000c000012d</code>。由 <code>ntdll!NtAllocateVirtualMemory()</code> 的函数原型可知，返回值是 <code>NTSTATUS</code> 类型的。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">NTSTATUS <span class="title">NtAllocateVirtualMemory</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  [in]      HANDLE    ProcessHandle,</span></span></span><br><span class="line"><span class="function"><span class="params">  [in, out] PVOID     *BaseAddress,</span></span></span><br><span class="line"><span class="function"><span class="params">  [in]      ULONG_PTR ZeroBits,</span></span></span><br><span class="line"><span class="function"><span class="params">  [in, out] PSIZE_T   RegionSize,</span></span></span><br><span class="line"><span class="function"><span class="params">  [in]      ULONG     AllocationType,</span></span></span><br><span class="line"><span class="function"><span class="params">  [in]      ULONG     Protect</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>查看官方文档可知，<code>0xc000012d</code> 的意义是 <code>STATUS_COMMITMENT_LIMIT</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/c000012d_status_commitment_limit.png" alt="c000012d_status_commitment_limit"></p>
+<p>根据 <code>Description</code> 列的描述可知，增大页面文件的大小可能会有帮助。看到这里的时候，我突然想起来，好像 <code>malloc()</code> 在调用<code>ntdll!NtAllocateVirtualMemory()</code> 的时候，传递的 <code>AllocationType</code> 应该是包含 <code>MEM_COMMIT</code> 标志的（因为可以直接对返回的地址空间进行读写操作了）。而分配这种类型的内存，<code>windows</code> 会检查是否有足够的内存（物理内存+页文件）支撑，如果剩余的物理内存+页文件（会被系统中的所有进程共同使用）的大小不能满足本次分配，那么会报错。</p>
+<p> 如果把 <code>MEM_COMMIT</code> 换成 <code>MEM_RESERVE</code>，能分配多大的内存呢？</p>
+<h2 id="测试-MEM-RESERVE-最大分配尺寸"><a href="#测试-MEM-RESERVE-最大分配尺寸" class="headerlink" title="测试 MEM_RESERVE 最大分配尺寸"></a>测试 MEM_RESERVE 最大分配尺寸</h2><p>于是我又写了一段测试代码，直接调用 <code>VirtualAlloc()</code> 进行内存分配。测试代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"windows.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">size_t</span> one_gb = <span class="number">1L</span>L * <span class="number">1024L</span>L * <span class="number">1024L</span>L * <span class="number">1024L</span>L; <span class="comment">// 1 GB</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">double</span> <span class="title">ToGb</span><span class="params">(<span class="keyword">size_t</span> bytes)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> bytes / <span class="number">1024.0</span> / <span class="number">1024.0</span> / <span class="number">1024.0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">double</span> <span class="title">ToTb</span><span class="params">(<span class="keyword">size_t</span> bytes)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> bytes / <span class="number">1024.0</span> / <span class="number">1024.0</span> / <span class="number">1024.0</span> / <span class="number">1024.0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">size_t</span> TestMaxAllocateMemory(<span class="keyword">size_t</span> init_size, <span class="keyword">size_t</span> decrease_size, DWORD allocation_type)</span><br><span class="line">&#123;</span><br><span class="line">    LPVOID p = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">nullptr</span> == (p = VirtualAlloc(<span class="literal">nullptr</span>, init_size, allocation_type, PAGE_READWRITE)))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">auto</span> last_error = GetLastError();</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"allocate "</span> &lt;&lt; ToGb(init_size) &lt;&lt; <span class="string">" GB failed. last error:"</span> &lt;&lt; last_error</span><br><span class="line">            &lt;&lt; <span class="string">". try allocate "</span> &lt;&lt; ToGb(init_size - decrease_size) &lt;&lt; <span class="string">" GB."</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line">        init_size -= decrease_size;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> init_size;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">TestMaxReserveMemory</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">size_t</span> size_reserve = <span class="number">128L</span>L * <span class="number">1024L</span>L * one_gb;  <span class="comment">// 128 TB</span></span><br><span class="line">    size_reserve = TestMaxAllocateMemory(size_reserve, one_gb, MEM_RESERVE);</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"allocate "</span> &lt;&lt; ToTb(size_reserve) &lt;&lt; <span class="string">" TB reserver memory success."</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    TestMaxReserveMemory();</span><br><span class="line">    <span class="built_in">std</span>::getchar();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行结果如下：</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/test-max-reserve-memory.png" alt="test-max-reserve-memory"></p>
+<p>当分配类型是 <code>MEM_RESERVE</code> 的时候，一次性最多可以分配大概 <code>126 TB</code> 的虚拟内存。基本符合之前的认知。</p>
+<blockquote>
+<p><strong>注意：</strong> 每次运行结果不完全一致，不过相差不多。</p>
+</blockquote>
+<h2 id="测试-MEM-COMMIT-最大分配尺寸"><a href="#测试-MEM-COMMIT-最大分配尺寸" class="headerlink" title="测试 MEM_COMMIT 最大分配尺寸"></a>测试 MEM_COMMIT 最大分配尺寸</h2><p>为了更好的展示不同情况下分配 <code>MEM_COMMIT</code> 的结果，我又添加如下测试代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">TestMaxCommitMemory</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">size_t</span> size_commit = <span class="number">128L</span>L * one_gb; <span class="comment">// 128 GB</span></span><br><span class="line">    size_commit = TestMaxAllocateMemory(size_commit, one_gb, MEM_COMMIT);</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"allocate "</span> &lt;&lt; ToGb(size_commit) &lt;&lt; <span class="string">" GB commit memory success."</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//TestMaxReserveMemory();</span></span><br><span class="line">    TestMaxCommitMemory();</span><br><span class="line">    <span class="built_in">std</span>::getchar();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我分别在不同系统内存占用的情况下运行了三次，三次运行结果如下：</p>
+<p>当系统内存相对充裕的时候，运行结果如下：</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/allocate-memory-commit-1.png" alt="allocate-memory-commit-1"></p>
+<p>当系统内存被消耗了一部分的时候，运行结果如下：</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/allocate-memory-commit-2.png" alt="allocate-memory-commit-1"></p>
+<p>当使用 <code>TestLimit64 -m 2048 -c 10</code> 分配 <code>20GB</code> 的 <code>MEM_COMMIT</code> 内存后，运行结果如下：</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/allocate-memory-commit-3.png" alt="allocate-memory-commit-1"></p>
+<blockquote>
+<p><strong>画外音：</strong> 当我尝试模拟系统内存吃紧的时候，突然想起来 <code>Testlimit</code>  就是用来测试各种资源极限的。<code>-m</code> 模拟的是分配 <code>MEM_COMMIT</code> 类型内存的，<code>-r</code> 模拟的是分配 <code>MEM_RESERVER</code> 类型内存的。<code>-c</code> 是分配数量，如果不指定，则无限分配。</p>
+</blockquote>
+<p>现在还剩下两个问题待证实：</p>
+<ol>
+<li>明确 <code>malloc()</code> 调用 <code>ntdll!NtAllocateVirtualMemory()</code>  传递的 <code>AllocationType</code> 参数。</li>
+<li>确定分配失败时，剩余物理内存+页文件的大小是否足够大。</li>
+</ol>
+<h2 id="明确-AllocationType"><a href="#明确-AllocationType" class="headerlink" title="明确 AllocationType"></a>明确 AllocationType</h2><p>使用 <code>k 3</code> 显示 <code>3</code> 个调用栈帧。栈帧 <code>01</code> 会调用 <code>ntdll!NtAllocateVirtualMemory()</code>，所以栈帧 <code>01</code> 会传递参数给<code>ntdll!NtAllocateVirtualMemory()</code>。使用 <code>ub 00007ffe30492762 L1a</code> 查看相关调用代码，可以发现 <code>AllocationType</code> 保存在 <code>rsp+0x20</code> 的位置，<code>Protect</code> 保存在 <code>rsp+0x28</code> 的位置，前四个参数分别由 <code>rcx, rdx, r8, r9</code> 进行传递。</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/view-AllocationType-param.png" alt="view-AllocationType-param"></p>
+<p>由此，可以确定之前的理解是正确的。 <code>malloc()</code> 调用 <code>ntdll!NtAllocateVirtualMemory()</code> 时，<code>AllocationType</code> 的值是 <code>MEM_COMMIT</code>。</p>
+<h2 id="剩余的内存是否足够大"><a href="#剩余的内存是否足够大" class="headerlink" title="剩余的内存是否足够大"></a>剩余的内存是否足够大</h2><p>因为转储文件只包含当前进程的信息，没有系统级的转储文件，不好确认系统中的其它进程的内存使用情况。但是转储文件的大小已经达到了 <code>18.3GB</code>，本次尝试分配的大小是 <code>923MB</code>，加上 <code>18.3GB</code>，大概是 <code>19GB</code>。</p>
+<p>通过 <code>.time</code> 命令，可以发现系统已经运行了接近 <code>2</code> 天，当前进程已经运行了大概 <code>18.5</code> 个小时。由系统开机时间可以推算，当时应该有不少进程在运行（我的系统上，<code>chrome</code> 和 <code>firefox</code> 基本是常开状态）。</p>
+<p><img src="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/show-system-and-process-running-time.png" alt="show-system-and-process-running-time"></p>
+<p>而且在 <code>vs2022</code> 无响应的时候，整个系统确实有些卡顿。以上种种迹象表明，系统当时的内存吃紧。这时候出现内存分配异常，确实合情合理。</p>
+<h2 id="彩蛋"><a href="#彩蛋" class="headerlink" title="彩蛋"></a>彩蛋</h2><p>前几天，客户的程序也遇到了一个类似的问题。她机器上内存紧张的时候，执行程序中的一个功能需要分配 <code>196MB</code> 的内存，由于物理内存不足，失败了。因为我之前已经调查过类似的问题了，在调查客户的问题的时候，非常快速而且有信心。我想这就是写文章记录的价值之一吧！</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><code>procdump</code> 真是事后调试的好帮手。以管理员权限运行 <code>procdump -i -ma d:\dumps\</code> 即可安装。<code>-i</code> 表示安装（如果要卸载，可以使用 <code>-u</code> 参数）。<code>-ma</code> 表示执行完整转储，<code>d:\dumps\</code> 表示 <code>.dmp</code> 文件保存的位置。</li>
+</ul>
+<ul>
+<li>相较于 <code>32</code> 位进程的 <code>4GB</code> （<code>2</code> 的 <code>32</code> 次方）虚拟内存空间而言， <code>64</code> 位进程的虚拟内存空间超级大，目前是  <code>256TB</code>（总共 <code>64</code> 位，目前只用了 <code>48</code> 位），内核态和用户态平均分，用户态可以使用一半，也就是 <code>128TB</code>。</li>
+</ul>
+<ul>
+<li>如果使用 <code>malloc()</code> 或者 <code>new()</code> （内部会调用 <code>malloc()</code>）分配的内存大小超出堆阈值，那么内部会使用 <code>NtAllocateVirtualMemory()</code> 分配内存，而且 <code>AllocationType</code> 的值是 <code>MEM_COMMIT</code>。分配 <code>MEM_COMMIT</code> 类型的内存是受<strong>物理内存+分页文件大小</strong>限制的。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>NTSTATUS Values</p>
+<p><a href="https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55" target="_blank" rel="noopener">https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">https://bianchengnan.github.io/articles/crazy-vs2022-allocate-memory-failed-part1/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
+          
+            <a href="/tags/转储/" rel="tag"><i class="fa fa-tag"></i> 转储</a>
+          
+            <a href="/tags/vs2022/" rel="tag"><i class="fa fa-tag"></i> vs2022</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" rel="next" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">
+                <i class="fa fa-chevron-left"></i> 如何判断转储文件是在 32 位系统还是 64 位系统下生成的？
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" rel="prev" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">
+                调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">调试实战 | dll 加载失败之 Debug Release 争锋篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">调试技巧 | 你很可能需要知道这个调试小技巧</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">调试实战 | 从转储文件找出抛出的异常 —— 理论</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vs2022-卡死了"><span class="nav-number">2.</span> <span class="nav-text">vs2022 卡死了</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看调用栈"><span class="nav-number">3.</span> <span class="nav-text">查看调用栈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分配了多大内存？"><span class="nav-number">4.</span> <span class="nav-text">分配了多大内存？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看空闲空间"><span class="nav-number">5.</span> <span class="nav-text">查看空闲空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试内存分配"><span class="nav-number">6.</span> <span class="nav-text">测试内存分配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试-MEM-RESERVE-最大分配尺寸"><span class="nav-number">7.</span> <span class="nav-text">测试 MEM_RESERVE 最大分配尺寸</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试-MEM-COMMIT-最大分配尺寸"><span class="nav-number">8.</span> <span class="nav-text">测试 MEM_COMMIT 最大分配尺寸</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#明确-AllocationType"><span class="nav-number">9.</span> <span class="nav-text">明确 AllocationType</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#剩余的内存是否足够大"><span class="nav-number">10.</span> <span class="nav-text">剩余的内存是否足够大</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#彩蛋"><span class="nav-number">11.</span> <span class="nav-text">彩蛋</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">12.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">13.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

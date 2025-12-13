@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,调试,vs,windbg,IDA,排错,process monitor,rc,CVT1101,LNK1123,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="缘起前一段时间在折腾拆分 rc 的问题，已经把遇到的问题整理成文了。感兴趣的小伙伴儿可以参考这里，这里 和 这里。本以为不会有问题了，后续流程就请其它同事帮忙处理了，没想到在拆分实际项目时遇到了一个非常奇怪的链接问题。 本文总结了使用 process monitor 监听进程创建，查看进程参数、使用 gflags 设置 Image File Excution Options、使用 IDA 静态分析">
+<meta name="keywords" content="原,总结,调试,vs,windbg,IDA,排错,process monitor,rc,CVT1101,LNK1123">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="缘起前一段时间在折腾拆分 rc 的问题，已经把遇到的问题整理成文了。感兴趣的小伙伴儿可以参考这里，这里 和 这里。本以为不会有问题了，后续流程就请其它同事帮忙处理了，没想到在拆分实际项目时遇到了一个非常奇怪的链接问题。 本文总结了使用 process monitor 监听进程创建，查看进程参数、使用 gflags 设置 Image File Excution Options、使用 IDA 静态分析">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvt1101-lnk1123-in-real-project.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvt1101-lnk1123-in-test-project.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/link-cvtres-same-path.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/include-path-end-with-dialog507.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvtres-main-function-logic.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/gflags-cvtres-setting.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvtres-error-startup-bat.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/windbg-cannot-start-cvtres-error.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvtres-startup-command.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvtres-exit-call-stack.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/view-ourfileopen-in-ida-using-f5.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/view-ourfileopen-param.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/view-ErrorPrint-in-ida.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/break-and-open-source-file.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/break-at-open-510res.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/view-getstream-in-windbg.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/search-crt-max-open-file-in-google.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/talking-thread-on-microsoft-q&a.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.762Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">
+<meta name="twitter:description" content="缘起前一段时间在折腾拆分 rc 的问题，已经把遇到的问题整理成文了。感兴趣的小伙伴儿可以参考这里，这里 和 这里。本以为不会有问题了，后续流程就请其它同事帮忙处理了，没想到在拆分实际项目时遇到了一个非常奇怪的链接问题。 本文总结了使用 process monitor 监听进程创建，查看进程参数、使用 gflags 设置 Image File Excution Options、使用 IDA 静态分析">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvt1101-lnk1123-in-real-project.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上） | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-02-06T18:24:04+08:00">
+                2022-02-06
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>前一段时间在折腾拆分 <code>rc</code> 的问题，已经把遇到的问题整理成文了。感兴趣的小伙伴儿可以参考<a href="https://bianchengnan.github.io/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part1-troubleshoot-error-RC1020-unexpected-endif/">这里</a>，<a href="https://bianchengnan.github.io/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part2-findout-why-rc-encoding-changed/">这里</a> 和 <a href="https://bianchengnan.github.io/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/">这里</a>。本以为不会有问题了，后续流程就请其它同事帮忙处理了，没想到在拆分实际项目时遇到了一个非常奇怪的链接问题。</p>
+<p>本文总结了使用 <code>process monitor</code> 监听进程创建，查看进程参数、使用 <code>gflags</code> 设置 <code>Image File Excution Options</code>、使用 <code>IDA</code> 静态分析相关函数的业务逻辑以及使用 <code>windbg</code> 进行动态调试的整个过程。我认为这是一个由不良的编程习惯与  <code>crt</code> 的限制共同导致的问题。快来一起看看吧。</p>
+<a id="more"></a>
+
+
+
+<h2 id="初闻错误"><a href="#初闻错误" class="headerlink" title="初闻错误"></a>初闻错误</h2><p>前些日子，在家隔离办公的某日中午，收到同事发来的信息说 <code>rc</code> 拆分的编译问题已经解决了，但是遇到了链接错误，还发送了链接错误的截图，并且给出了一个解决方案。</p>
+<blockquote>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvt1101-lnk1123-in-real-project.png" alt="cvt1101-lnk1123-in-real-project"></p>
+<p>尝试把  <code>.rc</code> 文件排除几十个就链接过去了。</p>
+</blockquote>
+<p>听到这个问题的时候，我怀疑是不是哪里操作有问题。从错误提示看是 <code>无法打开 xxx.res 进行读取</code>，所以第一感觉是文件路径不对。于是赶紧跟同事聊了一下，同事觉得是 <code>vs</code> 的限制，可能这个限制数量是 <code>512</code> 。</p>
+<p>但是我从没听过同一个工程中的 <code>.rc</code> 文件有数量限制，不管怎样，还是建个简单的工程验证下吧。</p>
+<h2 id="尝试重现"><a href="#尝试重现" class="headerlink" title="尝试重现"></a>尝试重现</h2><p>带着怀疑 + 好奇的心态，我快速新建了一个 <code>MFC</code> 对话框工程。然后在 <code>vs</code> 中不断复制默认对话框（大概复制了<code>600</code> 个，已经比同事所说的 <code>512</code> 上限要多了，如果有问题应该能重现了），然后使用工具把每个对话框拆分成独立的 <code>.rc</code> 文件并添加到工程文件中。保存好工程后，开始编译。等待一段时间后，果然报错了，错误截图如下：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvt1101-lnk1123-in-test-project.png" alt="cvt1101-lnk1123-in-test-project"></p>
+<p>从错误提示看，处理 <code>dialog_testmultiplerccompile_dialog507.rc</code> 文件的时候报错了。按照同事说的，删除若干个 <code>.rc</code> 文件，只保留 <code>500</code> 个，再次编译，没有报错。</p>
+<p>看来，在同一个工程中包含太多 <code>.rc</code> 文件真可能有问题。难道真有限制？为什么会做这种限制呢？不管为什么要做限制，我需要找到一个解决方案。</p>
+<p>开始深入调查前，先看看报错信息。</p>
+<h2 id="熟悉的错误"><a href="#熟悉的错误" class="headerlink" title="熟悉的错误"></a>熟悉的错误</h2><p>之前遇到过错误 <code>LINK : fatal error LNK1123: 转换到 COFF 期间失败:  文件无效或损坏</code>，是由于 <code>link.exe</code> 与 <code>cvtres.exe</code> 的版本不一样导致的。这次报错不是这个原因。通过 <code>process monitor</code> 看，这两个程序的路径是一样的。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/link-cvtres-same-path.png" alt="link-cvtres-same-path"></p>
+<p>再看错误 <code>error CVT1101: 无法打开“dialog_testmultiplerccompile_dialog507.res”进行读取</code>。猜测是在读取这个文件的时候发生了错误，可以在 <code>process monitor</code> 中查看相关事件。</p>
+<h2 id="过滤相关事件"><a href="#过滤相关事件" class="headerlink" title="过滤相关事件"></a>过滤相关事件</h2><p>在 <code>process monitor</code> 中根据路径名进行过滤。如果路径以 <code>dialog_testmultiplerccompile_dialog507.res</code> 结尾则包含，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/include-path-end-with-dialog507.png" alt="include-path-end-with-dialog507"></p>
+<p>没想到一条记录都没有，一片空白。这是怎么回事？说实话，我有点不知所措，看来只能硬着头皮调试 + 用 <code>IDA</code> 逆向了。在调试之前，先用 <code>IDA</code> 看看有没有什么发现。</p>
+<h2 id="请出-IDA"><a href="#请出-IDA" class="headerlink" title="请出 IDA"></a>请出 IDA</h2><p>使用 <code>ida32</code> 打开 <code>cvtres.exe</code>，<code>IDA</code> 会提示是否查找符号（真是一个好消息），当然选择是。等待 <code>IDA</code> 分析完成后，在左侧的 <code>Function window</code> 中找到 <code>_main</code>，双击查看反汇编代码，直接在反汇编窗口按 <code>F5</code>，查看伪代码（ <code>IDA</code> 的 <code>F5</code> 真香！）。</p>
+<p>大概浏览后，基本明白了 <code>main()</code> 函数的整体流程。首先，解析传入的参数，确定第一个文件在参数列表中的索引位置。然后，从此索引开始循环调用 <code>ReadResFile()</code> 读取每个文件，读取完所有的文件后统一调用 <code>CvtRes()</code> 函数进行转换。</p>
+<p>下图是在 <code>IDA</code> 中对 <code>main()</code> 函数使用 <code>F5</code> 获得的伪代码的后半部分。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvtres-main-function-logic.png" alt="cvtres-main-function-logic"></p>
+<p>其中的 <code>CvtRes()</code> 函数应该是转换的主要函数，非常值得怀疑。迫不及待的启动 <code>windbg</code> 准备调试，但是 <code>cvtres.exe</code> 是被 <code>link.exe</code> 调用的，该如何调试呢？</p>
+<h2 id="搭建调试环境"><a href="#搭建调试环境" class="headerlink" title="搭建调试环境"></a>搭建调试环境</h2><p>如果 <code>cvtres.exe</code> 启动的时候，能够自动中断到调试器中，就可以方便的调试了。之前在 <a href="https://bianchengnan.github.io/articles/global-variable-initialization-order-investigation/">调试实战 | 全局变量初始化顺序探究</a> 中介绍过使用 <code>gflags</code> 进行设置的方法。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/gflags-cvtres-setting.png" alt="gflags-cvtres-setting"></p>
+<p>根据之前调试 <code>cl.exe</code> 的经验，如果长时间中断到调试器中，调用者会重新启动 <code>cl.exe</code>。猜想这里也会有类似的逻辑。为了避免这种问题，需要根据 <code>link.exe</code> 启动 <code>cvtres.exe</code> 的参数手动运行 <code>cvtres.exe</code>。</p>
+<p>可以通过 <code>process monitor</code> 很快找出  <code>cvtres.exe</code> 需要的参数。经过简单观察，发现传递给 <code>cvtres.exe</code> 的参数比较简单直接，而且根据 <code>cvtres.exe /?</code> 提供的帮助信息，可以很快确定各个参数的意义。</p>
+<p>于是很快写出了一个批处理脚本，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvtres-error-startup-bat.png" alt="cvtres-error-startup-bat"></p>
+<p>没想到，双击脚本运行的时候，出现了如下错误：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/windbg-cannot-start-cvtres-error.png" alt="windbg-cannot-start-cvtres-error"></p>
+<p>提示找不到 <code>cvtres.exe</code>。看来需要使用完整路径。正确的脚本如下：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvtres-startup-command.png" alt="cvtres-startup-command"></p>
+<blockquote>
+<p><strong>说明：</strong> 为了避免命令行参数过长，我特意简化了 <code>.res</code> 文件名，之前的名字太长了。而且经过测试，打开 <code>510.res</code> 的时候就能重现，没必要准备 <code>600</code> 多个 <code>.res</code> 进行测试，这里只准备了 <code>511</code> 个 <code>.res</code> 文件进行测试。</p>
+</blockquote>
+<h2 id="猜错了"><a href="#猜错了" class="headerlink" title="猜错了"></a>猜错了</h2><p>双击脚本启动 <code>cvtres.exe</code>，立刻就中断到了 <code>windbg</code>  中。</p>
+<p>在 <code>windbg</code> 中执行 <code>x cvtres!*main</code> 即可找到入口函数，输入 <code>bp cvtres!wmain</code> 即可在 <code>wmain()</code> 函数入口处设置好断点。</p>
+<p>同理，执行 <code>x cvtres!*CvtRes</code> 即可找到 <code>cvtres!CvtRes()</code> 函数，输入 <code>bp cvtres!CvtRes</code> 即可在 <code>CvtRes()</code> 函数入口处设置好断点。</p>
+<p>设置好断点后，输入 <code>g</code> 让程序跑起来，可以发现 <code>wmain()</code> 函数内的断点命中了，但是 <code>CvtRes()</code> 函数内的断点并没有命中，进程直接退出了。</p>
+<p>有些出乎意料，居然不是在 <code>CvtRes()</code> 函数里出的错。没（有）关（点）系（懵），继续挖掘有效信息。</p>
+<h2 id="继续努力"><a href="#继续努力" class="headerlink" title="继续努力"></a>继续努力</h2><p>虽然进程退出了，但是依然可以通过 <code>k</code> 系列命令查看调用栈，在 <code>windbg</code> 中输入 <code>kp</code>，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/cvtres-exit-call-stack.png" alt="cvtres-exit-call-stack"></p>
+<p>上图中红色高亮部分就是关键调用栈。从上图还可以得到一个非常有用的信息 —— <code>exit code</code> 的值是 <code>1</code>。可以猜测，<code>link.exe</code> 就是根据 <code>cvtres.exe</code> 的返回值来判断其是否执行成功的。</p>
+<p>调用栈中的 <code>OurFileOpen()</code> 函数，应该是负责打开文件的函数。在继续调试之前，先在 <code>IDA</code> 中看看 <code>OurFileOpen()</code> 函数的实现。</p>
+<h2 id="回到-IDA"><a href="#回到-IDA" class="headerlink" title="回到 IDA"></a>回到 IDA</h2><p>双击 <code>OurFileOpen</code>，当然是直接查看 <code>F5</code> 的结果啦，有细节需要确认再看反汇编代码。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/view-ourfileopen-in-ida-using-f5.png" alt="view-ourfileopen-in-ida-using-f5"></p>
+<p>可以看到这个函数实现的非常简单，就是调用 <code>_wfsopen()</code>，如果失败（<code>result == 0</code>）那么调用 <code>ErrorPrint()</code> 打印错误信息。如果 <code>open_mode</code>（第二个参数）是 <code>0</code>，那么传递给 <code>ErrorPrint()</code> 的第一个参数是 <code>1101</code>，否则是 <code>1108</code>。</p>
+<p>而调用 <code>OurFileOpen</code> 时传递的第二个参数是通过 <code>edx</code> 传递的，对应的值是 <code>0</code>，所以如果出错，那么会传递 <code>1101</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/view-ourfileopen-param.png" alt="view-ourfileopen-param"></p>
+<p>说实话，看到 <code>OurOpenFile()</code> 函数中的 <code>1101</code> ，我太激动了，因为在<code>vs</code> 中看到的错误提示是 <code>error CVT1101: 无法打开“xxx.res”进行读取</code>。为了进一步确认猜想，在 <code>IDA</code> 中查看 <code>ErrorPrint()</code> 函数的反汇编代码，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/view-ErrorPrint-in-ida.png" alt="view-ErrorPrint-in-ida"></p>
+<p>从上方红色高亮语句 <code>CVTRES: fatal error CVT%04u:</code> 基本可以确定猜测是正确的。从上图底部的红色高亮区域还可以知道该函数内部确实会调用 <code>exit(1)</code> 来结束进程。</p>
+<p>接下来需要调查的问题是 <code>_wfsopen</code> 为什么失败了？</p>
+<h2 id="为什么-wfsopen-会失败？"><a href="#为什么-wfsopen-会失败？" class="headerlink" title="为什么 _wfsopen 会失败？"></a>为什么 _wfsopen 会失败？</h2><p>在 <code>windbg</code> 中输入 <code>.restart</code> 重启目标程序，输入 <code>bp MSVCR120!_wfsopen</code>，然后执行 <code>g</code> 命令。因为已经设置好了符号查找路径，所以 <code>windbg</code> 自动打开了对应的源码文件。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/break-and-open-source-file.png" alt="break-and-open-source-file"></p>
+<p>这个函数虽然很简单，加上注释不到 <code>50</code> 行。但是会被调用很多次，根据经验，前面的 <code>500</code> 多次调用都没有问题，在尝试打开 <code>510.res</code> 的时候会有问题，所以设置一个条件断点非常有必要。</p>
+<p>简单查看反汇编代码发现，<code>_wfsopen()</code> 函数的第一个参数是通过 <code>ecx</code> 传递的，可以设置如下的条件断点（真是烧脑还不好理解，我不会告诉你，我尝试了很久才写出了下面这段蹩脚的脚本）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bp MSVCR120!_wfsopen &quot;aS /mu $myFileName @ecx; .block &#123;.echo $myFileName; r @$t0=$spat(@\&quot;$myFileName\&quot;, @\&quot;*510.res\&quot;); .if(1==$t0)&#123;.echo **** bang ****&#125; .else&#123; gc;&#125; &#125;;&quot;</span><br></pre></td></tr></table></figure>
+
+<p>耐心等待一会就中断下来了，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/break-at-open-510res.png" alt="break-at-open-510res"></p>
+<p>单步走两步，发现是 <code>_getstream()</code> 出错了。</p>
+<h2 id="getstream-错在哪里了？"><a href="#getstream-错在哪里了？" class="headerlink" title="_getstream 错在哪里了？"></a>_getstream 错在哪里了？</h2><p>输入 <code>.restart</code> 重启目标程序，并且设置好条件断点，重新运行程序，当中断到 <code>_wfsopen()</code> 函数后，单步步入到 <code>_getstream()</code> 函数中。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/view-getstream-in-windbg.png" alt="view-getstream-in-windbg"></p>
+<p>可以看到 <code>_getstream()</code> 函数逻辑也不复杂，根据注释可以很简单的理解此函数的逻辑 —— 从 <code>__piob</code> 中（大小是 <code>_nstream</code>，通过 <code>dt _nstream</code> 可知其大小是 <code>512</code>）找到一条可用的记录项。判断一条记录项是否可用的标准是 <code>__piob[i] == NULL</code> ，或者 <code>!inuse( (FILE *)__piob[i] ) &amp;&amp; !str_locked( (FILE *)__piob[i] )</code>。</p>
+<p>直接在函数末尾加好断点，<code>g</code> 起来，发现确实没有找到一条可用的记录项。</p>
+<p>至此，我大概明白了整个过程。<code>cvtres.exe</code> 在 <code>main()</code> 函数中会循环调用 <code>ReadResFile()</code> 函数（内部会调用 <code>_wfsopen()</code>）读取所有的 <code>.res</code> 文件，但是读取完一个 <code>.res</code> 文件后，并没有关闭，当打开一定数量的文件后会导致 <code>__piob</code> 被占满。再尝试打开一个文件的时候就报错了。</p>
+<p>看来，<code>crt</code> 还有最大打开文件数的限制，赶紧 <code>google</code> 搜索是否有什么设置可以调整最大文件打开数量。</p>
+<h2 id="google-一下"><a href="#google-一下" class="headerlink" title="google 一下"></a>google 一下</h2><p>在 <code>google</code> 中输入 <code>crt max open file</code> 找到了几个相关的网址。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/search-crt-max-open-file-in-google.png" alt="search-crt-max-open-file-in-google"></p>
+<p>虽然可以通过 <a href="https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/setmaxstdio?view=msvc-170" target="_blank" rel="noopener">_setmaxstdio()</a> 调整 <code>crt</code> 的最大文件打开数，但是好像不能通过修改配置文件或者修改注册表的方式调整。</p>
+<h2 id="发帖询问"><a href="#发帖询问" class="headerlink" title="发帖询问"></a>发帖询问</h2><p>说实话，第一次分析到这个结果的时候我是有些不信的。于是我再三确认了 <code>ReadResFile()</code> 函数内部确实没有关闭文件的操作。难道有什么特殊的理由不关闭打开的文件？但是我实在想不出有什么理由。所以我觉得这是一个 <code>bug</code>，于是我在微软官方论坛上发了一个帖子，希望能得到一些回复。</p>
+<p>帖子地址是 <a href="https://docs.microsoft.com/en-us/answers/questions/709392/cvt1101-can39t-open-xxxres-for-reading.html" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/answers/questions/709392/cvt1101-can39t-open-xxxres-for-reading.html</a></p>
+<p>目前只有一位网友回复（另外一个是我自己），为了方便大家阅读，截图如下：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/talking-thread-on-microsoft-q&a.png" alt="talking-thread-on-microsoft-q&amp;a"></p>
+<p>虽然到现在还没收到官方的确认回复，不过我依然认为这是一个 <code>bug</code>，而不是 <code>feature</code>。</p>
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>既然没有设置选项或者配置文件可以简单的调整最大文件打开数量，对 <code>cvtres.exe</code> 打补丁又不太现实（每台机器上都要做处理），等待微软修复这个问题也不现实（远水解不了近渴）。所以我们的解决方案是通过合并一些 <code>.rc</code> 以减少工程中的 <code>.rc</code> 文件数量来规避这个问题。</p>
+<p>虽然问题已经调查清楚了，但是还有几个问题值得探究。</p>
+<h2 id="几个值得深究的问题"><a href="#几个值得深究的问题" class="headerlink" title="几个值得深究的问题"></a>几个值得深究的问题</h2><ol>
+<li><strong>为什么链接的时候需要调用 cvtres.exe 呢？</strong></li>
+<li><strong>有没有更好的设置条件断点的方式？目前的语法实在是太难用了。</strong></li>
+<li><strong>有什么简单的办法可以查看 <code>__piob</code> 数组中元素的内容吗？</strong></li>
+<li><strong>为什么在打开 <code>510.res</code> 的时候就报错了？应该可以打开 512 个文件才对？</strong></li>
+</ol>
+<p>由于本篇已经太长了，下一篇文章中继续把残留的这几个问题解答。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><code>crt</code>  有最大打开文件数的限制，可以通过 <code>_setmaxstdio()</code> 进行调整。</li>
+<li>在一个工程中最好不要同时包含太多 <code>.rc</code> 文件，一般应该不会遇到我遇到的这种情况。</li>
+<li>在不需要使用文件的时候，一定要及时关闭。</li>
+<li>进程退出后，依然可以使用 <code>k</code> 系列命令查看调用栈，有时候可以快速定位进程退出的原因。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://stackoverflow.com/questions/61581826/visual-studio-2019-cvt1101-lnk1123-fatal-error" target="_blank" rel="noopener">https://stackoverflow.com/questions/61581826/visual-studio-2019-cvt1101-lnk1123-fatal-error</a></p>
+<p><a href="https://docs.microsoft.com/en-us/cpp/build/reference/dot-res-files-as-linker-input?view=msvc-170" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/cpp/build/reference/dot-res-files-as-linker-input?view=msvc-170</a></p>
+<p><a href="https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/setmaxstdio?view=msvc-170" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/setmaxstdio?view=msvc-170</a></p>
+<p><code>vs2013</code> 自带的 <code>crt</code> 源码</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/IDA/" rel="tag"><i class="fa fa-tag"></i> IDA</a>
+          
+            <a href="/tags/排错/" rel="tag"><i class="fa fa-tag"></i> 排错</a>
+          
+            <a href="/tags/process-monitor/" rel="tag"><i class="fa fa-tag"></i> process monitor</a>
+          
+            <a href="/tags/rc/" rel="tag"><i class="fa fa-tag"></i> rc</a>
+          
+            <a href="/tags/CVT1101/" rel="tag"><i class="fa fa-tag"></i> CVT1101</a>
+          
+            <a href="/tags/LNK1123/" rel="tag"><i class="fa fa-tag"></i> LNK1123</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/speedup-my-tfs-parse-tool-part4-download-dot-net-source-code-and-setup-debug-in-vs/" rel="next" title="性能优化 | 记一次 .NET 程序的性能优化实战（4）—— .NET 源码查看及使用 vs 调试">
+                <i class="fa fa-chevron-left"></i> 性能优化 | 记一次 .NET 程序的性能优化实战（4）—— .NET 源码查看及使用 vs 调试
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" rel="prev" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">
+                调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">调试实战 | dll 加载失败之 Debug Release 争锋篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">调试技巧 | 你很可能需要知道这个调试小技巧</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">调试实战 | 从转储文件找出抛出的异常 —— 理论</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">1.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初闻错误"><span class="nav-number">2.</span> <span class="nav-text">初闻错误</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#尝试重现"><span class="nav-number">3.</span> <span class="nav-text">尝试重现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#熟悉的错误"><span class="nav-number">4.</span> <span class="nav-text">熟悉的错误</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过滤相关事件"><span class="nav-number">5.</span> <span class="nav-text">过滤相关事件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#请出-IDA"><span class="nav-number">6.</span> <span class="nav-text">请出 IDA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#搭建调试环境"><span class="nav-number">7.</span> <span class="nav-text">搭建调试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#猜错了"><span class="nav-number">8.</span> <span class="nav-text">猜错了</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继续努力"><span class="nav-number">9.</span> <span class="nav-text">继续努力</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回到-IDA"><span class="nav-number">10.</span> <span class="nav-text">回到 IDA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么-wfsopen-会失败？"><span class="nav-number">11.</span> <span class="nav-text">为什么 _wfsopen 会失败？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#getstream-错在哪里了？"><span class="nav-number">12.</span> <span class="nav-text">_getstream 错在哪里了？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#google-一下"><span class="nav-number">13.</span> <span class="nav-text">google 一下</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#发帖询问"><span class="nav-number">14.</span> <span class="nav-text">发帖询问</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解决方案"><span class="nav-number">15.</span> <span class="nav-text">解决方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#几个值得深究的问题"><span class="nav-number">16.</span> <span class="nav-text">几个值得深究的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">17.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">18.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

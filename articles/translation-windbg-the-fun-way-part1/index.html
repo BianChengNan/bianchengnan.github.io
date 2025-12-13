@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="windbg,natvis,翻译,dx,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言Yarden Shafir 分享了两篇非常通俗易懂的，关于 windbg 新引入的调试数据模型的文章。链接如下： part1：https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b part2：https://medium.com/@yardenshafir2/windbg-the-fun-way-par">
+<meta name="keywords" content="windbg,natvis,翻译,dx">
+<meta property="og:type" content="article">
+<meta property="og:title" content="难译 | windbg 乐趣之道（上）">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part1/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言Yarden Shafir 分享了两篇非常通俗易懂的，关于 windbg 新引入的调试数据模型的文章。链接如下： part1：https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b part2：https://medium.com/@yardenshafir2/windbg-the-fun-way-par">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/translation-permission.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/output-of-dx-g-cursession.Processes.Select.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/output-of-dx-g-tableEntry-_INVERTED_FUNCTION_TABLE_ENTRY.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/dx-inverted-_INVERTED_FUNCTION_TABLE.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.733Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="难译 | windbg 乐趣之道（上）">
+<meta name="twitter:description" content="前言Yarden Shafir 分享了两篇非常通俗易懂的，关于 windbg 新引入的调试数据模型的文章。链接如下： part1：https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b part2：https://medium.com/@yardenshafir2/windbg-the-fun-way-par">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/translation-permission.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part1/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>难译 | windbg 乐趣之道（上） | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">难译 | windbg 乐趣之道（上）</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-02-12T21:44:22+08:00">
+                2023-02-12
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/翻译/" itemprop="url" rel="index">
+                    <span itemprop="name">翻译</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><a href="https://twitter.com/yarden_shafir" target="_blank" rel="noopener">Yarden Shafir</a> 分享了两篇非常通俗易懂的，关于 <code>windbg</code> 新引入的调试数据模型的文章。链接如下：</p>
+<p><code>part1</code>：<a href="https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b" target="_blank" rel="noopener">https://medium.com/@yardenshafir2/windbg-the-fun-way-part-1-2e4978791f9b</a></p>
+<p><code>part2</code>：<a href="https://medium.com/@yardenshafir2/windbg-the-fun-way-part-2-7a904cba5435" target="_blank" rel="noopener">https://medium.com/@yardenshafir2/windbg-the-fun-way-part-2-7a904cba5435</a></p>
+<p>本文是第一部分的译文。在有道词典、必应词典、谷歌翻译的大力帮助下完成，感谢以上翻译工具，我只是一个搬运工。<strong>强烈建议</strong>英文好的朋友阅读原文，因为在翻译的过程中不可避免的按我的理解做了调整。</p>
+<a id="more"></a>
+
+
+
+<blockquote>
+<p><strong>说明：</strong></p>
+<ol>
+<li>翻译已征得原作者同意。</li>
+</ol>
+<p><img src="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/translation-permission.png" alt="translation-permission"></p>
+<ol start="2">
+<li><p>鸽了太久了，对不住原作者</p>
+</li>
+<li><p>标题实在想不到更好的翻译了</p>
+</li>
+<li><p>作者的 <a href="https://github.com/yardenshafir/WinDbg_Scripts" target="_blank" rel="noopener">github</a></p>
+</li>
+</ol>
+</blockquote>
+<p>以下是译文！</p>
+<hr>
+<p>不久前，<code>WinDbg</code> 添加了对新<a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/using-linq-with-the-debugger-objects" target="_blank" rel="noopener">调试数据模型</a>（debugger data model）的支持，这一变化彻底改变了我们使用 <code>WinDbg</code> 的方式。不再有可怕的 <code>MASM</code> 命令和晦涩的语法。无需再将地址或参数复制到记事本以便在后续命令中使用它们。不用再一遍又一遍地运行相同的命令（传递不同的地址）来遍历列表或数组。</p>
+<p>这是该指南的第一部分，因为我认为实际上不会有人从头到尾读完长达 <code>8000</code> 字的 <code>WinDbg</code> 命令解释。所以，我准备了 <code>2</code> 篇  <code>4000</code> 字的文章！这样会好些，对吧？</p>
+<p>在第一篇文章中，我们将学习如何使用这个新数据模型的基础知识 —— 使用自定义寄存器和新的内置寄存器，遍历对象，使用匿名类型来搜索、过滤、自定义对象。最后，我们将学习如何以一种比以前更好、更简单的方式解析数组和列表。</p>
+<p>在这两篇文章中，我们将学习这个数据模型为我们提供的更复杂、更高级的方法和特性。现在我们都知道将会发生什么，准备好一杯咖啡，让我们开始吧！</p>
+<p>这个数据模型，可以在 <code>WinDbg</code> 中通过 <code>dx</code> 命令使用，是一个极其强大的工具，能够定义自定义变量、结构体、函数并使用很多其它新功能。它还允许我们使用 <code>LINQ</code>（一种建立在 <code>SQL</code> 数据库语言之上的自然查询语言）进行查询和过滤信息。</p>
+<p>这个数据模型已经被文档化了，甚至在 <code>GitHub</code> 上还有使用范例。此外，所有模块都有对应的文档，可以在调试器中通过 <code>dx -v &lt;method&gt;</code> 查看。（您也可以通过运行不带 <code>-v</code> 的 <code>dx &lt;method&gt;</code> 命令获得相同的文档 ) ：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dx -v Debugger.Utility.Collections.FromListEntry</span><br><span class="line">Debugger.Utility.Collections.FromListEntry [FromListEntry(ListEntry, [&lt;ModuleName | ModuleObject&gt;], TypeName, FieldExpression) — Method <span class="built_in">which</span> converts a LIST_ENTRY specified by the ‘ListEntry’ parameter of types whose name is specified by the string ‘TypeName’ and whose embedded links within that <span class="built_in">type</span> are accessed via an expression specified by the string ‘FieldExpression’ into a collection object. If an optional module name or object is specified, the <span class="built_in">type</span> name is looked up <span class="keyword">in</span> the context of such module]</span><br></pre></td></tr></table></figure>
+
+<p>除此之外，还有一些<a href="https://github.com/hugsy/defcon_27_windbg_workshop/blob/master/windbg_cheatsheet.md" target="_blank" rel="noopener">外部</a>文档，但我觉得有些事情需要进一步解释，并且这个特性值得更多的关注。</p>
+<blockquote>
+<p><strong>译注：</strong></p>
+<p><code>debugger data model</code> 文档链接：<a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/data-model-cpp-overview）" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/data-model-cpp-overview）</a></p>
+<p>使用范例 <code>github</code> 链接：<a href="https://github.com/microsoft/WinDbg-Samples）" target="_blank" rel="noopener">https://github.com/microsoft/WinDbg-Samples）</a></p>
+</blockquote>
+<h2 id="自定义寄存器（Custom-Registers）"><a href="#自定义寄存器（Custom-Registers）" class="headerlink" title="自定义寄存器（Custom Registers）"></a>自定义寄存器（Custom Registers）</h2><p>首先，<code>NatVis</code> 允许我们添加自定义寄存器。有点像 <code>MASM</code> 中的 <code>@$t1</code>、<code>@$t2</code>、<code>@$t3</code> 等。 只是，现在你可以起任何想要的名字，并且可以指定类型：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dx @$myString = &quot;My String&quot;</span><br><span class="line">dx @$myInt = 123</span><br></pre></td></tr></table></figure>
+
+<p>我们可以使用 <code>dx @$vars</code> 来查看所有变量，使用 <code>dx @$vars.Remove(&quot;var name&quot;)</code>  来移除某个变量，或者使用 <code>@$vars.Clear()</code> 清除所有变量。我们还可以使用 <code>dx</code> 来处理更复杂的结构，比如 <code>EPROCESS</code>。您可能知道，公共调试符号（public PDBs）中的符号不包含类型信息。使用旧调试器，这并不总是一个问题，因为在 <code>MASM</code> 中，反正也没有类型，我们可以使用 <code>poi</code> 命令对指针进行解引用。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0: kd&gt; dt nt!_EPROCESS poi(nt!PsInitialSystemProcess)</span><br><span class="line"> +0x000 Pcb : _KPROCESS</span><br><span class="line"> +0x2e0 ProcessLock : _EX_PUSH_LOCK</span><br><span class="line"> +0x2e8 UniqueProcessId : (null)</span><br><span class="line"> ...</span><br></pre></td></tr></table></figure>
+
+<p>但当变量不是指针时，事情就变得更混乱了，比如 <code>PsIdleProcess</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">0: kd&gt; dt nt!_KPROCESS @@masm(nt!PsIdleProcess)</span><br><span class="line">   +0x000 Header           : _DISPATCHER_HEADER</span><br><span class="line">   +0x018 ProfileListHead  : _LIST_ENTRY [ 0x00000048`0411017e - 0x00000000`00000004 ]</span><br><span class="line">   +0x028 DirectoryTableBase : 0xffffb10b`79f08010</span><br><span class="line">   +0x030 ThreadListHead   : _LIST_ENTRY [ 0x00001388`00000000 - 0xfffff801`1b401000 ]</span><br><span class="line">   +0x040 ProcessLock      : 0</span><br><span class="line">   +0x044 ProcessTimerDelay : 0</span><br><span class="line">   +0x048 DeepFreezeStartTime : 0xffffe880`00000000</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+
+<p>我们必须先使用显式的 <code>MASM</code> 操作符来获取 <code>PsIdleProcess</code> 的地址，然后将它当作 <code>EPROCESS</code> 显示出来。通过使用 <code>dx</code>，我们可以更聪明地直接使用 <code>C</code> 风格的类型转换对符号进行强制转换。但是当我们尝试把 <code>nt!Psinitialsystemprocess</code> 转换为一个指向 <code>EPROCESS</code> 的指针：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dx @$systemProc = (nt!_EPROCESS*)nt!PsInitialSystemProcess</span><br><span class="line">Error: No type (or void) for object at Address 0xfffff8074ef843a0</span><br></pre></td></tr></table></figure>
+
+<p>我们得到了一个错误。</p>
+<p>就像我提到的那样，符号没有类型。我们不能转换没有类型的东西。所以我们需要获取符号的地址，并转换成一个指向我们想要的类型的指针（在当前示例中，<code>PsInitialSystemProcess</code> 已经是一个指向 <code>EPROCESS</code> 的指针，所以我们需要将其地址转换为一个指向 <code>EPROCESS</code> 指针的指针）。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx @$systemProc = *(nt!_EPROCESS**)&amp;nt!PsInitialSystemProcess</span><br></pre></td></tr></table></figure>
+
+<p>现在，我们有了一个有类型的变量，我们可以像在 <code>C</code> 中那样访问它的字段：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">0: kd&gt; dx @$systemProc-&gt;ImageFileName</span><br><span class="line"></span><br><span class="line">@$systemProc-&gt;ImageFileName               [Type: unsigned char [15]]</span><br><span class="line">[0]              : 0x53 [Type: unsigned char]</span><br><span class="line">[1]              : 0x79 [Type: unsigned char]</span><br><span class="line">[2]              : 0x73 [Type: unsigned char]</span><br><span class="line">[3]              : 0x74 [Type: unsigned char]</span><br><span class="line">[4]              : 0x65 [Type: unsigned char]</span><br><span class="line">[5]              : 0x6d [Type: unsigned char]</span><br><span class="line">[6]              : 0x0 [Type: unsigned char]</span><br></pre></td></tr></table></figure>
+
+<p>我们还可以对它进行类型转换以得到更好的输出：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">dx (char*)@$systemProc-&gt;ImageFileName</span><br><span class="line"></span><br><span class="line">(char*)@$systemProc-&gt;ImageFileName  :</span><br><span class="line">0xffffc10c8e87e710 : &quot;System&quot; [Type: char *]</span><br></pre></td></tr></table></figure>
+
+<p>我们还可以使用 <code>ToDisplayString</code> 将它从 <code>char*</code> 转换为 <code>string</code>。我们有两个选项 —— <code>ToDisplayString(&quot;s&quot;)</code>，将输出结果转换为字符串并将引号作为字符串的一部分，或者<code>ToDisplayString(&quot;sb&quot;)</code>，将删除引号：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">dx ((char*)@$systemProc-&gt;ImageFileName).ToDisplayString(&quot;s&quot;)</span><br><span class="line"></span><br><span class="line">((char*)@$systemProc-&gt;ImageFileName).ToDisplayString(&quot;s&quot;) :</span><br><span class="line">&quot;System&quot;</span><br><span class="line">    Length           : 0x8</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">dx ((char*)@$systemProc-&gt;ImageFileName).ToDisplayString(&quot;sb&quot;)</span><br><span class="line"></span><br><span class="line">((char*)@$systemProc-&gt;ImageFileName).ToDisplayString(&quot;sb&quot;) :</span><br><span class="line">System</span><br><span class="line">    Length           : 0x6</span><br></pre></td></tr></table></figure>
+
+<h2 id="内置寄存器（Built-in-Registers）"><a href="#内置寄存器（Built-in-Registers）" class="headerlink" title="内置寄存器（Built-in Registers）"></a>内置寄存器（Built-in Registers）</h2><p>这很有趣，但对于进程（和其他一些东西），还有一种更简单的方法。<code>WinDbg</code> 中的 <code>NatVis</code> 为我们提供了一些有用的“免费”寄存器 —— <code>curframe</code>, <code>curprocess</code>, <code>cursession</code>, <code>curstack</code> 和 <code>curthread</code>。不难通过它们的名字猜出对应的内容，但还是看一看吧：</p>
+<h3 id="curframe"><a href="#curframe" class="headerlink" title="@$curframe"></a>@$curframe</h3><p>提供有关当前帧的信息。我自己从来没用过，但它也许有用：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 @$curframe.Attributes</span><br><span class="line"></span><br><span class="line">@$curframe.Attributes                </span><br><span class="line">    InstructionOffset : 0xfffff8074ebda1e1</span><br><span class="line">    ReturnOffset     : 0xfffff80752ad2b61</span><br><span class="line">    FrameOffset      : 0xfffff80751968830</span><br><span class="line">    StackOffset      : 0xfffff80751968838</span><br><span class="line">    FuncTableEntry   : 0x0</span><br><span class="line">    Virtual          : 1</span><br><span class="line">    FrameNumber      : 0x0</span><br></pre></td></tr></table></figure>
+
+<h3 id="curprocess"><a href="#curprocess" class="headerlink" title="@$curprocess"></a>@$curprocess</h3><p>一个包含当前进程信息的容器。但不是 <code>EPROCESS</code> (尽管包含它)。它包含了关于当前进程的易于访问的信息，比如线程、加载的模块、句柄等。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">dx @$curprocess</span><br><span class="line"></span><br><span class="line">@$curprocess                 : System [Switch To]</span><br><span class="line">    KernelObject     [Type: _EPROCESS]</span><br><span class="line">    Name             : System</span><br><span class="line">    Id               : 0x4</span><br><span class="line">    Handle           : 0xf0f0f0f0</span><br><span class="line">    Threads         </span><br><span class="line">    Modules         </span><br><span class="line">    Environment     </span><br><span class="line">    Devices         </span><br><span class="line">    Io</span><br></pre></td></tr></table></figure>
+
+<p>我们不仅可以访问 <code>EPROCESS</code>（通过 <code>KernelObject</code> ），还可以使用其他字段。例如，我们可以通过 <code>@$curprocess.Io.Handles</code> 访问进程持有的所有句柄。<code>@$curprocess.Io.Handles</code> 会返回一个由句柄值索引的句柄数组：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">dx @$curprocess.Io.Handles</span><br><span class="line"></span><br><span class="line">@$curprocess.Io.Handles                </span><br><span class="line">    [0x4]           </span><br><span class="line">    [0x8]           </span><br><span class="line">    [0xc]           </span><br><span class="line">    [0x10]          </span><br><span class="line">    [0x14]          </span><br><span class="line">    [0x18]          </span><br><span class="line">    [0x1c]          </span><br><span class="line">    [0x20]          </span><br><span class="line">    [0x24]          </span><br><span class="line">    [0x28]</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p><code>System</code> 进程有很多句柄，这只是开始的几个！让我们来看看第一个（我们也可以通过 <code>@$curprocess.Io.Handles[0x4]</code> 来访问它）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dx @$curprocess.Io.Handles.First()</span><br><span class="line"></span><br><span class="line">@$curprocess.Io.Handles.First()                </span><br><span class="line">    Handle           : 0x4</span><br><span class="line">    Type             : Process</span><br><span class="line">    GrantedAccess    : Delete | ReadControl | WriteDac | WriteOwner | Synch | Terminate | CreateThread | VMOp | VMRead | VMWrite | DupHandle | CreateProcess | SetQuota | SetInfo | QueryInfo | SetPort</span><br><span class="line">    Object           [Type: _OBJECT_HEADER]</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到句柄，句柄对应的对象类型，它被授予的访问权限，甚至有一个指向对象本身的指针（或者更准确地说，它指向的是对象头）！</p>
+<p>这个寄存器还有很多东西可以探索，我鼓励您去调查它们，但我不会全部展示。</p>
+<p>顺便说一下，我是否提过 <code>dx</code> 允许 <code>tab</code> 补全？</p>
+<h3 id="cursession"><a href="#cursession" class="headerlink" title="@$cursession"></a>@$cursession</h3><p>顾名思义，这个寄存器为我们提供关于当前调试会话的信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dx @$cursession</span><br><span class="line"></span><br><span class="line">@$cursession                 : Remote KD: KdSrv:Server=@&#123;&lt;Local&gt;&#125;,Trans=@&#123;NET:Port=55556,Key=1.2.3.4,Target=192.168.251.21&#125;</span><br><span class="line">    Processes       </span><br><span class="line">    Id               : 0</span><br><span class="line">    Devices         </span><br><span class="line">    Attributes</span><br></pre></td></tr></table></figure>
+
+<p>因此，我们可以获得关于调试会话的信息，这总是很有趣。但是还可以找到更多有用的东西，比如 <code>Processes</code> 字段，它是所有进程的数组，由 <code>PID</code> 索引。让我们选一个吧：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">dx @$cursession.Processes[0x1d8]</span><br><span class="line"></span><br><span class="line">@$cursession.Processes[0x1d8]                 : smss.exe [Switch To]</span><br><span class="line">    KernelObject     [Type: _EPROCESS]</span><br><span class="line">    Name             : smss.exe</span><br><span class="line">    Id               : 0x1d8</span><br><span class="line">    Handle           : 0xf0f0f0f0</span><br><span class="line">    Threads         </span><br><span class="line">    Modules         </span><br><span class="line">    Environment     </span><br><span class="line">    Devices         </span><br><span class="line">    Io</span><br></pre></td></tr></table></figure>
+
+<p>现在我们可以获得每个进程的全部有用信息！我们还可以通过过滤来搜索进程（例如，通过进程名、加载到进程中的特定模块、命令行中的字符串等等）。我稍后再解释这些。</p>
+<h3 id="curstack"><a href="#curstack" class="headerlink" title="@$curstack"></a>@$curstack</h3><p>这个寄存器只包含一个字段 —— 帧，它以一种易于处理的方式向我们显示当前调用栈：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">dx @$curstack.Frames</span><br><span class="line"></span><br><span class="line">@$curstack.Frames                </span><br><span class="line">    [0x0]        : nt!DbgBreakPointWithStatus + 0x1 [Switch To]</span><br><span class="line">    [0x1]        : kdnic!TXTransmitQueuedSends + 0x125 [Switch To]</span><br><span class="line">    [0x2]        : kdnic!TXSendCompleteDpc + 0x14d [Switch To]</span><br><span class="line">    [0x3]        : nt!KiProcessExpiredTimerList + 0x169 [Switch To]</span><br><span class="line">    [0x4]        : nt!KiRetireDpcList + 0x4e9 [Switch To]</span><br><span class="line">    [0x5]        : nt!KiIdleLoop + 0x7e [Switch To]</span><br></pre></td></tr></table></figure>
+
+<h3 id="curthread"><a href="#curthread" class="headerlink" title="@$curthread"></a>@$curthread</h3><p>为我们提供当前线程的相关信息，就像 <code>@$curprocess</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">dx @$curthread</span><br><span class="line"></span><br><span class="line">@$curthread                 : nt!DbgBreakPointWithStatus+0x1 (fffff807`4ebda1e1)  [Switch To]</span><br><span class="line">    KernelObject     [Type: _ETHREAD]</span><br><span class="line">    Id               : 0x0</span><br><span class="line">    Stack           </span><br><span class="line">    Registers       </span><br><span class="line">    Environment</span><br></pre></td></tr></table></figure>
+
+<p><code>KernelObject</code> 字段包含了 <code>ETHREAD</code>，  <code>Environment</code> 字段包含了 <code>TEB</code>，除此之外，还包括线程 <code>ID</code>、调用栈和寄存器。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dx @$curthread.Registers</span><br><span class="line"></span><br><span class="line">@$curthread.Registers                </span><br><span class="line">    User            </span><br><span class="line">    Kernel          </span><br><span class="line">    SIMD            </span><br><span class="line">    FloatingPoint</span><br></pre></td></tr></table></figure>
+
+<p>寄存器被方便地分为用户寄存器、内核寄存器、<code>SIMD</code> 寄存器和浮点寄存器，我们可以分别查看它们：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 @$curthread.Registers.Kernel</span><br><span class="line"></span><br><span class="line">@$curthread.Registers.Kernel</span><br><span class="line">    cr0              : 0x80050033</span><br><span class="line">    cr2              : 0x207b8f7abbe</span><br><span class="line">    cr3              : 0x6d4002</span><br><span class="line">    cr4              : 0x370678</span><br><span class="line">    cr8              : 0xf</span><br><span class="line">    gdtr             : 0xffff9d815ffdbfb0</span><br><span class="line">    gdtl             : 0x57</span><br><span class="line">    idtr             : 0xffff9d815ffd9000</span><br><span class="line">    idtl             : 0xfff</span><br><span class="line">    tr               : 0x40</span><br><span class="line">    ldtr             : 0x0</span><br><span class="line">    kmxcsr           : 0x1f80</span><br><span class="line">    kdr0             : 0x0</span><br><span class="line">    kdr1             : 0x0</span><br><span class="line">    kdr2             : 0x0</span><br><span class="line">    kdr3             : 0x0</span><br><span class="line">    kdr6             : 0xfffe0ff0</span><br><span class="line">    kdr7             : 0x400</span><br></pre></td></tr></table></figure>
+
+<h1 id="搜索和过滤（Searching-and-Filtering）"><a href="#搜索和过滤（Searching-and-Filtering）" class="headerlink" title="搜索和过滤（Searching and Filtering）"></a>搜索和过滤（Searching and Filtering）</h1><p>我们在前面简要提到过，<code>NatVis</code> 允许我们做一些非常有用的操作 —— 通过类似 <code>SQL</code> 中的 <code>Select</code>、<code>Where</code>、<code>Orderderby</code> 及其它方法对信息进行查找、过滤和排序。</p>
+<p>例如，让我们尝试找到所有没启用 <code>high entropy ASLR</code> 的进程。该信息存储在 <code>EPROCESS-&gt;MitigationFlags</code> 字段中，<code>HighEntropyASLREnabled</code> 的值是 <code>0x20</code> （所有值都可以在<a href="https://www.geoffchappell.com/studies/windows/km/ntoskrnl/structs/eprocess/mitigationflags.htm" target="_blank" rel="noopener">这里</a>和公共符号中找到）。</p>
+<p>首先，我们声明一个值为 <code>0x20</code> 的新寄存器，这只是为了使代码更具可读性：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">0: kd&gt; dx @$highEntropyAslr = 0x20</span><br><span class="line"></span><br><span class="line">@$highEntropyAslr = 0x20 : 32</span><br></pre></td></tr></table></figure>
+
+<p>然后创建查询来遍历所有进程，只选择那些没有设置 <code>HighEntropyASLREnabled</code> 标志位的进程：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 @$cursession.Processes.Where(p =&gt; (p.KernelObject.MitigationFlags &amp; @$highEntropyAslr) == 0)</span><br><span class="line"></span><br><span class="line">@$cursession.Processes.Where(p =&gt; (p.KernelObject.MitigationFlags &amp; @$highEntropyAslr) == 0)                </span><br><span class="line">    [0x910]          : spoolsv.exe [Switch To]</span><br><span class="line">    [0xb40]          : IpOverUsbSvc.exe [Switch To]</span><br><span class="line">    [0x1610]         : explorer.exe [Switch To]</span><br><span class="line">    [0x1d8c]         : OneDrive.exe [Switch To]</span><br></pre></td></tr></table></figure>
+
+<p>或者我们可以直接检查 <code>MitigationFlagsValues</code> 并获得相同的结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 @$cursession.Processes.Where(p =&gt; (p.KernelObject.MitigationFlagsValues.HighEntropyASLREnabled == 0))</span><br><span class="line"></span><br><span class="line">@$cursession.Processes.Where(p =&gt; (p.KernelObject.MitigationFlagsValues.HighEntropyASLREnabled == 0))</span><br><span class="line">    [0x910]          : spoolsv.exe [Switch To]</span><br><span class="line">    [0xb40]          : IpOverUsbSvc.exe [Switch To]</span><br><span class="line">    [0x1610]         : explorer.exe [Switch To]</span><br><span class="line">    [0x1d8c]         : OneDrive.exe [Switch To]</span><br></pre></td></tr></table></figure>
+
+<p>我们还可以使用 <code>Select()</code> 来显示正在遍历的对象的某些特定属性。这里我们只查看每个进程的线程数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">dx @$cursession.Processes.Select(p =&gt; p.Threads.Count())</span><br><span class="line"></span><br><span class="line">@$cursession.Processes.Select(p =&gt; p.Threads.Count())                </span><br><span class="line">    [0x0]            : 0x6</span><br><span class="line">    [0x4]            : 0xeb</span><br><span class="line">    [0x78]           : 0x4</span><br><span class="line">    [0x1d8]          : 0x5</span><br><span class="line">    [0x244]          : 0xe</span><br><span class="line">    [0x294]          : 0x8</span><br><span class="line">    [0x2a0]          : 0x10</span><br><span class="line">    [0x2f8]          : 0x9</span><br><span class="line">    [0x328]          : 0xa</span><br><span class="line">    [0x33c]          : 0xd</span><br><span class="line">    [0x3a8]          : 0x2c</span><br><span class="line">    [0x3c0]          : 0x8</span><br><span class="line">    [0x3c8]          : 0x8</span><br><span class="line">    [0x204]          : 0x15</span><br><span class="line">    [0x300]          : 0x1d</span><br><span class="line">    [0x444]          : 0x3f</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>我们还可以通过在命令末尾加上 <code>,d</code> 来以十进制格式显示所有内容。（<code>b</code> 表示以二进制显示，<code>o</code> 表示以八进制显示，<code>s</code> 表示以字符串显示)：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">dx @$cursession.Processes.Select(p =&gt; p.Threads.Count()), d@$cursession.Processes.Select(p =&gt; p.Threads.Count()), d                </span><br><span class="line">    [0]              : 6</span><br><span class="line">    [4]              : 235</span><br><span class="line">    [120]            : 4</span><br><span class="line">    [472]            : 5</span><br><span class="line">    [580]            : 14</span><br><span class="line">    [660]            : 8</span><br><span class="line">    [672]            : 16</span><br><span class="line">    [760]            : 9</span><br><span class="line">    [808]            : 10</span><br><span class="line">    [828]            : 13</span><br><span class="line">    [936]            : 44</span><br><span class="line">    [960]            : 8</span><br><span class="line">    [968]            : 8</span><br><span class="line">    [516]            : 21</span><br><span class="line">    [768]            : 29</span><br><span class="line">    [1092]           : 63</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>再看一个稍微复杂一点的示例 —— 查看某个特定进程中每个线程的理想处理器（我随机选择了一个进程，只是为了查看非 <code>System</code> 进程的一些信息）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 @$cursession.Processes[0x1b2c].Threads.Select(t =&gt; t.Environment.EnvironmentBlock.CurrentIdealProcessor.Number)</span><br><span class="line"></span><br><span class="line">@$cursession.Processes[0x1b2c].Threads.Select(t =&gt; t.Environment.EnvironmentBlock.CurrentIdealProcessor.Number)                </span><br><span class="line">    [0x1b30]         : 0x1 [Type: unsigned char]</span><br><span class="line">    [0x1b40]         : 0x2 [Type: unsigned char]</span><br><span class="line">    [0x1b4c]         : 0x3 [Type: unsigned char]</span><br><span class="line">    [0x1b50]         : 0x4 [Type: unsigned char]</span><br><span class="line">    [0x1b48]         : 0x5 [Type: unsigned char]</span><br><span class="line">    [0x1b5c]         : 0x0 [Type: unsigned char]</span><br><span class="line">    [0x1b64]         : 0x1 [Type: unsigned char]</span><br></pre></td></tr></table></figure>
+
+<p>我们还可以使用 <code>OrderBy</code> 来获得更好的输出，例如获取按字母顺序排序的进程列表：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">dx -r1 @$cursession.Processes.OrderBy(p =&gt; p.Name)</span><br><span class="line"></span><br><span class="line">@$cursession.Processes.OrderBy(p =&gt; p.Name)                </span><br><span class="line">    [0x1848]         : ApplicationFrameHost.exe [Switch To]</span><br><span class="line">    [0x0]            : Idle [Switch To]</span><br><span class="line">    [0xb40]          : IpOverUsbSvc.exe [Switch To]</span><br><span class="line">    [0x106c]         : LogonUI.exe [Switch To]</span><br><span class="line">    [0x754]          : MemCompression [Switch To]</span><br><span class="line">    [0x187c]         : MicrosoftEdge.exe [Switch To]</span><br><span class="line">    [0x1b94]         : MicrosoftEdgeCP.exe [Switch To]</span><br><span class="line">    [0x1b7c]         : MicrosoftEdgeSH.exe [Switch To]</span><br><span class="line">    [0xb98]          : MsMpEng.exe [Switch To]</span><br><span class="line">    [0x1158]         : NisSrv.exe [Switch To]</span><br><span class="line">    [0x1d8c]         : OneDrive.exe [Switch To]</span><br><span class="line">    [0x78]           : Registry [Switch To]</span><br><span class="line">    [0x1ed0]         : RuntimeBroker.exe [Switch To]</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>如果我们希望按降序排列，可以使用 <code>OrderByDescending</code>。</p>
+<p>但是，如果我们想要查看多个属性该怎么办呢？有办法。</p>
+<h1 id="匿名类型（Anonymous-Types）"><a href="#匿名类型（Anonymous-Types）" class="headerlink" title="匿名类型（Anonymous Types）"></a>匿名类型（Anonymous Types）</h1><p>我们可以声明一个自定义的类型，它将是未命名的并且只在查询作用域中有效，语法如下：<code>Select(x =&gt; new {var1 = x.A, var2 = x.B，…})</code>。</p>
+<p>我们把它用在前面的示例中。假设我们想要显示每个进程的进程名和线程数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">dx @$cursession.Processes.Select(p =&gt; new &#123;Name = p.Name, ThreadCount = p.Threads.Count()&#125;)</span><br><span class="line"></span><br><span class="line">@$cursession.Processes.Select(p =&gt; new &#123;Name = p.Name, ThreadCount = p.Threads.Count()&#125;)                </span><br><span class="line">    [0x0]           </span><br><span class="line">    [0x4]           </span><br><span class="line">    [0x78]          </span><br><span class="line">    [0x1d8]         </span><br><span class="line">    [0x244]         </span><br><span class="line">    [0x294]         </span><br><span class="line">    [0x2a0]         </span><br><span class="line">    [0x2f8]         </span><br><span class="line">    [0x328]</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>但是现在我们只看到进程容器，而不是实际的信息。为了查看信息本身，我们需要使用 <code>-r2</code> 来多显示一层。<code>r</code> 后面的数字表示递归层数。默认值是 <code>-r1</code>， <code>-r0</code> 将不显示输出，<code>-r2</code> 将显示两层，以此类推。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">dx -r2 @$cursession.Processes.Select(p =&gt; new &#123;Name = p.Name, ThreadCount = p.Threads.Count()&#125;)</span><br><span class="line"></span><br><span class="line">@$cursession.Processes.Select(p =&gt; new &#123;Name = p.Name, ThreadCount = p.Threads.Count()&#125;)                </span><br><span class="line">    [0x0]           </span><br><span class="line">        Name             : Idle</span><br><span class="line">        ThreadCount      : 0x6</span><br><span class="line">    [0x4]           </span><br><span class="line">        Name             : System</span><br><span class="line">        ThreadCount      : 0xeb</span><br><span class="line">    [0x78]          </span><br><span class="line">        Name             : Registry</span><br><span class="line">        ThreadCount      : 0x4</span><br><span class="line">    [0x1d8]         </span><br><span class="line">        Name             : smss.exe</span><br><span class="line">        ThreadCount      : 0x5</span><br><span class="line">    [0x244]         </span><br><span class="line">        Name             : csrss.exe</span><br><span class="line">        ThreadCount      : 0xe</span><br><span class="line">    [0x294]         </span><br><span class="line">        Name             : wininit.exe</span><br><span class="line">        ThreadCount      : 0x8</span><br><span class="line">    [0x2a0]         </span><br><span class="line">        Name             : csrss.exe</span><br><span class="line">        ThreadCount      : 0x10</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>这看起来已经好多了，但是我们可以使用新的表格视图让它看起来更好（通过 <code>-g</code> 选项）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx -g @$cursession.Processes.Select(p =&gt; new &#123;Name = p.Name, ThreadCount = p.Threads.Count()&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/output-of-dx-g-cursession.Processes.Select.png" alt="output-of-dx-g-cursession.Processes.Select"></p>
+<p>这看起来太棒了。是的，这些标题是可点击的，点击标题会将表格排序！</p>
+<p>如果我们想看到以十进制显示的 <code>PID</code> 和线程数，我们可以在命令的末尾加上 <code>,d</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx -g @$cursession.Processes.Select(p =&gt; new &#123;Name = p.Name, ThreadCount = p.Threads.Count()&#125;),d</span><br></pre></td></tr></table></figure>
+
+<h1 id="数组和链表（Arrays-and-Lists）"><a href="#数组和链表（Arrays-and-Lists）" class="headerlink" title="数组和链表（Arrays and Lists）"></a>数组和链表（Arrays and Lists）</h1><p><code>dx</code> 为我们提供了一种新的、更简单的方法来处理数组和列表。</p>
+<p>让我们先来看看数组，语法是 <code>dx *(TYPE(*)[Size])&lt;pointer to array start&gt;</code>。</p>
+<p>作为示例，我们将转储 <code>PsInvertedFunctionTable</code> 中的内容，它的 <code>TableEntry</code> 字段包含了最多容纳 <code>256</code> 个缓存模块的数组。</p>
+<p>首先，我们将获得该符号的指针，并将其转换为 <code>_INVERTED_FUNCTION_TABLE</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">dx @$inverted = (nt!_INVERTED_FUNCTION_TABLE*)&amp;nt!PsInvertedFunctionTable</span><br><span class="line"></span><br><span class="line">@$inverted = (nt!_INVERTED_FUNCTION_TABLE*)&amp;nt!PsInvertedFunctionTable                 : 0xfffff8074ef9b010 [Type: _INVERTED_FUNCTION_TABLE *]</span><br><span class="line">    [+0x000] CurrentSize      : 0xbe [Type: unsigned long]</span><br><span class="line">    [+0x004] MaximumSize      : 0x100 [Type: unsigned long]</span><br><span class="line">    [+0x008] Epoch            : 0x19e [Type: unsigned long]</span><br><span class="line">    [+0x00c] Overflow         : 0x0 [Type: unsigned char]</span><br><span class="line">    [+0x010] TableEntry       [Type: _INVERTED_FUNCTION_TABLE_ENTRY [256]]</span><br></pre></td></tr></table></figure>
+
+<p>现在我们可以创建数组了。不幸的是，数组的大小必须是静态的，不能使用变量，所以我们需要根据 <code>CurrentSize</code> 手动输入（或者将它设置为 <code>256</code>，这是整个数组的大小）。我们可以用表格视图很好地显示它：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx -g @$tableEntry = *(nt!_INVERTED_FUNCTION_TABLE_ENTRY(*)[0xbe])@$inverted-&gt;TableEntry</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/output-of-dx-g-tableEntry-_INVERTED_FUNCTION_TABLE_ENTRY.png" alt="output-of-dx-g-tableEntry-_INVERTED_FUNCTION_TABLE_ENTRY"></p>
+<p>或者，我们可以使用 <code>Take()</code> 方法来获得相同的结果，该方法接收一个数字并显示指定数量的集合元素：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx -g @$inverted-&gt;TableEntry-&gt;Take(@$inverted-&gt;CurrentSize)</span><br></pre></td></tr></table></figure>
+
+<p>我们也可以用同样的方法来查看 <code>UserInvertedFunctionTable</code> (在我们切换到非 <code>System</code> 进程的用户态空间后)，从 <code>nt!KeUserInvertedFunctionTable</code> 开始：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">dx @$inverted = *(nt!_INVERTED_FUNCTION_TABLE**)&amp;nt!KeUserInvertedFunctionTable</span><br><span class="line"></span><br><span class="line">@$inverted = *(nt!_INVERTED_FUNCTION_TABLE**)&amp;nt!KeUserInvertedFunctionTable                 : 0x7ffa19e3a4d0 [Type: _INVERTED_FUNCTION_TABLE *]</span><br><span class="line">    [+0x000] CurrentSize      : 0x2 [Type: unsigned long]</span><br><span class="line">    [+0x004] MaximumSize      : 0x200 [Type: unsigned long]</span><br><span class="line">    [+0x008] Epoch            : 0x6 [Type: unsigned long]</span><br><span class="line">    [+0x00c] Overflow         : 0x0 [Type: unsigned char]</span><br><span class="line">    [+0x010] TableEntry       [Type: _INVERTED_FUNCTION_TABLE_ENTRY [256]]</span><br><span class="line">    </span><br><span class="line">dx -g @$inverted-&gt;TableEntry-&gt;Take(@$inverted-&gt;CurrentSize)</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://resources.bianchengnan.tech/translation-windbg-the-fun-way-part1/dx-inverted-_INVERTED_FUNCTION_TABLE.png" alt="dx-inverted-_INVERTED_FUNCTION_TABLE"></p>
+<p>当然，我们可以使用 <code>Select()</code>、<code>Where()</code> 或者其他函数来过滤、排序或者选择特定的字段进行输出，以得到完全满足我们需求的结果。</p>
+<p>接下来要处理的是列表 —— <code>Windows</code> 中到处都是链表，你可以在任何地方找到它们。进程、线程、模块、<code>DPCs</code>、<code>IRPs</code>、<a href="https://windows-internals.com/lookaside-list-forensics/" target="_blank" rel="noopener">还有更多</a>。</p>
+<p>幸运的是，新数据模型提供了一个非常有用的方法—— <code>Debugger.Utiilty.Collections.FromListEntry</code>，它接收一个链表头，链表中的对象类型和类型中包含 <code>LIST_ENTRY</code> 的字段名称，并返回一个包含所有列表内容的容器。</p>
+<p>让我们以转储系统中所有的句柄表为例。我们的起点将是符号 <code>nt!HandleTableListHead</code>，链表中的对象类型是 <code>nt!HANDLE_TABLE</code> ，连接列表的字段是 <code>HandleTableList</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">dx -r2 Debugger.Utility.Collections.FromListEntry(*(nt!_LIST_ENTRY*)&amp;nt!HandleTableListHead, &quot;nt!_HANDLE_TABLE&quot;, &quot;HandleTableList&quot;)</span><br><span class="line"></span><br><span class="line">Debugger.Utility.Collections.FromListEntry(*(nt!_LIST_ENTRY*)&amp;nt!HandleTableListHead, &quot;nt!_HANDLE_TABLE&quot;, &quot;HandleTableList&quot;)                </span><br><span class="line">    [0x0]            [Type: _HANDLE_TABLE]</span><br><span class="line">        [+0x000] NextHandleNeedingPool : 0x3400 [Type: unsigned long]</span><br><span class="line">        [+0x004] ExtraInfoPages   : 0 [Type: long]</span><br><span class="line">        [+0x008] TableCode        : 0xffff8d8dcfd18001 [Type: unsigned __int64]</span><br><span class="line">        [+0x010] QuotaProcess     : 0x0 [Type: _EPROCESS *]</span><br><span class="line">        [+0x018] HandleTableList  [Type: _LIST_ENTRY]</span><br><span class="line">        [+0x028] UniqueProcessId  : 0x4 [Type: unsigned long]</span><br><span class="line">        [+0x02c] Flags            : 0x0 [Type: unsigned long]</span><br><span class="line">        [+0x02c ( 0: 0)] StrictFIFO       : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x02c ( 1: 1)] EnableHandleExceptions : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x02c ( 2: 2)] Rundown          : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x02c ( 3: 3)] Duplicated       : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x02c ( 4: 4)] RaiseUMExceptionOnInvalidHandleClose : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x030] HandleContentionEvent [Type: _EX_PUSH_LOCK]</span><br><span class="line">        [+0x038] HandleTableLock  [Type: _EX_PUSH_LOCK]</span><br><span class="line">        [+0x040] FreeLists        [Type: _HANDLE_TABLE_FREE_LIST [1]]</span><br><span class="line">        [+0x040] ActualEntry      [Type: unsigned char [32]]</span><br><span class="line">        [+0x060] DebugInfo        : 0x0 [Type: _HANDLE_TRACE_DEBUG_INFO *]</span><br><span class="line">    [0x1]            [Type: _HANDLE_TABLE]</span><br><span class="line">        [+0x000] NextHandleNeedingPool : 0x400 [Type: unsigned long]</span><br><span class="line">        [+0x004] ExtraInfoPages   : 0 [Type: long]</span><br><span class="line">        [+0x008] TableCode        : 0xffff8d8dcb651000 [Type: unsigned __int64]</span><br><span class="line">        [+0x010] QuotaProcess     : 0xffffb90a530e4080 [Type: _EPROCESS *]</span><br><span class="line">        [+0x018] HandleTableList  [Type: _LIST_ENTRY]</span><br><span class="line">        [+0x028] UniqueProcessId  : 0x78 [Type: unsigned long]</span><br><span class="line">        [+0x02c] Flags            : 0x10 [Type: unsigned long]</span><br><span class="line">        [+0x02c ( 0: 0)] StrictFIFO       : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x02c ( 1: 1)] EnableHandleExceptions : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x02c ( 2: 2)] Rundown          : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x02c ( 3: 3)] Duplicated       : 0x0 [Type: unsigned char]</span><br><span class="line">        [+0x02c ( 4: 4)] RaiseUMExceptionOnInvalidHandleClose : 0x1 [Type: unsigned char]</span><br><span class="line">        [+0x030] HandleContentionEvent [Type: _EX_PUSH_LOCK]</span><br><span class="line">        [+0x038] HandleTableLock  [Type: _EX_PUSH_LOCK]</span><br><span class="line">        [+0x040] FreeLists        [Type: _HANDLE_TABLE_FREE_LIST [1]]</span><br><span class="line">        [+0x040] ActualEntry      [Type: unsigned char [32]]</span><br><span class="line">        [+0x060] DebugInfo        : 0x0 [Type: _HANDLE_TRACE_DEBUG_INFO *]</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>看到 <code>QuotaProcess</code> 字段了吗？该字段指向当前句柄表所属的进程。由于每个进程都有一个句柄表，这允许我们以一种不为人所知的方式枚举系统中的所有进程。这种方法在过去被 <code>rootkit</code> 用于枚举进程，而不被 <code>EDR</code> 产品检测到。因此，要实现这一点，我们只需要从句柄表列表中的每个条目中选择 <code>QuotaProcess</code> （通过 <code>Select()</code> 方法）。为了让输出结果更易读，我们还可以创建一个包含进程名、<code>PID</code> 和 <code>EPROCESS</code> 指针的匿名容器：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">dx -r2 (Debugger.Utility.Collections.FromListEntry(*(nt!_LIST_ENTRY*)&amp;nt!HandleTableListHead, &quot;nt!_HANDLE_TABLE&quot;, &quot;HandleTableList&quot;)).Select(h =&gt; new &#123; Object = h.QuotaProcess, Name = ((char*)h.QuotaProcess-&gt;ImageFileName).ToDisplayString(&quot;s&quot;), PID = (__int64)h.QuotaProcess-&gt;UniqueProcessId&#125;)</span><br><span class="line"></span><br><span class="line">(Debugger.Utility.Collections.FromListEntry(*(nt!_LIST_ENTRY*)&amp;nt!HandleTableListHead, &quot;nt!_HANDLE_TABLE&quot;, &quot;HandleTableList&quot;)).Select(h =&gt; new &#123; Object = h.QuotaProcess, Name = ((char*)h.QuotaProcess-&gt;ImageFileName).ToDisplayString(&quot;s&quot;), PID = (__int64)h.QuotaProcess-&gt;UniqueProcessId&#125;)</span><br><span class="line"></span><br><span class="line">[0x0]            : Unspecified error (0x80004005)</span><br><span class="line">[0x1]</span><br><span class="line">    Object           : 0xffffb10b70906080 [Type: _EPROCESS *]</span><br><span class="line">    Name             : &quot;Registry&quot;</span><br><span class="line">    PID              : 120 [Type: __int64]</span><br><span class="line">[0x2]</span><br><span class="line">    Object           : 0xffffb10b72eba0c0 [Type: _EPROCESS *]</span><br><span class="line">    Name             : &quot;smss.exe&quot;</span><br><span class="line">    PID              : 584 [Type: __int64]</span><br><span class="line">[0x3]</span><br><span class="line">    Object           : 0xffffb10b76586140 [Type: _EPROCESS *]</span><br><span class="line">    Name             : &quot;csrss.exe&quot;</span><br><span class="line">    PID              : 696 [Type: __int64]</span><br><span class="line">[0x4]</span><br><span class="line">    Object           : 0xffffb10b77132140 [Type: _EPROCESS *]</span><br><span class="line">    Name             : &quot;wininit.exe&quot;</span><br><span class="line">    PID              : 772 [Type: __int64]</span><br><span class="line">[0x5]</span><br><span class="line">    Object           : 0xffffb10b770a2080 [Type: _EPROCESS *]</span><br><span class="line">    Name             : &quot;csrss.exe&quot;</span><br><span class="line">    PID              : 780 [Type: __int64]</span><br><span class="line">[0x6]</span><br><span class="line">    Object           : 0xffffb10b7716d080 [Type: _EPROCESS *]</span><br><span class="line">    Name             : &quot;winlogon.exe&quot;</span><br><span class="line">    PID              : 852 [Type: __int64]</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>第一条结果属于 <code>System</code> 进程，它没有 <code>QuotaProcess</code>，这就是查询返回错误的原因。但对于数组中的其他元素，应该是完美的。如果我们想让输出结果更漂亮，可以在执行 <code>Select()</code> 之前过滤掉 <code>QuotaProcess == 0</code> 的条目：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dx -r2 (Debugger.Utility.Collections.FromListEntry(*(nt!_LIST_ENTRY*)&amp;nt!HandleTableListHead, “nt!_HANDLE_TABLE”, “HandleTableList”)).Where(h =&gt; h.QuotaProcess != 0).Select(h =&gt; new &#123; Object = h.QuotaProcess, Name = ((char*)h.QuotaProcess-&gt;ImageFileName).ToDisplayString(&quot;s&quot;), PID = h.QuotaProcess-&gt;UniqueProcessId&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>如前所示，我们也可以在表格视图中显示这个列表，或者使用任何 <code>LINQ</code> 查询来使输出满足我们的需要。</p>
+<p>第一部分到此结束，但不要担心，第二部分就在<a href="https://medium.com/@yardenshafir2/windbg-the-fun-way-part-2-7a904cba5435" target="_blank" rel="noopener">这里</a>。它包含了全部新奇的 <code>dx</code> 方法，比如一个新的反汇编器，自定义方法，可以真正工作的条件断点，以及更多。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part1/" title="难译 | windbg 乐趣之道（上）">https://bianchengnan.github.io/articles/translation-windbg-the-fun-way-part1/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/natvis/" rel="tag"><i class="fa fa-tag"></i> natvis</a>
+          
+            <a href="/tags/翻译/" rel="tag"><i class="fa fa-tag"></i> 翻译</a>
+          
+            <a href="/tags/dx/" rel="tag"><i class="fa fa-tag"></i> dx</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/2023-startup/" rel="next" title="2023 开工喽">
+                <i class="fa fa-chevron-left"></i> 2023 开工喽
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/translation-windbg-the-fun-way-part2/" rel="prev" title="难译 | windbg 乐趣之道（下）">
+                难译 | windbg 乐趣之道（下） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/translation-windbg-the-fun-way-part2/" title="难译 | windbg 乐趣之道（下）">难译 | windbg 乐趣之道（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义寄存器（Custom-Registers）"><span class="nav-number">2.</span> <span class="nav-text">自定义寄存器（Custom Registers）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内置寄存器（Built-in-Registers）"><span class="nav-number">3.</span> <span class="nav-text">内置寄存器（Built-in Registers）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#curframe"><span class="nav-number">3.1.</span> <span class="nav-text">@$curframe</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#curprocess"><span class="nav-number">3.2.</span> <span class="nav-text">@$curprocess</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cursession"><span class="nav-number">3.3.</span> <span class="nav-text">@$cursession</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#curstack"><span class="nav-number">3.4.</span> <span class="nav-text">@$curstack</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#curthread"><span class="nav-number">3.5.</span> <span class="nav-text">@$curthread</span></a></li></ol></li></ol><li class="nav-item nav-level-1"><a class="nav-link" href="#搜索和过滤（Searching-and-Filtering）"><span class="nav-number"></span> <span class="nav-text">搜索和过滤（Searching and Filtering）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#匿名类型（Anonymous-Types）"><span class="nav-number"></span> <span class="nav-text">匿名类型（Anonymous Types）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数组和链表（Arrays-and-Lists）"><span class="nav-number"></span> <span class="nav-text">数组和链表（Arrays and Lists）</span></a></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

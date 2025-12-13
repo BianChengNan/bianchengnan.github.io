@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,vs,排错,编译错误,错误列表,输出窗口,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="缘起最近，项目里出现了一个奇怪的编译错误。乍看错误提示，真有丈二的和尚，摸不着头脑的感觉。解决之后，又是这么的合情合理。具体是什么样的问题呢？一起来看看吧。">
+<meta name="keywords" content="原,总结,vs,排错,编译错误,错误列表,输出窗口">
+<meta property="og:type" content="article">
+<meta property="og:title" content="排错实战 | 解决 c++ 工程编译错： error C2059 &#39;string&#39; illegal token on right side of xxx">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="缘起最近，项目里出现了一个奇怪的编译错误。乍看错误提示，真有丈二的和尚，摸不着头脑的感觉。解决之后，又是这么的合情合理。具体是什么样的问题呢？一起来看看吧。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/compile-error-c2589.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/hover-tip.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/hover-tip-normal-in-real-project.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/search-result.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/search-result-matched.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/find-the-culprit.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/Intermediate-Directory-Setting.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/preprocess-to-file-setting.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/view-intermediate-file.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.759Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="排错实战 | 解决 c++ 工程编译错： error C2059 &#39;string&#39; illegal token on right side of xxx">
+<meta name="twitter:description" content="缘起最近，项目里出现了一个奇怪的编译错误。乍看错误提示，真有丈二的和尚，摸不着头脑的感觉。解决之后，又是这么的合情合理。具体是什么样的问题呢？一起来看看吧。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/compile-error-c2589.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>排错实战 | 解决 c++ 工程编译错： error C2059 'string' illegal token on right side of xxx | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">排错实战 | 解决 c++ 工程编译错： error C2059 'string' illegal token on right side of xxx</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-04-04T20:52:34+08:00">
+                2020-04-04
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/排错/" itemprop="url" rel="index">
+                    <span itemprop="name">排错</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>最近，项目里出现了一个奇怪的编译错误。乍看错误提示，真有丈二的和尚，摸不着头脑的感觉。解决之后，又是这么的合情合理。具体是什么样的问题呢？一起来看看吧。</p>
+<a id="more"></a>
+
+
+
+<p><strong>说明：</strong>实际项目中的错误隐藏的更深，完全没有相关的错误提示。因为不方便用项目代码演示，准备了一个简单的例子，大家可以新建一个控制台工程，并把下面的代码粘贴到对应的文件里。</p>
+<h2 id="示例代码简介"><a href="#示例代码简介" class="headerlink" title="示例代码简介"></a>示例代码简介</h2><p>示例代码比较简单，共有五个关键文件，加起来不到 <code>40</code> 行代码。大家可以先观察一下代码，思考编译是否会遇到问题。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NameCollisionDemo.cpp</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"ModifyInfoTest.h"</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">wmain</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">wchar_t</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  Test();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ModifyInfo.h</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> once</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CModifyInfo</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">enum</span> <span class="class"><span class="keyword">class</span> <span class="title">eSource</span> &#123;</span> None = <span class="number">0</span>, BayWindow, Beam &#125;;</span><br><span class="line">  CModifyInfo(eSource source_) : source(source_) &#123;&#125;</span><br><span class="line">  eSource source;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ModifyInfoTest.h</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> once</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"ModifyInfo.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"UiMacros.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Test</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">CModifyInfo <span class="title">info1</span><span class="params">(CModifyInfo::eSource::BayWindow)</span></span>;</span><br><span class="line">    <span class="function">CModifyInfo <span class="title">info2</span><span class="params">(CModifyInfo::eSource::Beam)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// UiMacros.h</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> once</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"BayWindowUiMacros.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// BayWindowUiMacros.h</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> once</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BayWindow <span class="meta-string">"Ui.BayWindow"</span></span></span><br></pre></td></tr></table></figure>
+
+<h2 id="初识错误"><a href="#初识错误" class="headerlink" title="初识错误"></a>初识错误</h2><p>用 <code>vs</code> 打开工程后，编译，报错如下：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/compile-error-c2589.png" alt="c2589"></p>
+<p>大家能从图中得到什么信息呢？</p>
+<ul>
+<li>第一行提示 <code>error C2059: syntax error : &#39;::&#39;</code>。语法错误？</li>
+<li>第二行提示 <code>error C2589: &#39;string&#39; : illegal token on right side of &#39;::&#39;</code> 在<code>::</code>右侧有非法符号？</li>
+<li>第三行提示 <code>IntelliSense: expected an identifier</code>。期待一个标识符？</li>
+</ul>
+<p><strong>注意：</strong>第三行是 <code>IntelliSense</code> 提示的，不是真正意义上的错误。<code>IntelliSense</code>  提示的错误对是否能成功编译没有影响。注意看图标，不是 <code>大红叉</code>。第三行给出了出错文件（<code>ModifyInfoTest.h</code>）及行号（ <code>6</code> ），列号 <code>45</code>。书中暗表，这个提示是最接近出错地点的。</p>
+<h2 id="关键的悬浮提示"><a href="#关键的悬浮提示" class="headerlink" title="关键的悬浮提示"></a>关键的悬浮提示</h2><p>对照代码仔细检查，没问题啊。<code>BayWindow</code> 确实在 <code>SourceType</code> 中定义了，大小写也没问题。使用 <code>Visual AssistX</code> 的快捷键 <code>alt + g</code> 能正常跳转到定义。这是什么情况？如果我们把鼠标放到 <code>BayWindow</code> 上，<strong>有可能</strong>会看到下图中的提示：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/hover-tip.png" alt="鼠标悬浮提示"></p>
+<p><code>Oops</code>，怎么 <code>BayWindow</code> 变成了一个宏？应该是在编译到这条语句前，遇到了一个名字为 <code>BayWindow</code> 的宏。我们接下来的任务是找到这个宏是在哪里定义的，又为什么会出现在这条语句前。 </p>
+<blockquote>
+<p><strong>说明：</strong> 在实际项目里通过什么方法看都是正常的。alt + g 和 F12 都能正常跳转到定义，鼠标悬停提示也正常。应该是实际的工程太复杂了，智能感知不好使了！<br><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/hover-tip-normal-in-real-project.png" alt="hover-tip-normal-in-real-project"></p>
+</blockquote>
+<h2 id="深入调查"><a href="#深入调查" class="headerlink" title="深入调查"></a>深入调查</h2><p>在 <code>solution</code> 范围搜索关键字 <code>BayWindow</code>。可以勾选 <code>Match whole word</code>（全字匹配）和 <code>Match case</code> （大小写匹配） 排除无关的信息。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/search-result.png" alt="搜索整个 solution"></p>
+<p>纳尼？没有这个宏。大写的尴尬（不要问我怎么写）！原来，我们指定搜索范围为 <code>Entire Solution</code> 的时候，<code>vs</code> 只会搜索已经添加到工程的文件。我们需要指定搜索范围为 <code>Entire Solution ( Including External Items )</code>。这样就可以搜到没加到工程里，但是被 <code>include</code> 的头文件了。搜索结果如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/search-result-matched.png" alt="搜索 solution 及包含文件"></p>
+<p>好了，至此我们已经知道 <code>BayWindow</code> 宏定义在 <code>BayWindowUiMacros.h</code> 中了。我们的下一个目标是：找出为什么在编译出错语句前，<code>BayWindow</code> 宏就被定义了。</p>
+<p>应该是在出问题的代码前面的某个位置包含了 <code>BayWindowUiMacros.h</code>。我们需要找到这个关键的 <code>#include BayWindowUiMacros.h</code> 语句。</p>
+<p>我们可以搜索 <code>BayWindowUiMacros.h</code>，发现只有 <code>UiMacros.h</code> 包含了 <code>BayWindowUiMacros.h</code>。继续搜索 <code>UiMacros.h</code>，我们发现在 <code>ModifyInfoTest.h</code> 的第 3 行包含了 <code>UiMacros.h</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/find-the-culprit.png" alt="找到真相"></p>
+<p>至此，我们查清了来龙去脉——在 <code>ModifyInfoTest.h</code> 的第 3 行包含了 <code>UiMacros.h</code>，从而间接包含了 <code>BayWindowUiMacros.h</code>，里面定义了名为 <code>BayWindow</code> 的宏。第 6 行的 <code>BayWindow</code> 在预处理阶段被当成宏处理了，所以第 6 行就变成了 <code>WallModifyInfoEx info1(WallModifyInfoEx::SourceType::&quot;Ui.BayWindow&quot;)</code>。</p>
+<p>到底是不是这样的呢？有没有办法验证我们的猜测呢？</p>
+<blockquote>
+<p><strong>说明：</strong> 在实际工程中，头文件的包含关系极有可能比这个简单的示例工程复杂的多。手动排查绝对是体力活！我在解决项目里的编译问题的时候，是通过下面的方法排查的。在准备示例工程的时候，通过悬浮提示发现了居然直接提示有问题的地方是一个宏，大大降低了排查难度。有时候，智能感知还是挺有用的。</p>
+</blockquote>
+<h2 id="杀手锏"><a href="#杀手锏" class="headerlink" title="杀手锏"></a>杀手锏</h2><p>解决这种问题有一个可以称得上杀手锏的设置 —— <code>Preprocess to a File</code>。这个设置可以把预处理后的文件以编译单元（<code>.cpp, .c</code> 等）为单位输出到 <code>Intermediate Directory</code> （中间目录）。可以在工程设置里修改中间目录的值。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/Intermediate-Directory-Setting.png" alt="Intermediate Directory 设置"></p>
+<p>在工程上，<code>右键</code> -&gt; <code>属性</code> 打开工程设置。然后设置 <code>Configuration Properties</code> -&gt; <code>C/C++</code> -&gt; <code>Preprocessor</code> 中的 <code>Preprocess to a File</code>  为 <code>Yes(/P)</code> 就可以把预处理的结果输出到中间目录了。</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/preprocess-to-file-setting.png" alt="preprocess to file 设置"></p>
+<p>上图中右侧黄色高亮的两个选项会影响生成的中间文件的内容，<code>Preprocess Suppress Line Numbers</code> 为 <code>Yes(/P)</code> 表示输出的中间文件不包含行号信息，<code>Keep Comments</code> 为 <code>True</code> 表示保留注释，否则不保留。</p>
+<p>设置好后，重新编译。就可以生成 <code>.i</code> 文件了。让我们一起查看下生成的中间文件（我生成的时候，输出了行号信息）：</p>
+<p><img src="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/view-intermediate-file.png" alt="查看中间文件"></p>
+<p>我们发现，有问题的那一行居然变成了 <code>WallModifyInfoEx info1(WallModifyInfoEx::SourceType::&quot;Ui.BayWindow&quot;)</code>。证实了我们的猜想。</p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<ol>
+<li>我们怎么知道应该看哪个中间文件呢？真实的项目里，会有 N 多个源文件，我们不可能每个文件都检查一遍。我们可以根据上一篇文章里介绍的 <code>输出窗口</code> 的 <code>Build Order</code> 定位到错误出现在哪个源文件中。示例工程比较简单，就省略了这一步。</li>
+<li>在真实项目里，生成的中间文件会很大。基本不可能用肉眼看，需要靠搜索关键字定位。我们可以把 <code>Keep Comments</code> 设置为 <code>True</code>，然后在出问题的哪一行的后面写一个带特殊标记的注释，搜索特殊标记就可以了。</li>
+</ol>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>要充分利用 <code>IDE</code> 给出的提示，<code>Intellisense</code> 还是很有用的，虽然在大工程里经常性的失效。</p>
+</li>
+<li><p>定义宏的时候，尽量全大写，这样与其它名字冲突的机率会小很多。</p>
+</li>
+<li><p>源文件必须添加到工程文件中，但是头文件不是必须添加到工程文件里的。</p>
+</li>
+<li><p>搜索范围指定为 <code>Entire Solution ( Including External Items )</code>，可以在没添加到工程中的头文件中搜索。</p>
+</li>
+<li><p><code>Preprocess to a File</code> 你记住了吗？</p>
+</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/" title="排错实战 | 解决 c++ 工程编译错： error C2059 'string' illegal token on right side of xxx">https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
+          
+            <a href="/tags/排错/" rel="tag"><i class="fa fa-tag"></i> 排错</a>
+          
+            <a href="/tags/编译错误/" rel="tag"><i class="fa fa-tag"></i> 编译错误</a>
+          
+            <a href="/tags/错误列表/" rel="tag"><i class="fa fa-tag"></i> 错误列表</a>
+          
+            <a href="/tags/输出窗口/" rel="tag"><i class="fa fa-tag"></i> 输出窗口</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/vs-error-list-and-output-tricks/" rel="next" title="排错实战 | 善用 vs 中的错误列表和输出窗口，高效查找 C++ 多工程编译错误">
+                <i class="fa fa-chevron-left"></i> 排错实战 | 善用 vs 中的错误列表和输出窗口，高效查找 C++ 多工程编译错误
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/local-kernel-debug-with-livekd/" rel="prev" title="本地内核调试神器 —— livekd 使用总结">
+                本地内核调试神器 —— livekd 使用总结 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/replace-task-manager-with-process-explorer/" title="排错实战 | 使用process explorer替换任务管理器">排错实战 | 使用process explorer替换任务管理器</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/config-symbols-for-ida/" title="排错实战 | 解救加载调试符号失败的IDA">排错实战 | 解救加载调试符号失败的IDA</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-tekla-plugin-install-failure/" title="排错实战 | 解决 Tekla 通过 .tsep 安装插件失败的问题">排错实战 | 解决 Tekla 通过 .tsep 安装插件失败的问题</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-malfunction-using-sysinternals/" title="排错实战 | 通过对比分析 sysinternals 事件修复程序功能异常">排错实战 | 通过对比分析 sysinternals 事件修复程序功能异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vs-clear-recent-projects/" title="排错实战 | VS清空最近打开的工程记录">排错实战 | VS清空最近打开的工程记录</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/drag-full-windows-setting/" title="排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？">排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/DebugView-Usage/" title="神兵利器 | 你知道怎么使用 DebugView 查看内核调试信息吗？">神兵利器 | 你知道怎么使用 DebugView 查看内核调试信息吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-autoruns-can-not-showup/" title="排错实战 | 1 分钟解救 run 不出来的 Autoruns">排错实战 | 1 分钟解救 run 不出来的 Autoruns</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vs-error-list-and-output-tricks/" title="排错实战 | 善用 vs 中的错误列表和输出窗口，高效查找 C++ 多工程编译错误">排错实战 | 善用 vs 中的错误列表和输出窗口，高效查找 C++ 多工程编译错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-error-msb8037-missing-sdk/" title="排错实战 | 帮 vs2019 找回丢失的 SDK">排错实战 | 帮 vs2019 找回丢失的 SDK</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/where-does-the-unset-_DEBUG-macro-come-from/" title="排错实战 | 神秘的 _DEBUG 宏从何处来？">排错实战 | 神秘的 _DEBUG 宏从何处来？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-different-DEBUG-macro-in-different-cpp/" title="排错实战 | 使用 pragma message 查找多变的 DEBUG 宏">排错实战 | 使用 pragma message 查找多变的 DEBUG 宏</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/fix-corrupted-vs-project-include-settings/" title="排错实战 | 修复被破坏的 vs 工程设置">排错实战 | 修复被破坏的 vs 工程设置</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-high-cpu-on-server-caused-by-malware/" title="排错实战 | 一次简单的服务器 cpu 占用率高的快速排查实战">排错实战 | 一次简单的服务器 cpu 占用率高的快速排查实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/fix-corrupted-vs-project-include-settings-continue/" title="排错实战 | 修复被破坏的 vs 工程设置（续）">排错实战 | 修复被破坏的 vs 工程设置（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/what-commit-command-actually-do-in-tortoisegit/" title="排错实战 | 在 tortoisegit 执行 commit 会跳过暂存区直接提交到仓库中吗？">排错实战 | 在 tortoisegit 执行 commit 会跳过暂存区直接提交到仓库中吗？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/where-does-WindowsSdkDir-come-from/" title="排错实战 | WindowsSdkDir 从何处来？">排错实战 | WindowsSdkDir 从何处来？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-lost-process-name-column-in-process-explorer-back-by-hand/" title="排错实战 | 徒手帮 process explorer 找回丢失的进程列">排错实战 | 徒手帮 process explorer 找回丢失的进程列</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part1-troubleshoot-error-RC1020-unexpected-endif/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（1）">排错实战 | 记一次曲折的多资源文件拆分折腾过程（1）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part2-findout-why-rc-encoding-changed/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（2）">排错实战 | 记一次曲折的多资源文件拆分折腾过程（2）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git">排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-a-way-to-modify-bimbase-activation-pc-name/" title="排错实战 | 授权码不知道被谁占用了？不可能的，这辈子都是不可能的">排错实战 | 授权码不知道被谁占用了？不可能的，这辈子都是不可能的</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/findout-which-window-is-focused/" title="排错实战 | 记一次有教益的焦点窗口查找过程">排错实战 | 记一次有教益的焦点窗口查找过程</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-another-compile-error/" title="排错实战 | 当编译器" 吃掉"函数声明：一次由宏冲突引发的离奇编译错误">排错实战 | 当编译器"吃掉"函数声明：一次由宏冲突引发的离奇编译错误</a></li>
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">1.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#示例代码简介"><span class="nav-number">2.</span> <span class="nav-text">示例代码简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初识错误"><span class="nav-number">3.</span> <span class="nav-text">初识错误</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关键的悬浮提示"><span class="nav-number">4.</span> <span class="nav-text">关键的悬浮提示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#深入调查"><span class="nav-number">5.</span> <span class="nav-text">深入调查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#杀手锏"><span class="nav-number">6.</span> <span class="nav-text">杀手锏</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

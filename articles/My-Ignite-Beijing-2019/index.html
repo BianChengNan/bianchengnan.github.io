@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT, blog, dev, c++, bianchengnan, bcn, gitee, 博客, github">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言第一次参加微软技术大会。之前对微软技术大会有太多遐想，今天终于亲身参与其中了。现在，终于有时间回顾下今天的 Ignite之旅了（全称是 Microsoft Ignite The Tour）。特记流水账一篇，以纪念我的第一次。">
+<meta name="keywords" content="blog,博客,dev,github">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ignite Beijing 2019你参加了吗？多图，慎点！">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/My-Ignite-Beijing-2019/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言第一次参加微软技术大会。之前对微软技术大会有太多遐想，今天终于亲身参与其中了。现在，终于有时间回顾下今天的 Ignite之旅了（全称是 Microsoft Ignite The Tour）。特记流水账一篇，以纪念我的第一次。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/Registration-success-email.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/crowded-line2.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/welcome.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/id.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/meals-signboard.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/breakfast-ticket.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/meals-bag.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/breakfast-food.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/water.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/map.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/work-lounge.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/Microsoft-Team.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/guide.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/lunch.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/mushroom.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/mushroom-tagged.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/Registration.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/moon.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/golden-bridge.jpg">
+<meta property="og:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/microsoft-learn.jpg">
+<meta property="og:updated_time" content="2019-12-10T10:03:57.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ignite Beijing 2019你参加了吗？多图，慎点！">
+<meta name="twitter:description" content="前言第一次参加微软技术大会。之前对微软技术大会有太多遐想，今天终于亲身参与其中了。现在，终于有时间回顾下今天的 Ignite之旅了（全称是 Microsoft Ignite The Tour）。特记流水账一篇，以纪念我的第一次。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/Registration-success-email.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/My-Ignite-Beijing-2019/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>Ignite Beijing 2019你参加了吗？多图，慎点！ | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/My-Ignite-Beijing-2019/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">Ignite Beijing 2019你参加了吗？多图，慎点！</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-10T18:03:57+08:00">
+                2019-12-10
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2019-12-10T18:03:57+08:00">
+                2019-12-10
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/技术会议/" itemprop="url" rel="index">
+                    <span itemprop="name">技术会议</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>第一次参加微软技术大会。之前对微软技术大会有太多遐想，今天终于亲身参与其中了。现在，终于有时间回顾下今天的 <code>Ignite</code>之旅了（全称是 <code>Microsoft Ignite The Tour</code>）。特记流水账一篇，以纪念我的第一次。</p>
+<a id="more"></a>
+
+
+
+<h2 id="注册"><a href="#注册" class="headerlink" title="注册"></a>注册</h2><p><code>11</code>月份的时候听群友说，今年<code>Microsoft Ignite</code>北京站会在<code>12</code>月<code>10</code>，<code>11</code>号举办。马上注册。:sunglasses:</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/Registration-success-email.jpg" alt="Registration-success-email"></p>
+<h2 id="出发"><a href="#出发" class="headerlink" title="出发"></a>出发</h2><p>昨晚睡觉前定好了今天早晨<code>5:30</code>的闹钟。闹钟响后，立刻起床。简单准备后，出门。扫了一辆小蓝骑到地铁站，然后坐到天津站赶往北京南站。到站后，把改好的变更集整理好发给客户。</p>
+<h2 id="北京南站——国家会议中心"><a href="#北京南站——国家会议中心" class="headerlink" title="北京南站——国家会议中心"></a>北京南站——国家会议中心</h2><p>坐地铁从<code>北京南站</code>到<code>国家会议中心</code>。<code>4号线北京南站</code>上车，到<code>宣武门</code>换乘<code>2号线</code>，到<code>鼓楼大街</code>站换乘<code>8号线</code> ，在<code>奥林匹克公园</code>下车（更快的路线应该是<code>4号线</code>到<code>平安里</code>换乘<code>6号线</code>，然后到<code>南锣古巷</code>换乘<code>8号线</code>，在<code>奥林匹克公园</code>下车）。</p>
+<p><code>2号线</code>依然是老样子，人是真的多！我是被挤上车的，一点都不夸张。大家看看<code>4号线</code>换<code>2号线</code>的走廊，人山人海！<br><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/crowded-line2.jpg" alt="crowded-line2"></p>
+<h2 id="Ignite外景"><a href="#Ignite外景" class="headerlink" title="Ignite外景"></a><code>Ignite</code>外景</h2><p>下地铁后，从<code>E</code>口出来后，过马路，很容易找到微软大会的入口。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/welcome.jpg" alt="welcome"></p>
+<p>大家感受下：求知（<code>Learn</code>），求同（<code>Connect</code>），求索（<code>Explore</code>）</p>
+<h2 id="登记"><a href="#登记" class="headerlink" title="登记"></a>登记</h2><p>进入大厅后，第一件事是登记。根据注册信息和能证明自己身份的证件（身份证，或者其它证件）拿到一张通行证，进入每个会场都需要这张卡。滴~</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/id.jpg" alt="id"></p>
+<h2 id="初印象"><a href="#初印象" class="headerlink" title="初印象"></a>初印象</h2><p>进入大厅后，先围绕一楼大厅转了一圈，发现有个展位在发小礼物，有很多人在排队，我就先去逛别处了，回来发现礼物没有了，应该是发完了，罢了。</p>
+<h2 id="早餐"><a href="#早餐" class="headerlink" title="早餐"></a>早餐</h2><p>有个初步印象后，当然要解决温饱问题了。根据右手边的指示牌+服务人员的指引，顺利来到就餐处。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/meals-signboard.jpg" alt="meals-signboard"></p>
+<p><code>预定特殊餐食</code>指示牌再往里走就到了<code>普通餐食</code>区了。用餐需要先领“餐票”。<br><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/breakfast-ticket.jpg" alt="breakfast-ticket"></p>
+<p>早餐是用袋子装起来的。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/meals-bag.jpg" alt="meals-bag"></p>
+<p>比较西式。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/breakfast-food.jpg" alt="breakfast-food"></p>
+<p>还可以自己接咖啡或者茶水。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/water.jpg" alt="water"></p>
+<p>快速吃完，开启今天的<code>Ignite</code>之旅。先看下指示图：</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/map.jpg" alt="map"></p>
+<p>两侧是就餐的地方（我都是在右边吃的），靠近就餐区内侧的三个角是三个<strong>剧院式演讲区</strong>（<code>Theater</code>），另外一个角是<strong>微软展示区域</strong>（<code>Microsoft ShowCase</code>），再向里，分别有 <strong>创新企业展示区</strong>（<code>StartUp Gallery</code>），<strong>休息室</strong>（<code>Feature Lounge</code>），<strong>工作休息室</strong>（<code>Work Lounge</code>），<strong>娱乐休闲室</strong>（<code>Play Lounge</code>）。<strong>工作休息室</strong>提供了插座，可以用来给手机和笔记本充电，<strong>娱乐休闲室</strong>提供了唱吧，可以K歌。后面有<strong>安静区</strong>（<code>Quiet Zone</code>）和<strong>赞助商休息区</strong>（<code>Sponsers Lounge</code>），然后是走廊，走廊对面两侧分别设有男女洗手间。</p>
+<p>来一张<code>Work Lounge</code>的特写，其它区域拍的不好，就不上图了。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/work-lounge.jpg" alt="work-lounge"></p>
+<h2 id="Microsoft-Team"><a href="#Microsoft-Team" class="headerlink" title="Microsoft Team"></a>Microsoft Team</h2><p>在<strong>微软展示区域</strong>，最有意思的就是<code>Microsoft Team</code>的展示了。集成了在线聊天，视频会议，文件共享，多人同时文档编辑等诸多功能。看演示，效果很赞，不过我的手机拍照太差劲，屏幕太亮，录出来的视频没法看，太遗憾了。听现场的微软员工介绍，这里展示的是一体机（我看贴的是<code>Surface</code>的牌儿），系统是专门为<code>Microsoft Team</code>定制的（猜测应该是<code>win10</code>裁剪的:joy:）。一套下来，大概要<code>9000$</code>左右，根据硬件不同，价格有浮动。豪不豪？不过想买在国内也买不到:joy:，因为国内没有卖的。</p>
+<p>放一张效果图吧。这效果，是不是该换手机了？</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/Microsoft-Team.jpg" alt="Microsoft Team 白板"></p>
+<h2 id="上午参会"><a href="#上午参会" class="headerlink" title="上午参会"></a>上午参会</h2><p>在大厅逛了很久，心想，都在这了吗？不应该啊。到入口处才发现，还有分会场。（眼有点大:joy:）</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/guide.jpg" alt="guide"></p>
+<p>在各个分会场逛了逛，参加了几场<code>AZure</code>相关的会议。拍照比较少，这里就不发图了。</p>
+<h2 id="午餐"><a href="#午餐" class="headerlink" title="午餐"></a>午餐</h2><p>逛了一上午，累了，该吃午餐了。和早餐流程一样，领一张“餐票”，拿着餐票领午餐。<br><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/lunch.jpg" alt="lunch"></p>
+<h2 id="下午参会"><a href="#下午参会" class="headerlink" title="下午参会"></a>下午参会</h2><p>参加了一场<code>AZure</code>开发工具相关的会议，再次感叹<code>vs code</code>的强大。没有什么事是<code>vs code</code>插件解决不了的，如果有，就写一个。由于有事提前离场了，不知道演讲者有没有介绍<code>Mark Russinovich</code>大神开发的<code>Sysinternals Suite for Nano Server</code>相关工具。<code>Sysinternals</code>系列可是鼎鼎有名啊！</p>
+<p>最后一场会议是在<code>Theater1</code>的老外讲的。主题是<code>Windows Server 2019 的五大新功能</code>。虽然只有短短的十分钟，但是整个过程声音洪亮，思路清晰，有声有色。感叹老外是真的自信。</p>
+<h2 id="晚餐"><a href="#晚餐" class="headerlink" title="晚餐"></a>晚餐</h2><p>简单吃了几块糕点，喝了一杯橙汁。</p>
+<h2 id="惊喜"><a href="#惊喜" class="headerlink" title="惊喜"></a>惊喜</h2><p>没想到又看到早晨发礼物的那家公司在发礼物，下（犹）定（犹）决（豫）心（豫）上前跟小姐姐要了一个红色小蘑菇（当然需要先扫码关注一下她们公司啦）。闺女的礼物有了。:sunglasses:</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/mushroom.jpg" alt="mushroom"></p>
+<p>P.S. 到我闺女手里后，发现什么没？是不是孩子都这样啊？:rofl:</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/mushroom-tagged.jpg" alt="mushroom"></p>
+<h2 id="回家"><a href="#回家" class="headerlink" title="回家"></a>回家</h2><p>早晨没来的及拍照，离行前，补发一张<code>签到处</code>的照片。签到处一共有两侧，另外一侧的工作人员还在忙。辛苦！</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/Registration.jpg" alt="签到处"></p>
+<p>从里面出来后，月亮已经升起来了。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/moon.jpg" alt="moon"></p>
+<p>早晨来的时候，居然没发现这个标志性的丝路金桥。拍出来效果比较亮，实际天已经暗了。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/golden-bridge.jpg" alt="golden-bridge"></p>
+<p>拍完照，打道回府。虽然明天还有一天，但是没有非常感兴趣的主题，工作也比较忙。只能下次了。</p>
+<p>再见了<code>Ignite</code>！再见了，北京！</p>
+<h2 id="福利"><a href="#福利" class="headerlink" title="福利"></a>福利</h2><p>参加本次<code>Ignite</code>的小伙伴儿，都可以扫码注册<code>Microsoft Learn</code>，免费学习一门课程，有微软认证的哦。</p>
+<p><img src="http://resources.bianchengnan.tech/My-Ignite-Beijing-2019/microsoft-learn.jpg" alt="microsoft-learn"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>本次大会很多会议是关于云的，能看出来微软对云生态的重视。</li>
+<li>与会的整个过程，服务人员很专业，为他们点赞。</li>
+<li>真心意识到良好表达能力的重要性！一定要增强自己在公共场合的表达能力。</li>
+<li>吐个槽：能不能把演讲者也显示出来？方便“追星族”追一下？:sunglasses:</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/My-Ignite-Beijing-2019/" title="Ignite Beijing 2019你参加了吗？多图，慎点！">https://bianchengnan.github.io/articles/My-Ignite-Beijing-2019/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/drag-full-windows-setting/" rel="next" title="排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？">
+                <i class="fa fa-chevron-left"></i> 排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/DebugView-Usage/" rel="prev" title="神兵利器 | 你知道怎么使用 DebugView 查看内核调试信息吗？">
+                神兵利器 | 你知道怎么使用 DebugView 查看内核调试信息吗？ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#注册"><span class="nav-number">2.</span> <span class="nav-text">注册</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#出发"><span class="nav-number">3.</span> <span class="nav-text">出发</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#北京南站——国家会议中心"><span class="nav-number">4.</span> <span class="nav-text">北京南站——国家会议中心</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Ignite外景"><span class="nav-number">5.</span> <span class="nav-text">Ignite外景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#登记"><span class="nav-number">6.</span> <span class="nav-text">登记</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初印象"><span class="nav-number">7.</span> <span class="nav-text">初印象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#早餐"><span class="nav-number">8.</span> <span class="nav-text">早餐</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Microsoft-Team"><span class="nav-number">9.</span> <span class="nav-text">Microsoft Team</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#上午参会"><span class="nav-number">10.</span> <span class="nav-text">上午参会</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#午餐"><span class="nav-number">11.</span> <span class="nav-text">午餐</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下午参会"><span class="nav-number">12.</span> <span class="nav-text">下午参会</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#晚餐"><span class="nav-number">13.</span> <span class="nav-text">晚餐</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#惊喜"><span class="nav-number">14.</span> <span class="nav-text">惊喜</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回家"><span class="nav-number">15.</span> <span class="nav-text">回家</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#福利"><span class="nav-number">16.</span> <span class="nav-text">福利</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">17.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,调试,vs,排错,process monitor,spyxx,UIA,MSAA,uispy,inspect,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="缘起前一阵子，同事遇到了一个诡异的 bug，新版本发出来后之前运行好好的功能不好使了。原来的逻辑是：点击板上某个埋件的时候，会弹出四个定位编辑框，其中的一个编辑框需要获得焦点，方便用户直接修改，按 tab 会切换到下一个编辑框。但是新程序的行为发生了变化——点击埋件的时候，四个编辑框没有一个获得焦点。本文记录了使用 spyxx 和 accevent.exe 定位此问题的过程。">
+<meta name="keywords" content="原,总结,调试,vs,排错,process monitor,spyxx,UIA,MSAA,uispy,inspect">
+<meta property="og:type" content="article">
+<meta property="og:title" content="排错实战 | 记一次有教益的焦点窗口查找过程">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/findout-which-window-is-focused/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="缘起前一阵子，同事遇到了一个诡异的 bug，新版本发出来后之前运行好好的功能不好使了。原来的逻辑是：点击板上某个埋件的时候，会弹出四个定位编辑框，其中的一个编辑框需要获得焦点，方便用户直接修改，按 tab 会切换到下一个编辑框。但是新程序的行为发生了变化——点击埋件的时候，四个编辑框没有一个获得焦点。本文记录了使用 spyxx 和 accevent.exe 定位此问题的过程。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/findout-which-window-is-focused/focus-was-taken-unexpected.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/findout-which-window-is-focused/OnKillFocus.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/findout-which-window-is-focused/can-not-find-this-window.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/findout-which-window-is-focused/accevent32-setting.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/findout-which-window-is-focused/accevent-watch-focused-window.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/findout-which-window-is-focused/view-top-window-by-spyxx.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/findout-which-window-is-focused/find-window-by-spyxx.gif">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.597Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="排错实战 | 记一次有教益的焦点窗口查找过程">
+<meta name="twitter:description" content="缘起前一阵子，同事遇到了一个诡异的 bug，新版本发出来后之前运行好好的功能不好使了。原来的逻辑是：点击板上某个埋件的时候，会弹出四个定位编辑框，其中的一个编辑框需要获得焦点，方便用户直接修改，按 tab 会切换到下一个编辑框。但是新程序的行为发生了变化——点击埋件的时候，四个编辑框没有一个获得焦点。本文记录了使用 spyxx 和 accevent.exe 定位此问题的过程。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/findout-which-window-is-focused/focus-was-taken-unexpected.gif">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/findout-which-window-is-focused/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>排错实战 | 记一次有教益的焦点窗口查找过程 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/findout-which-window-is-focused/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">排错实战 | 记一次有教益的焦点窗口查找过程</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-08-28T20:24:04+08:00">
+                2022-08-28
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/排错/" itemprop="url" rel="index">
+                    <span itemprop="name">排错</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>前一阵子，同事遇到了一个诡异的 <code>bug</code>，新版本发出来后之前运行好好的功能不好使了。原来的逻辑是：点击板上某个埋件的时候，会弹出四个定位编辑框，其中的一个编辑框需要获得焦点，方便用户直接修改，按 <code>tab</code> 会切换到下一个编辑框。但是新程序的行为发生了变化——点击埋件的时候，四个编辑框没有一个获得焦点。本文记录了使用 <code>spyxx</code> 和 <code>accevent.exe</code> 定位此问题的过程。</p>
+<a id="more"></a>
+
+
+
+<h2 id="初步调查"><a href="#初步调查" class="headerlink" title="初步调查"></a>初步调查</h2><p>同事演示了一下现象，大概现象如下：</p>
+<p><img src="http://resources.bianchengnan.tech/findout-which-window-is-focused/focus-was-taken-unexpected.gif" alt="抢焦点"></p>
+<p>可以发现，左侧的编辑框先是获得了焦点（获得焦点的时候会选中全部文字），然后很快被抢走了。</p>
+<p>因为之前在开发其它功能时也遇到过焦点被命令编辑框（软件底部中央的编辑框）抢走的情况，所以经过一定的观察后，断定跟上次是一样的问题。由于之前遇到的那个问题是通过其它方式解决的，这次的问题不能用相同的方式解决，于是建议同事跟客户反馈一下，让平台同事帮忙处理一下抢焦点的问题。</p>
+<h2 id="再次调查"><a href="#再次调查" class="headerlink" title="再次调查"></a>再次调查</h2><p>过了一天，客户那边反馈可以使用某个命令禁止命令编辑框抢焦点。执行这个命令后，发现命令编辑框确实不抢焦点了，但是焦点还是会被抢走。</p>
+<p>跟同事了解完相关代码逻辑后，找到了被抢走焦点的编辑框类。该类中包含一个响应函数 <code>OnKillFocus(CWnd* pNewWnd)</code>。从名字可以看出，该函数是处理失去焦点事件的，该函数只有一个参数，从名字看该参数是新获得焦点的窗口对象指针。于是，果断在这里设置断点，并且设置中断时输出调试信息后继续执行代码。经过几次观察，可以发现，焦点总是被某个固定的窗口抢走。</p>
+<p><img src="http://resources.bianchengnan.tech/findout-which-window-is-focused/OnKillFocus.png" alt="OnKillFocus"></p>
+<p>既然焦点总被固定的窗口抢走，说明这个窗口是固定存在的，不是临时窗口。既然是固定存在的窗口，就可以通过 <code>spyxx</code>  查看到底是哪个窗口。但是当我在 <code>spyxx</code> 中输入这个窗口句柄时，却怎么也找不到这个句柄对应的窗口！真是怪事！</p>
+<p><img src="http://resources.bianchengnan.tech/findout-which-window-is-focused/can-not-find-this-window.gif" alt="can-not-find-this-window"></p>
+<h2 id="保存调用栈"><a href="#保存调用栈" class="headerlink" title="保存调用栈"></a>保存调用栈</h2><p>虽然没能通过 <code>spyxx</code> 找到对应的窗口，但是却发现了一条非常有用的信息 —— 每次焦点都会被同一个窗口抢走。那么可以在 <code>OnKillFocus()</code> 函数内部设置条件断点，当 <code>pNewWnd</code> 是特定值时才中断。这样就可以在目标编辑框失去焦点时中断下来。中断下来后，简单查看调用栈，由于缺少调试符号，没有发现什么有用信息。保存一份完整转储文件，后面可以发给平台同事，让他们帮忙查看具体原因。</p>
+<blockquote>
+<p><strong>提示：</strong> 转储文件是程序某个时刻的快照。调试时保存转储文件个非常好的习惯，尤其是那种不轻易重现的问题。好不容易抓到一次，一定要先拍个照。防止调试器意外退出，追悔莫及。懂得都懂，对吧。</p>
+</blockquote>
+<p>其实，这个问题调查到这一步已经够了。因为这个问题已经很明确了（焦点被其它窗口抢走了），而且外网没有相关代码，只能等平台同事处理。但是，我特别好奇到底是哪个窗口把焦点抢走了，为什么在调试输出中看到焦点每次都被同一个窗口抢走，但是在 <code>spyxx</code> 中却查不到这个窗口。</p>
+<h2 id="继续折腾"><a href="#继续折腾" class="headerlink" title="继续折腾"></a>继续折腾</h2><p>之前做读屏软件开发的时候了解到，除了 <code>spyxx</code>，还有其它工具可以查看窗口信息。比如，可以通过 <code>Inspect, UISpy, accevent</code> 等工具以追踪焦点的方式自动获取当前获得焦点的窗口。但是，这次在使用这几个工具的过程中，发现很大概率会导致主程序发生 <code>StackOverflow</code> 异常（在这里浪费了很长时间）。最后发现，使用 <code>accevent32</code>，并且只监听 <code>OBJ_FOCUS</code> 事件的时候，不会发生异常。</p>
+<p><img src="http://resources.bianchengnan.tech/findout-which-window-is-focused/accevent32-setting.png" alt="accevent32-setting"></p>
+<p>按上图设置好之后，点击 <code>OK</code> 按钮，即可监听焦点变化事件。终于抓到了这个偷抢焦点的窗口。</p>
+<p><img src="http://resources.bianchengnan.tech/findout-which-window-is-focused/accevent-watch-focused-window.png" alt="accevent-watch-focused-window"></p>
+<p>好像抢焦点的是主窗口？赶紧用 <code>spyxx</code> 查看主窗口句柄，果然主窗口的句柄是 <code>00541376</code>，与使用 <code>accevent</code> 捕获到的窗口句柄是一样的。<img src="http://resources.bianchengnan.tech/findout-which-window-is-focused/view-top-window-by-spyxx.gif" alt="view-top-window-by-spyxx"></p>
+<p>这次，终于知道是哪个窗口抢走了焦点，但是为什么主窗口会抢焦点，还是需要平台同事帮忙调查原因了。</p>
+<h2 id="为什么-spyxx-找不到窗口"><a href="#为什么-spyxx-找不到窗口" class="headerlink" title="为什么 spyxx 找不到窗口"></a>为什么 spyxx 找不到窗口</h2><p>为什么之前在 <code>spyxx</code> 里输入窗口句柄，但是却找不到对应的窗口呢？在 <code>vs</code> 输出窗口中显示的窗口句柄是 <code>0x0000000000541376</code>，在 <code>spyxx</code> 中输入的也是 <code>0x0000000000541376</code>，没道理找不到。但是在 <code>accevent</code> 里看到的窗口句柄是 <code>00541376</code>，难道在<code>spyxx</code> 中输入 <code>00541376</code> 就可以查找到了？赶紧试试。</p>
+<p><img src="http://resources.bianchengnan.tech/findout-which-window-is-focused/find-window-by-spyxx.gif" alt="find-window-by-spyxx"></p>
+<p>果然，输入 <code>00541376</code> 是可以找到对应的窗口的。但是当我尝试使用 <code>0x00541376</code> 查找窗口时，却无法找到匹配的窗口。看来，在 <code>spyxx</code> 中通过输入句柄查找窗口时不能输入 <code>0x</code> 前缀。</p>
+<h2 id="反思"><a href="#反思" class="headerlink" title="反思"></a>反思</h2><p>在整个过程中有一点做的特别不好：本来可以修改 <code>OnKillFocus()</code> 函数中的代码，多打印一些信息，比如获取窗口范围，窗口类名等信息。这样就可以直接在代码里定位到是哪个窗口抢走了焦点。但是根据之前的经验，编译一次比较耗时，所以潜意识里不想修改代码，只是想着通过为断点设置输出信息的方式打印了一些辅助信息。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p><code>Inspect, UISpy, accevent</code>  等工具也是一种可以查看窗口信息的工具，在某些情况下可能非常有用。</p>
+</li>
+<li><p>在 <code>spyxx</code> 中通过输入窗口句柄查找窗口时不能输入 <code>0x</code> 前缀，否则会出现找不到窗口的情况。</p>
+</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/findout-which-window-is-focused/" title="排错实战 | 记一次有教益的焦点窗口查找过程">https://bianchengnan.github.io/articles/findout-which-window-is-focused/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
+          
+            <a href="/tags/排错/" rel="tag"><i class="fa fa-tag"></i> 排错</a>
+          
+            <a href="/tags/process-monitor/" rel="tag"><i class="fa fa-tag"></i> process monitor</a>
+          
+            <a href="/tags/spyxx/" rel="tag"><i class="fa fa-tag"></i> spyxx</a>
+          
+            <a href="/tags/UIA/" rel="tag"><i class="fa fa-tag"></i> UIA</a>
+          
+            <a href="/tags/MSAA/" rel="tag"><i class="fa fa-tag"></i> MSAA</a>
+          
+            <a href="/tags/uispy/" rel="tag"><i class="fa fa-tag"></i> uispy</a>
+          
+            <a href="/tags/inspect/" rel="tag"><i class="fa fa-tag"></i> inspect</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/find-a-way-to-modify-bimbase-activation-pc-name/" rel="next" title="排错实战 | 授权码不知道被谁占用了？不可能的，这辈子都是不可能的">
+                <i class="fa fa-chevron-left"></i> 排错实战 | 授权码不知道被谁占用了？不可能的，这辈子都是不可能的
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/unexpected-crash/" rel="prev" title="这个崩溃，有点意思">
+                这个崩溃，有点意思 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/replace-task-manager-with-process-explorer/" title="排错实战 | 使用process explorer替换任务管理器">排错实战 | 使用process explorer替换任务管理器</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/config-symbols-for-ida/" title="排错实战 | 解救加载调试符号失败的IDA">排错实战 | 解救加载调试符号失败的IDA</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-tekla-plugin-install-failure/" title="排错实战 | 解决 Tekla 通过 .tsep 安装插件失败的问题">排错实战 | 解决 Tekla 通过 .tsep 安装插件失败的问题</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-malfunction-using-sysinternals/" title="排错实战 | 通过对比分析 sysinternals 事件修复程序功能异常">排错实战 | 通过对比分析 sysinternals 事件修复程序功能异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vs-clear-recent-projects/" title="排错实战 | VS清空最近打开的工程记录">排错实战 | VS清空最近打开的工程记录</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/drag-full-windows-setting/" title="排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？">排错实战 | 你知道拖动窗口时只显示虚框怎么设置吗？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/DebugView-Usage/" title="神兵利器 | 你知道怎么使用 DebugView 查看内核调试信息吗？">神兵利器 | 你知道怎么使用 DebugView 查看内核调试信息吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-autoruns-can-not-showup/" title="排错实战 | 1 分钟解救 run 不出来的 Autoruns">排错实战 | 1 分钟解救 run 不出来的 Autoruns</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vs-error-list-and-output-tricks/" title="排错实战 | 善用 vs 中的错误列表和输出窗口，高效查找 C++ 多工程编译错误">排错实战 | 善用 vs 中的错误列表和输出窗口，高效查找 C++ 多工程编译错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-C2589-illegal-token-on-right-side-of/" title="排错实战 | 解决 c++ 工程编译错： error C2059 'string' illegal token on right side of xxx">排错实战 | 解决 c++ 工程编译错： error C2059 'string' illegal token on right side of xxx</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-error-msb8037-missing-sdk/" title="排错实战 | 帮 vs2019 找回丢失的 SDK">排错实战 | 帮 vs2019 找回丢失的 SDK</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/where-does-the-unset-_DEBUG-macro-come-from/" title="排错实战 | 神秘的 _DEBUG 宏从何处来？">排错实战 | 神秘的 _DEBUG 宏从何处来？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-different-DEBUG-macro-in-different-cpp/" title="排错实战 | 使用 pragma message 查找多变的 DEBUG 宏">排错实战 | 使用 pragma message 查找多变的 DEBUG 宏</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/fix-corrupted-vs-project-include-settings/" title="排错实战 | 修复被破坏的 vs 工程设置">排错实战 | 修复被破坏的 vs 工程设置</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-high-cpu-on-server-caused-by-malware/" title="排错实战 | 一次简单的服务器 cpu 占用率高的快速排查实战">排错实战 | 一次简单的服务器 cpu 占用率高的快速排查实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/fix-corrupted-vs-project-include-settings-continue/" title="排错实战 | 修复被破坏的 vs 工程设置（续）">排错实战 | 修复被破坏的 vs 工程设置（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/what-commit-command-actually-do-in-tortoisegit/" title="排错实战 | 在 tortoisegit 执行 commit 会跳过暂存区直接提交到仓库中吗？">排错实战 | 在 tortoisegit 执行 commit 会跳过暂存区直接提交到仓库中吗？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/where-does-WindowsSdkDir-come-from/" title="排错实战 | WindowsSdkDir 从何处来？">排错实战 | WindowsSdkDir 从何处来？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-lost-process-name-column-in-process-explorer-back-by-hand/" title="排错实战 | 徒手帮 process explorer 找回丢失的进程列">排错实战 | 徒手帮 process explorer 找回丢失的进程列</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part1-troubleshoot-error-RC1020-unexpected-endif/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（1）">排错实战 | 记一次曲折的多资源文件拆分折腾过程（1）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part2-findout-why-rc-encoding-changed/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（2）">排错实战 | 记一次曲折的多资源文件拆分折腾过程（2）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/using-multiple-rc-and-stop-git-treating-rc-as-binary-part3-reference-git-source/" title="排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git">排错实战 | 记一次曲折的多资源文件拆分折腾过程（3）在 windows 下用 linux 神器 gdb 调试 git</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-a-way-to-modify-bimbase-activation-pc-name/" title="排错实战 | 授权码不知道被谁占用了？不可能的，这辈子都是不可能的">排错实战 | 授权码不知道被谁占用了？不可能的，这辈子都是不可能的</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-another-compile-error/" title="排错实战 | 当编译器" 吃掉"函数声明：一次由宏冲突引发的离奇编译错误">排错实战 | 当编译器"吃掉"函数声明：一次由宏冲突引发的离奇编译错误</a></li>
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">1.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初步调查"><span class="nav-number">2.</span> <span class="nav-text">初步调查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#再次调查"><span class="nav-number">3.</span> <span class="nav-text">再次调查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#保存调用栈"><span class="nav-number">4.</span> <span class="nav-text">保存调用栈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继续折腾"><span class="nav-number">5.</span> <span class="nav-text">继续折腾</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么-spyxx-找不到窗口"><span class="nav-number">6.</span> <span class="nav-text">为什么 spyxx 找不到窗口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#反思"><span class="nav-number">7.</span> <span class="nav-text">反思</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

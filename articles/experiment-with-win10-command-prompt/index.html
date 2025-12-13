@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,process monitor,win10,基础,cmd,命令行,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言相信，很多小伙伴儿都在命令提示符中执行过 ipconfig 查看 ip 信息。我们还可以执行  ping ip 来 ping 对应的 ip 地址，执行 notepad 启动记事本，执行 explorer 启动文件管理器……  但是，你好奇过背后的运作机制吗？为什么输入几个简单的几个字母就能启动外部程序，本文试图通过一系列实验来挖掘其背后的运作机制。 如果你对下面的问题有很明确的答案，本文不是为">
+<meta name="keywords" content="原,总结,process monitor,win10,基础,cmd,命令行">
+<meta property="og:type" content="article">
+<meta property="og:title" content="10 个实验搞懂命令提示符">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/experiment-with-win10-command-prompt/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言相信，很多小伙伴儿都在命令提示符中执行过 ipconfig 查看 ip 信息。我们还可以执行  ping ip 来 ping 对应的 ip 地址，执行 notepad 启动记事本，执行 explorer 启动文件管理器……  但是，你好奇过背后的运作机制吗？为什么输入几个简单的几个字母就能启动外部程序，本文试图通过一系列实验来挖掘其背后的运作机制。 如果你对下面的问题有很明确的答案，本文不是为">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/can-not-find-bcn.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/cmd-current-directory.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/cmd-path-environment-value.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/procmon-filter-event-bcn.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/path-with-invalid-folder.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/procmon-filter-event-with-not_existed_folder.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/callstack.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/start-bcn-on-current-folder.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/start-bcn-on-windows-folder.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/start-ipconfig-with-empty-path.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/pathext.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/pathext-search-order.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/excute-with-empty-pathext.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/default-pathext.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/compare-load-order.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/run-with-extension.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.585Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="10 个实验搞懂命令提示符">
+<meta name="twitter:description" content="前言相信，很多小伙伴儿都在命令提示符中执行过 ipconfig 查看 ip 信息。我们还可以执行  ping ip 来 ping 对应的 ip 地址，执行 notepad 启动记事本，执行 explorer 启动文件管理器……  但是，你好奇过背后的运作机制吗？为什么输入几个简单的几个字母就能启动外部程序，本文试图通过一系列实验来挖掘其背后的运作机制。 如果你对下面的问题有很明确的答案，本文不是为">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/can-not-find-bcn.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/experiment-with-win10-command-prompt/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>10 个实验搞懂命令提示符 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/experiment-with-win10-command-prompt/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">10 个实验搞懂命令提示符</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-05-16T19:44:04+08:00">
+                2020-05-16
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/工具/" itemprop="url" rel="index">
+                    <span itemprop="name">工具</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>相信，很多小伙伴儿都在命令提示符中执行过 <code>ipconfig</code> 查看 <code>ip</code> 信息。我们还可以执行  <code>ping ip</code> 来 <code>ping</code> 对应的 <code>ip</code> 地址，执行 <code>notepad</code> 启动记事本，执行 <code>explorer</code> 启动文件管理器…… </p>
+<p>但是，你好奇过背后的运作机制吗？为什么输入几个简单的几个字母就能启动外部程序，本文试图通过一系列实验来挖掘其背后的运作机制。</p>
+<p>如果你对下面的问题有很明确的答案，本文不是为你准备的。如果有模糊，拿不准的地方，请耐心读完。如果觉得有用，请帮忙点个在看，拜谢。</p>
+<a id="more"></a>
+
+
+
+<h2 id="Five-Questions"><a href="#Five-Questions" class="headerlink" title="Five Questions"></a>Five Questions</h2><p>1、在命令提示符里输入 <code>notepad</code>，是哪个位置的记事本被启动了？跟什么有关？</p>
+<p>2、如果同一个目录下有两个名为 <code>bcn</code> 的文件，一个是 <code>bcn.com</code>, 一个是 <code>bcn.exe</code>。在命令提示符中输入 <code>bcn</code> 会执行哪个？受什么影响？</p>
+<p>3、你知道怎么让自己的程序可以直接在命令提示符中被启动吗？像执行 <code>ipconfig</code> 那样。</p>
+<p>4、如果 <code>PATH</code> 环境变量是空的，会有什么问题？</p>
+<p>5、如果 <code>PATHEXT</code> 变量是空的，会有什么问题？</p>
+<h2 id="PATH-实验"><a href="#PATH-实验" class="headerlink" title="PATH 实验"></a>PATH 实验</h2><p><strong>实验1：</strong>在命令提示符中输入一个不存在的命令（比如，<code>bcn</code>），使用 <code>process monitor</code> 观察整个过程。</p>
+<hr>
+<p>如我们所料，找不到。结果如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/can-not-find-bcn.png" alt="can-not-find-bcn"></p>
+<p>在观察 <code>process monitor</code> 捕获的日志之前，我们先查看当前命令提示符的当前路径（ <code>Current Directory</code>）和 <code>PATH</code> 环境变量的值。</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/cmd-current-directory.png" alt="current directory的值"></p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/cmd-path-environment-value.png" alt="PATH环境变量的值"></p>
+<p>下图是使用 <code>process monitor</code> 捕获的事件，已过滤无关信息。</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/procmon-filter-event-bcn.png" alt="procmon-filter-event-bcn"></p>
+<p>红色高亮部分是当前路径相关的事件，黄白相间的部分是 <code>PATH</code> 环境变量相关的事件。</p>
+<p>从此可以比较有信心的猜测：在命令提示符中输入命令会先在当前路径下查找，再到 <code>PATH</code> 环境变量指定的路径依次查找。</p>
+<p><strong>实验2：</strong> 添加一个不存在的路径到 <code>PATH</code> 环境变量中，再次观察整个过程。</p>
+<hr>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">:: 更新 PATH 环境变量</span><br><span class="line">set PATH=%PATH%d:\not_existed_folder</span><br><span class="line">:: 执行命令</span><br><span class="line">bcn</span><br></pre></td></tr></table></figure>
+
+<p>当前路径没变，而对应的 <code>PATH</code> 已经多了一条 <code>d:\not_existed_folder</code>，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/path-with-invalid-folder.png" alt="path-with-invalid-folder"></p>
+<p>下图是使用 <code>process monitor</code> 捕获的相关事件（已过滤无关事件）。跟上面的实验对比，发现只多了黄色高亮部分。</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/procmon-filter-event-with-not_existed_folder.png" alt="procmon-filter-event-with-not_existed_folder"></p>
+<p>注意对比上图中黄色和红色部分。红色部分对应的路径是存在的，所以有三条记录。黄色部分对应的路径是不存在的，只有一条记录。可以双击某条记录，查看对应的调用栈。相信查看过调用栈后，你会和我一样，对 <code>Operation</code> 这一列有一个新的认识。</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/callstack.png" alt="callstack"></p>
+<p><strong>实验3：</strong> 把 <code>bcn.exe</code> 放到当前路径（ <code>C:\Users\bcn\Desktop</code>）下，执行 <code>bcn</code>。</p>
+<hr>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/start-bcn-on-current-folder.png" alt="start-bcn-on-current-folder"></p>
+<p>从上图可知，启动的是 <code>C:\Users\bcn\Desktop\bcn.exe</code>，因为在当前路径下就找到了对应的程序，所以并没有到 <code>PATH</code> 环境变量指示的路径中查找。</p>
+<p><strong>实验4：</strong> 删除 <code>C:\Users\bcn\Desktop\bcn.exe</code>，把 <code>bcn.exe</code> 放到 <code>PATH</code> 环境变量中的 <code>c:\windows\</code> 下，再次执行 <code>bcn</code>。</p>
+<hr>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/start-bcn-on-windows-folder.png" alt="start-bcn-on-current-folder"></p>
+<p>从上图可知，启动的是 <code>C:\Windows\bcn.exe</code>，在当前路径下没找到，然后依次到 <code>PATH</code> 环境变量指示的路径中查找，在<code>c:\windows\</code> 下找到了对应的程序。</p>
+<p><strong>实验5：</strong> 清空 <code>PATH</code> 环境变量，在命令提示符中输入 <code>ipconfig</code>，看看是否能正常运行。</p>
+<hr>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/start-ipconfig-with-empty-path.png" alt="Snipaste_2020-05-05_12-49-10"></p>
+<p><strong>结论：</strong></p>
+<p>通过以上几个实验，我们知道了在命令提示符中执行一个命令时的查找顺序是：当前路径，<code>PATH</code> 环境变量中指定的路径（按出现顺序进行查找）。</p>
+<h2 id="PATHEXT-实验"><a href="#PATHEXT-实验" class="headerlink" title="PATHEXT 实验"></a>PATHEXT 实验</h2><p>相信有细心的小伙伴儿发现了，在上面的 <code>实验3</code> 和 <code>实验4</code> 中，会先查找 <code>bcn.COM</code>，没找到才继续查找的 <code>bcn.exe</code>。为什么是这种行为呢？跟什么有关呢？我们看下 <code>PATHEXT</code>环境变量的值，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/pathext.png" alt="pathext"></p>
+<p>我们发现 <code>.COM</code> 出现在 <code>.EXE</code> 之前，是不是这个原因呢？让我们做实验来验证。</p>
+<p><strong>实验6：</strong> 观察 <code>PATHEXT</code> 是否会影响查找结果。</p>
+<hr>
+<p>调整 <code>PATHEXT</code> 的值为 <code>.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.EXE;.COM</code>，如果查找了前面的几个后缀，而没查找 <code>.COM</code>，说明 <code>PATHEXT</code> 会影响查找结果。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set PATHEXT=.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.EXE;.COM</span><br><span class="line">bcn</span><br></pre></td></tr></table></figure>
+
+<p><code>process monitor</code> 捕获的事件验证了我们的猜测。截图：</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/pathext-search-order.png" alt="pathext-search-order"></p>
+<p><strong>实验7：</strong> 观察 <code>PATHEXT</code> 时的行为。</p>
+<hr>
+<p>清空 <code>PATHEXT</code>，再执行 <code>bcn</code>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set PATHEXT=</span><br><span class="line">bcn</span><br></pre></td></tr></table></figure>
+
+<p><code>process monitor</code> 捕获相关事件如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/excute-with-empty-pathext.png" alt="excute-with-empty-pathext"></p>
+<p>有点意外，原本以为会执行失败。看来如果 <code>PATHEXT</code> 是空，会使用默认的 <code>PATHEXT</code>，默认的 <code>PATHEXT</code> 是什么呢？</p>
+<p><strong>实验8：</strong> 观察默认的<code>PATHEXT</code> 。</p>
+<hr>
+<p>重命名 <code>bcn.exe</code> 为 <code>bcn.xyz</code>（很重要），然后执行下面的命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set PATHEXT=</span><br><span class="line">bcn</span><br></pre></td></tr></table></figure>
+
+<p><code>process monitor</code> 捕获相关事件如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/default-pathext.png" alt="default-pathext"></p>
+<p>在我的系统（<code>win10 1903</code>）中，当 <code>PATHEXT</code> 为空时，默认搜索的扩展名是 <code>.COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC;</code>。其它系统可能有不同的行为，感兴趣的小伙伴儿请自行实验。</p>
+<p><strong>实验9：</strong> 当前目录下同时存在 <code>bcn.com</code> 和 <code>bcn.exe</code> 会执行哪个？（通过上面的实验，结论很明显了）</p>
+<hr>
+<p>分别执行下面两组命令，观察对比结果：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set PATHEXT=.COM;.EXE</span><br><span class="line">bcn</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set PATHEXT=.EXE;.COM</span><br><span class="line">bcn</span><br></pre></td></tr></table></figure>
+
+<p><code>procmon</code> 捕获的两次查找过程对比图，黄色是设置 <code>.COM</code> 优先的结果，红色是设置 <code>.EXE</code> 优先的结果。</p>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/compare-load-order.png" alt="compare-load-order"></p>
+<p>从结果可以进一步确定，优先查找 <code>PATHEXT</code> 中先出现的后缀名。</p>
+<p><strong>实验10：</strong>观察直接执行 <code>bcn.exe</code> 观察查找过程。</p>
+<hr>
+<p><img src="http://resources.bianchengnan.tech/experiment-with-win10-command-prompt/run-with-extension.png" alt="run-with-extension"></p>
+<p>如果命令中带后缀，那么查找的时候不会依赖 <code>PATHEXT</code> ，会直接执行给定的命令。</p>
+<h2 id="实验代码"><a href="#实验代码" class="headerlink" title="实验代码"></a>实验代码</h2><p>如果你也想自己动手实验。可以新建一个工程，并粘贴下面的代码，编译生成测试程序。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"stdafx.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"stdlib.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> exe_path[MAX_PATH] = &#123; <span class="number">0</span> &#125;;</span><br><span class="line">  ::GetModuleFileNameA(<span class="literal">NULL</span>, exe_path, MAX_PATH);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%s\n"</span>, exe_path);</span><br><span class="line">  system(<span class="string">"pause"</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>相信通过上面一系列的实验，我们对命令提示符如何执行一个外部命令有了深刻的认识。对 <code>PATH</code> 和 <code>PATHEXT</code> 这两个环境变量的作用，简单总结如下：</p>
+<ol>
+<li><code>PATH</code> 决定了外部命令所在位置的查找顺序，<code>PATHEXT</code> 决定了外部命令的扩展名查找顺序。</li>
+<li>当我们在命令提示符中输入一个命令时，会先到当前路径（<code>Current Directory</code>）中查找，如果找不到，才会到环境变量 <code>PATH</code> 指示的路径中查找。</li>
+<li>如果输入的命令不带后缀，那么会根据 <code>PATHEXT</code> 指示的后缀顺序依次拼接成完整名称再查找。</li>
+<li>如果输入的命令带后缀，不会根据 <code>PATHEXT</code> 中的后缀查找。</li>
+<li>如果我们想让自己的程序也能直接通过命令提示符启动，我们可以把程序所在路径添加到 <code>PATH</code> 环境变量中，位置越靠前，越有可能被执行。</li>
+<li>如果 <code>PATHEXT</code> 为空，那么会使用默认的 <code>PATHEXT</code>，我机器上的值是 <code>.COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC;</code>。</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/experiment-with-win10-command-prompt/" title="10 个实验搞懂命令提示符">https://bianchengnan.github.io/articles/experiment-with-win10-command-prompt/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/process-monitor/" rel="tag"><i class="fa fa-tag"></i> process monitor</a>
+          
+            <a href="/tags/win10/" rel="tag"><i class="fa fa-tag"></i> win10</a>
+          
+            <a href="/tags/基础/" rel="tag"><i class="fa fa-tag"></i> 基础</a>
+          
+            <a href="/tags/cmd/" rel="tag"><i class="fa fa-tag"></i> cmd</a>
+          
+            <a href="/tags/命令行/" rel="tag"><i class="fa fa-tag"></i> 命令行</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/troubleshoot-vs-error-msb8037-missing-sdk/" rel="next" title="排错实战 | 帮 vs2019 找回丢失的 SDK">
+                <i class="fa fa-chevron-left"></i> 排错实战 | 帮 vs2019 找回丢失的 SDK
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" rel="prev" title="调试实战 | dll 加载失败之全局变量初始化篇">
+                调试实战 | dll 加载失败之全局变量初始化篇 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Five-Questions"><span class="nav-number">2.</span> <span class="nav-text">Five Questions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PATH-实验"><span class="nav-number">3.</span> <span class="nav-text">PATH 实验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PATHEXT-实验"><span class="nav-number">4.</span> <span class="nav-text">PATHEXT 实验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实验代码"><span class="nav-number">5.</span> <span class="nav-text">实验代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

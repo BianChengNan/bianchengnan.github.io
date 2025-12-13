@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,总结,调试,debug,dump,转储文件,process monitor,注册表,BSOD,蓝屏,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="前言我们在 内核转储，开抓啦！ 这篇文章里介绍了一个关键的系统设置。设置好后可以让系统在蓝屏（Blue Screen of Death，简称 BSOD）的时候自动保存转储文件。那篇文章只是简单的介绍了设置步骤，本文力求详细的介绍相关内容。">
+<meta name="keywords" content="原,总结,调试,debug,dump,转储文件,process monitor,注册表,BSOD,蓝屏">
+<meta property="og:type" content="article">
+<meta property="og:title" content="蓝屏（BSOD）转储设置，看本文就够了！">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/kernel-memory-dump-setting/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="前言我们在 内核转储，开抓啦！ 这篇文章里介绍了一个关键的系统设置。设置好后可以让系统在蓝屏（Blue Screen of Death，简称 BSOD）的时候自动保存转储文件。那篇文章只是简单的介绍了设置步骤，本文力求详细的介绍相关内容。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/kernel-memory-dump-setting/system-crash-dump-setting.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/kernel-memory-dump-setting/system-crash-dump-setting-investigate.gif">
+<meta property="og:image" content="http://resources.bianchengnan.tech/kernel-memory-dump-setting/filter-with-path-begin-with.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/kernel-memory-dump-setting/compare-of-full-and-active-setting.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/kernel-memory-dump-setting/win7-system-dump-setting.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/kernel-memory-dump-setting/manually-set-page-file-size.gif">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.672Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="蓝屏（BSOD）转储设置，看本文就够了！">
+<meta name="twitter:description" content="前言我们在 内核转储，开抓啦！ 这篇文章里介绍了一个关键的系统设置。设置好后可以让系统在蓝屏（Blue Screen of Death，简称 BSOD）的时候自动保存转储文件。那篇文章只是简单的介绍了设置步骤，本文力求详细的介绍相关内容。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/kernel-memory-dump-setting/system-crash-dump-setting.gif">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/kernel-memory-dump-setting/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>蓝屏（BSOD）转储设置，看本文就够了！ | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/kernel-memory-dump-setting/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">蓝屏（BSOD）转储设置，看本文就够了！</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-02-15T21:55:43+08:00">
+                2020-02-15
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/转储/" itemprop="url" rel="index">
+                    <span itemprop="name">转储</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我们在 <a href="https://bianchengnan.github.io/articles/kernel-mode-dump-begins/">内核转储，开抓啦！</a> 这篇文章里介绍了一个关键的系统设置。设置好后可以让系统在蓝屏（<strong>B</strong>lue <strong>S</strong>creen <strong>o</strong>f <strong>D</strong>eath，简称 <code>BSOD</code>）的时候自动保存转储文件。那篇文章只是简单的介绍了设置步骤，本文力求详细的介绍相关内容。</p>
+<a id="more"></a>
+
+
+
+<p>我们先根据下面的动图回顾一下设置步骤：</p>
+<p><img src="http://resources.bianchengnan.tech/kernel-memory-dump-setting/system-crash-dump-setting.gif" alt="系统转储设置"></p>
+<p>不知道大家有没有想过这些设置保存在哪里了呢？我猜保存在注册表里。是不是呢？我们一起来看看吧。</p>
+<h2 id="保存位置"><a href="#保存位置" class="headerlink" title="保存位置"></a>保存位置</h2><p>为了找到这些设置保存的位置，我特意用 <code>process monitor</code> 捕获了整个设置过程，并录制了一段视频。</p>
+<p><img src="http://resources.bianchengnan.tech/kernel-memory-dump-setting/system-crash-dump-setting-investigate.gif" alt="system-crash-dump-setting-investigate"></p>
+<p>根据调查结果可知，<code>转储类型</code> 保存在注册表如下位置： <code>HKLM\System\CurrentControlSet\Control\CrashControl\CrashDumpEnabled</code> 。每一项对应的值如下表：</p>
+<table>
+<thead>
+<tr>
+<th align="left">中文名</th>
+<th align="left">英文名</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">（无）</td>
+<td align="left">(None)</td>
+<td>0</td>
+</tr>
+<tr>
+<td align="left">小内存转储（256KB）</td>
+<td align="left">Small memory dump</td>
+<td>3</td>
+</tr>
+<tr>
+<td align="left">核心内存转储</td>
+<td align="left">Kernel memory dump</td>
+<td>2</td>
+</tr>
+<tr>
+<td align="left">完全内存转储</td>
+<td align="left">Complete memory dump</td>
+<td>1</td>
+</tr>
+<tr>
+<td align="left">自动内存转储</td>
+<td align="left">Automatic memory dump</td>
+<td>7</td>
+</tr>
+<tr>
+<td align="left">活动内存转储</td>
+<td align="left">Active memory dump</td>
+<td>1</td>
+</tr>
+</tbody></table>
+<p>我们可以发现， <code>完全内存转储</code> 和 <code>活动内存转储</code> 设置的 <code>CrashDumpEnabled</code> 的值居然一样，都是 1。肯定有其它地方不一样。把过滤条件改为 <code>Path</code>  <code>begins with</code>  <code>HKLM\System\CurrentControlSet\Control\CrashControl</code>，</p>
+<p><img src="http://resources.bianchengnan.tech/kernel-memory-dump-setting/filter-with-path-begin-with.png" alt="更改过滤条件"></p>
+<p>继续观察，得到的对比结果如下。</p>
+<p><img src="http://resources.bianchengnan.tech/kernel-memory-dump-setting/compare-of-full-and-active-setting.png" alt="结果对比"></p>
+<p>经过对比我们发现，当设置为 <code>活动内存转储</code> 时，会设置注册表项<code>HKLM\System\CurrentControlSet\Control\CrashControl\FilterPages</code> 的值为 <code>1</code>，当设置为 <code>完全内存转储</code> 时，会删除 <code>FilterPages</code> 子项。</p>
+<div class="note info"><p><strong>说明：</strong><code>win7</code> 及更早的系统中没有 <code>自动内存转储</code> 和 <code>活动内存转储</code> 选项。 <code>自动内存转储</code> 是从 <code>win8</code> 开始引入的。<code>活动内存转储</code> 是从 <code>win10</code> 开始引入的。</p>
+<p><img src="http://resources.bianchengnan.tech/kernel-memory-dump-setting/win7-system-dump-setting.png" alt="win7 系统转储设置"></p></div>
+
+
+
+<h2 id="其它相关设置"><a href="#其它相关设置" class="headerlink" title="其它相关设置"></a>其它相关设置</h2><p>除了指定<code>转储类型</code>，我们还可以进行其它设置。</p>
+<ul>
+<li><p><code>转储文件：</code> 指定转储文件保存的位置。</p>
+<p>对于<code>小内存转储</code>，指定的是转储文件保存的目录，默认是 <code>%SystemRoot%\Minidump\</code>。对于其它几种转储类型，指定的是转储文件的保存路径，默认是 <code>%SystemRoot%\MEMORY.DMP</code>。</p>
+</li>
+<li><p><code>自动重新启动（R）</code> 选项：如果勾选，可以让系统在蓝屏后自动重启。</p>
+</li>
+<li><p><code>将事件写入系统日志（W）</code> 选项：如果勾选，可以把蓝屏事件记录到系统日志里。</p>
+</li>
+<li><p><code>覆盖任何现有文件（O）</code> 选项：如果勾选，覆盖已存在的同名文件，否则不覆盖（如果已经有同名文件，本次蓝屏的转储文件不会生成）。此选项对<code>小内存转储</code>不生效。</p>
+</li>
+<li><p><code>禁止在磁盘空间不足时自动删除内存转储（A）</code> 选项：如果勾选，即使在磁盘空间不足时也不删除之前保存的转储文件。此选项在 <code>win7</code> 中不存在，是在更高版本的操作系统中引入的。</p>
+</li>
+</ul>
+<p>每一项在注册表中的对应位置，请参考如下代码。保存为 <code>.reg</code> 文件，双击即可导入。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">Windows Registry Editor Version 5.00</span><br><span class="line"></span><br><span class="line">; 将事件写入系统日志。 1 表示写入，0 表示不写入</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">&quot;LogEvent&quot;=dword:00000000</span><br><span class="line"></span><br><span class="line">; 是否自动重启。1 表示自动重启，0 表示不自动重启</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">&quot;AutoReboot&quot;=dword:00000000</span><br><span class="line"></span><br><span class="line">; 转储类型。每个值的意义参考上表</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">&quot;CrashDumpEnabled&quot;=dword:00000001</span><br><span class="line"></span><br><span class="line">; 转储文件的保存路径。以二进制形式表示的 UNICODE 路径。默认值是 %SystemRoot%\MEMORY.DMP</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">&quot;DumpFile&quot;=hex(2):25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\</span><br><span class="line">  74,00,25,00,5c,00,4d,00,45,00,4d,00,4f,00,52,00,59,00,2e,00,44,00,4d,00,50,\</span><br><span class="line">  00,00,00</span><br><span class="line"></span><br><span class="line">; 小内存转储文件保存路径。以二进制形式表示的 UNICODE 路径。默认值是 %SystemRoot%\MEMORY.DMP</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">&quot;MinidumpDir&quot;=hex(2):25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,\</span><br><span class="line">  00,74,00,25,00,5c,00,4d,00,69,00,6e,00,69,00,64,00,75,00,6d,00,70,00,00,00</span><br><span class="line"></span><br><span class="line">; 小内存转储文件保存的最大个数。如果转储文件数量超过此值，则删除最旧的那个。</span><br><span class="line">; 界面上没有对应的设置，只能通过注册表修改。</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">&quot;MinidumpsCount&quot;=dword:00000005</span><br><span class="line"></span><br><span class="line">; 覆盖任何现有文件。1 表示覆盖，0 表示不覆盖。对小内存转储不生效。</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">&quot;Overwrite&quot;=dword:00000001</span><br><span class="line"></span><br><span class="line">; 禁止在磁盘空间不足时自动删除内存转储。 1 表示不删除，0 表示删除</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl]</span><br><span class="line">&quot;AlwaysKeepMemoryDump&quot;=dword:00000000</span><br></pre></td></tr></table></figure>
+
+<h2 id="各种转储类型介绍"><a href="#各种转储类型介绍" class="headerlink" title="各种转储类型介绍"></a>各种转储类型介绍</h2><p>关于这几种转储类型的介绍，主要翻译自微软官方文档，但不完全是。喜欢看英文文档的小伙伴儿请参考微软官方文档。</p>
+<ul>
+<li><p>完全内存转储</p>
+<p>包含操作系统使用的所有物理内存。默认不包含平台固件占用的物理内存。为了确保转储文件可以顺利生成，请确保引导盘上的页面文件大小至少是物理内存大小 + 1 MB（写转储文件时需要一些头信息）。假设，物理内存是 <code>4GB</code>，我们需要保证初始大小至少是 <code>4097MB</code>。当然设置成更大的值也没关系。我们可以按下图进行设置：</p>
+<p><img src="http://resources.bianchengnan.tech/kernel-memory-dump-setting/manually-set-page-file-size.gif" alt="手动设置分页文件大小"></p>
+</li>
+</ul>
+<ul>
+<li><p>活动内存转储</p>
+<p><code>活动内存转储</code> 类似于 <code>完整内存转储</code>，但是会过滤掉不太可能与排除故障相关的页面。由于这种过滤，产生的转储文件通常比 <code>完整内存转储</code> 小得多。</p>
+<p>这种类型的转储文件包含分配给用户模式应用程序的任何内存。它还包括分配给 <code>Windows</code> 内核和硬件抽象层（<code>HAL</code>）的内存，以及分配给内核模式驱动程序和其他内核模式程序的内存。转储文件包括映射到内核或用户空间的对调试有用的活动页面，还包括选择的以分页文件为后备的转换、备用和修改页面，比如使用 <code>VirtualAlloc</code> 或以分页文件为后备的内存区域。<code>活动内存转储</code> 不包括空闲列表、零列表、文件缓存、客户虚拟机页面和其他各种类型的不太可能对调试有用的内存。</p>
+<p>当目标系统中托管了虚拟机的时候，<code>活动内存转储</code> 特别有用。<code>完全内存转储</code>会包含所有虚拟机占用的内存，而<code>活动内存转储</code> 不会。</p>
+</li>
+</ul>
+<p>  <strong>活动内存转储 在 Windows 10 或更高版本的系统中可用。</strong></p>
+<ul>
+<li><p>核心内存转储</p>
+<p>包含了系统崩溃时<strong>内核</strong>所使用的物理内存。</p>
+<p>这种转储文件比完整内存转储小得多。</p>
+<p><code>核心内存转储</code> 不包括未分配的内存，或分配给用户态应用程序的任何内存。它只包括分配给 <code>Windows</code> 内核和硬件抽象层（<code>HAL</code>）的内存，以及分配给内核模式驱动程序和其他内核模式程序的内存。</p>
+<p>大多数情况下，这种类型的崩溃转储是最有用的。它比完全内存转储小得多，但是它只忽略了那些不太可能涉及崩溃的内存部分。</p>
+<p>由于这种转储文件不包含崩溃时驻留在内存中的任何用户模式可执行文件的映像，所以如果这些可执行文件非常重要，您可能还需要设置可执行映像路径。</p>
+</li>
+</ul>
+<ul>
+<li><p>自动内存转储<br><code>自动内存转储</code> 与 <code>核心内存转储</code> 包含相同的信息。两者的区别不在于转储文件本身，而在于 <code>Windows</code> 设置系统分页文件大小的方式。</p>
+<p>如果系统分页文件大小设置为 <code>系统管理的大小（Y）</code>，转储类型设置为 <code>自动内存转储</code>，那么 <code>Windows</code> 可以将分页文件大小设置的比物理内存还要小。在这种情况下，<code>Windows</code> 将分页文件的大小设置得足够大，以确保在大多数情况下可以捕获核心内存转储。</p>
+<p>如果系统崩溃，而分页文件的大小不足以保存核心内存转储，则 <code>Windows</code> 会将分页文件的尺寸增加到至少物理内存的大小。此事件（增大分页文件尺寸的事件）发生的时间会被记录在注册表项<code>HKLM\SYSTEM\CurrentControlSet\Control\CrashControl\LastCrashTime</code> 中。</p>
+<p>增加后的分页文件大小将保持 <code>4</code> 周，然后恢复到之前较小的值。如果希望在 <code>4</code> 周之前就恢复到之前较小的值，可以删除此注册表项。</p>
+</li>
+</ul>
+<p>  <strong>自动内存转储在 Windows 8 或更高版本的系统中可用。</strong></p>
+<ul>
+<li><p>小内存转储（<code>256 KB</code>）</p>
+<p>小内存转储包含如下内容：</p>
+<ul>
+<li><p>错误检查信息和参数，以及其它蓝屏数据。</p>
+</li>
+<li><p>崩溃的处理器上下文（<code>PRCB</code>）。</p>
+</li>
+<li><p>崩溃进程的进程信息和内核上下文（<code>EPROCESS</code>）。</p>
+</li>
+<li><p>崩溃线程的线程信息和内核上下文（<code>ETHREAD</code>）。</p>
+</li>
+<li><p>崩溃线程的内核模式调用堆栈。如果它大于 <code>16 KB</code>，则只包含最前面的 <code>16 KB</code>。</p>
+</li>
+<li><p>加载的驱动程序列表。</p>
+</li>
+</ul>
+<p>在 <code>Windows XP</code> 和 <code>Windows</code> 的后续版本中，还包括以下内容：</p>
+<ul>
+<li><p>已加载模块和已卸载模块的列表。</p>
+</li>
+<li><p>调试器数据块。它包含关于系统的基本调试信息。</p>
+</li>
+<li><p><code>Windows</code> 标识为对调试失败有用的任何附加内存页。这包括发生崩溃时寄存器所指向的内存页，以及故障组件特别请求的其他内存页。</p>
+</li>
+<li><p>（<code>Windows Server 2003</code> 及更高版本）<code>The Windows SKU</code> —— 比如，”Professional” 或者 “Server”。</p>
+<p>关于 <code>Windows SKU</code> 可以参考链接 <a href="https://www.thewindowsclub.com/windows-7-versions-sku" target="_blank" rel="noopener">https://www.thewindowsclub.com/windows-7-versions-sku</a></p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><code>小内存转储（256KB）</code> 默认会保存到 <code>%SystemRoot%\Minidump</code> 文件夹下，其它几种类型的转储文件默认保存到 <code>%SystemRoot%\Memory.dmp</code>。</li>
+<li>各种转储类型产生的转储文件中包含的信息不一样，根据自己的需要选择。产生的转储文件大小排序如下：<code>完全内存转储</code> &gt; <code>活动内存转储</code> &gt; <code>核心内存转储</code> = <code>自动内存转储</code> &gt; <code>小内存转储</code>。</li>
+<li>系统蓝屏后是否自动重启，是否保存转储文件，是否覆盖现有文件，转储文件保存类型，转储文件保存位置等相关设置都在注册表项 <code>HKLM\System\CurrentControlSet\Control\CrashControl\</code> 下，可以根据需要修改本文中的代码，并另存为 <code>.reg</code> 文件，双击导入系统即可。注意需要重启生效。</li>
+<li>如果在调试的时候遇到了 <code>missing page</code> 错误，可以使用 <code>.ignore_missing_pages</code> 命令。</li>
+<li>在 <code>process monitor</code> 的帮助下，没查看任何帮助文档就把各个类型的转储文件对应的值及保存位置调查清楚了！​​<code>process monitor</code> 真是调查此类问题的神兵利器！你值得拥有！</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a href="https://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-179-Manually-Forcing-a-Crash-Dump" target="_blank" rel="noopener">https://channel9.msdn.com/Shows/Defrag-Tools/Defrag-Tools-179-Manually-Forcing-a-Crash-Dump</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/varieties-of-kernel-mode-dump-files" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/varieties-of-kernel-mode-dump-files</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/complete-memory-dump" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/complete-memory-dump</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/active-memory-dump" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/active-memory-dump</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/kernel-memory-dump" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/kernel-memory-dump</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/automatic-memory-dump" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/automatic-memory-dump</a></li>
+<li><a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/small-memory-dump" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/small-memory-dump</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/kernel-memory-dump-setting/" title="蓝屏（BSOD）转储设置，看本文就够了！">https://bianchengnan.github.io/articles/kernel-memory-dump-setting/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
+          
+            <a href="/tags/转储文件/" rel="tag"><i class="fa fa-tag"></i> 转储文件</a>
+          
+            <a href="/tags/process-monitor/" rel="tag"><i class="fa fa-tag"></i> process monitor</a>
+          
+            <a href="/tags/注册表/" rel="tag"><i class="fa fa-tag"></i> 注册表</a>
+          
+            <a href="/tags/BSOD/" rel="tag"><i class="fa fa-tag"></i> BSOD</a>
+          
+            <a href="/tags/蓝屏/" rel="tag"><i class="fa fa-tag"></i> 蓝屏</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/kernel-mode-dump-begins/" rel="next" title="内核转储，开抓啦！">
+                <i class="fa fa-chevron-left"></i> 内核转储，开抓啦！
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/how-to-force-system-to-crash/" rel="prev" title="系统蓝屏的几种姿势，确定不了解下么？">
+                系统蓝屏的几种姿势，确定不了解下么？ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/something-you-should-know-about-process-dump/" title="转储文件知多少">转储文件知多少</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/process-dump-tools-you-should-know/" title="你需要知道的 N 种抓取 dump 的工具">你需要知道的 N 种抓取 dump 的工具</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/little-problem-about-dump-file/" title="你生成的转储文件有问题吗？">你生成的转储文件有问题吗？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/auto-dump-when-process-crash/" title="你需要了解的JIT Debugging">你需要了解的JIT Debugging</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/brief-introduction-to-jit-debug-info/" title="JIT Debug Info 简介">JIT Debug Info 简介</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-dump-our-own-process/" title="向大厂看齐！为自己的程序增加自动转储的功能！">向大厂看齐！为自己的程序增加自动转储的功能！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/kernel-mode-dump-begins/" title="内核转储，开抓啦！">内核转储，开抓啦！</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-force-system-to-crash/" title="系统蓝屏的几种姿势，确定不了解下么？">系统蓝屏的几种姿势，确定不了解下么？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-local-kernel-debug-setup/" title="本地内核调试环境搭建，就这么简单！">本地内核调试环境搭建，就这么简单！</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-remote-kernel-debug-setup/" title="双机内核调试 101">双机内核调试 101</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-virtualkd-windbg-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境">使用 VMware + win10 + VirtualKD + windbg 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/vmware-vs2019-win10-kernel-debug-setup-step-by-step/" title="使用 VMware + win10 + vs2019 从零搭建双机内核调试环境">使用 VMware + win10 + vs2019 从零搭建双机内核调试环境</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/summary-of-dump-series-articles/" title="转储系列文章总结">转储系列文章总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#保存位置"><span class="nav-number">2.</span> <span class="nav-text">保存位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其它相关设置"><span class="nav-number">3.</span> <span class="nav-text">其它相关设置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#各种转储类型介绍"><span class="nav-number">4.</span> <span class="nav-text">各种转储类型介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

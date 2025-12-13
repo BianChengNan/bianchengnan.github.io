@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,调试,vs,debug,windbg,dll,全局变量,crash,崩溃,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="缘起最近，项目里遇到一个 dll 加载不上的问题。实际项目比较复杂，但是解决后，又是这么的简单，合情合理。本文是我使用示例工程模拟的，实际项目中另有玄机，但问题的本质是一样的。本文从行文上与 《调试实战 | dll 加载失败之全局变量初始化篇》  非常相似，示例代码也非常相似（原谅我比较懒），感兴趣的小伙伴儿可以对比来读。">
+<meta name="keywords" content="原,调试,vs,debug,windbg,dll,全局变量,crash,崩溃">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试实战 | dll 加载失败之 Debug Release 争锋篇">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/debugging-dll-load-failure-caused-by-mixed-configuration/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="缘起最近，项目里遇到一个 dll 加载不上的问题。实际项目比较复杂，但是解决后，又是这么的简单，合情合理。本文是我使用示例工程模拟的，实际项目中另有玄机，但问题的本质是一样的。本文从行文上与 《调试实战 | dll 加载失败之全局变量初始化篇》  非常相似，示例代码也非常相似（原谅我比较懒），感兴趣的小伙伴儿可以对比来读。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/run-result.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/exports-info.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/dll-load-info.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/callstack-and-exception-info.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/exception-address.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-pnode.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-this-content.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-s_manager_type_in_vs.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/attach-noninvasive.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/attach-already-being-debugged-process-failed-tip.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/find_s_manager_address_by_windbg.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-s_manager_in_windbg.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/compare-two-map.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-inherit.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/find-the-culprit.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/iterator_debug_level.png">
+<meta property="og:updated_time" content="2025-12-13T05:48:33.575Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试实战 | dll 加载失败之 Debug Release 争锋篇">
+<meta name="twitter:description" content="缘起最近，项目里遇到一个 dll 加载不上的问题。实际项目比较复杂，但是解决后，又是这么的简单，合情合理。本文是我使用示例工程模拟的，实际项目中另有玄机，但问题的本质是一样的。本文从行文上与 《调试实战 | dll 加载失败之全局变量初始化篇》  非常相似，示例代码也非常相似（原谅我比较懒），感兴趣的小伙伴儿可以对比来读。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/run-result.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/debugging-dll-load-failure-caused-by-mixed-configuration/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试实战 | dll 加载失败之 Debug Release 争锋篇 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/debugging-dll-load-failure-caused-by-mixed-configuration/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试实战 | dll 加载失败之 Debug Release 争锋篇</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-06-06T20:46:16+08:00">
+                2020-06-06
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
+                2025-12-13
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/调试案例/" itemprop="url" rel="index">
+                    <span itemprop="name">调试案例</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>最近，项目里遇到一个 <code>dll</code> 加载不上的问题。实际项目比较复杂，但是解决后，又是这么的简单，合情合理。本文是我使用示例工程模拟的，实际项目中另有玄机，但问题的本质是一样的。本文从行文上与 <a href="https://bianchengnan.github.io/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/">《调试实战 | dll 加载失败之全局变量初始化篇》</a>  非常相似，示例代码也非常相似（原谅我比较懒），感兴趣的小伙伴儿可以对比来读。</p>
+<a id="more"></a>
+
+
+
+<h2 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h2><p>示例代码中一共有四个工程，一个 <code>exe</code>，三个 <code>dll</code>。其中，<code>Base.vcxproj</code> 是封装了公共接口的工程，会生成 <code>Base.dll</code>。<code>Extension1.vcxproj</code> 和 <code>Extension2.vcxproj</code> 非常相似，会分别生成 <code>Extension1.dll</code> 和 <code>Extension2.dll</code>。<code>MixConfiguration.vcxproj</code> 会生成 <code>MixConfiguration.exe</code> ，该 <code>exe</code> 会加载 <code>Extension1.dll</code> 和 <code>Extension2.dll</code> ，并调用它们的导出函数（象征性的调用）。程序运行起来后，发现只有一个 <code>dll</code> 的功能正常，另外一个 <code>dll</code> 的功能执行不正常。如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/run-result.png" alt="run-result"></p>
+<p>已经通过 <code>dumpbin</code> 确认两个 <code>dll</code> 都有名为 <code>GetCallCount</code> 的函数。但是只有一个调用成功了，另外一个却调用失败。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/exports-info.png" alt="exports-info"></p>
+<p>使用 <code>process explorer</code> 观察 <code>dll</code> 加载情况，发现只加载了一个 <code>dll</code>，没发现另外一个 <code>dll</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/dll-load-info.png" alt="dll-load-info"></p>
+<p>与上一个问题一样，如果用 <code>procmon</code> 观察整个加载过程，看到的都是 <code>Success</code>。这里不截图了。直接上调试器。</p>
+<h2 id="上调试器"><a href="#上调试器" class="headerlink" title="上调试器"></a>上调试器</h2><p>直接在 <code>vs</code> 中按 <code>F5</code> 启动，果然中断到 <code>vs</code> 中了。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/callstack-and-exception-info.png" alt="callstack-and-exception-info"></p>
+<p>从上图右侧部分，可以看到完整的调用栈。</p>
+<p>简单介绍下相关代码。在 <code>MixConfiguration\Entry.cpp</code> 的第 <code>15</code> 行调用了<code>auto hDll2 = LoadLibraryA(&quot;Extension2.dll&quot;);</code> 加载对应的模块。在 <code>Extension2\Extension2.cpp</code> 的第 <code>22</code> 行定义了全局变量 <code>CTest2 g_t2</code>，问题就出在这个全局变量的初始化代码中。</p>
+<p>从上图左侧部分可知，错误代码是 <code>0xc0000005</code>，内存访问异常。访问的地址是 <code>0x0000000D</code>，对应的指令地址是 <code>008B7F34</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/exception-address.png" alt="exception-address"></p>
+<p>从上图可以看出，确实是挂在了 <code>008B7F34  movsx ecx,byte ptr [eax]</code>。因为 <code>eax</code> 的值是 <code>0xD</code>，我们需要查明 <code>eax</code> 的值为什么是 <code>0xD</code>。相信很多小伙伴都知道，<code>eax</code> 用来保存函数调用的返回值。我们可以把注意力集中到 <code>0x008B7F2c</code> 处的 <code>Call</code> 指令了，调用的是 <code>_Isnil()</code> 成员函数。</p>
+<p>查看 <code>vs</code> 提供的源码，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">char</span>&amp; _Isnil(_Nodeptr _Pnode)</span><br><span class="line">&#123;<span class="comment">// return reference to nil flag in node</span></span><br><span class="line">  <span class="keyword">return</span> ((<span class="keyword">char</span>&amp;)_Pnode-&gt;_Isnil);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>发现 <code>_Isnil</code> 内部简单的返回了 <code>_Pnode</code> 的 <code>_Isnil</code> 成员。</p>
+<p><strong>务必注意：</strong> 这里返回的是 <code>char&amp;</code>，返回的是引用！相当于返回的是 <code>_Pnode-&gt;_Isnil</code> 的地址！</p>
+<p>可以在 <code>Watch</code> 窗口查看传递给 <code>_Isnil()</code> 的参数 <code>_Pnode</code> ，如下：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-pnode.png" alt="watch-pnode"></p>
+<p>可以看到 <code>_Pnode</code> 的值是 <code>0</code>，类型是 <code>std::_Tree_node&lt;...&gt;</code>。</p>
+<p> <code>std::_Tree_node</code> 的定义如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="class"><span class="keyword">class</span> _<span class="title">Value_type</span>,	<span class="title">class</span> _<span class="title">Voidptr</span>&gt;</span></span><br><span class="line"><span class="class"><span class="title">struct</span> _<span class="title">Tree_node</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  _Voidptr _Left;     <span class="comment">// offset: 0x0</span></span><br><span class="line">  _Voidptr _Parent;   <span class="comment">// offset: 0x4</span></span><br><span class="line">  _Voidptr _Right;    <span class="comment">// offset: 0x8</span></span><br><span class="line">  <span class="keyword">char</span> _Color;        <span class="comment">// offset: 0xC</span></span><br><span class="line">  <span class="keyword">char</span> _Isnil;        <span class="comment">// offset: 0xD</span></span><br><span class="line">  _Value_type _Myval; <span class="comment">// offset: 0x10</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  _Tree_node&amp; <span class="keyword">operator</span>=(<span class="keyword">const</span> _Tree_node&amp;);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>从 <code>_Tree_node</code> 的定义可知， <code>_Isnil</code> 的偏移是 <code>0xD</code> （一般，<code>32</code> 位的程序指针占 <code>4</code> 字节，如果是 <code>64</code> 位，那么占 <code>8</code> 字节）。</p>
+<p>综上，地址 <code>008B7F2C</code> 处的 <code>call</code> 指令反回 <code>0xD</code> 合情合理。<code>008B7F34</code> 处的指令 <code>movsx ecx,byte ptr [eax]</code> 把返回值保存到 <code>ecx</code> 处，但是因为 <code>eax</code> 的值是 <code>0xD</code>，正常情况下访问 <code>0x0000000D</code> 处的值当然会挂掉了。</p>
+<p>至此，我们知道了崩溃的直接原因——访问非法地址。但是根本原因是什么呢？为什么 <code>_Pnode</code> 是 <code>0</code> 呢？</p>
+<p><code>_Pnode</code> 的值来自 <code>_Nodeptr _Pnode = _Root();</code>。根据<a href="https://bianchengnan.github.io/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/">《调试实战 —— dll 加载失败之全局变量初始化篇》</a> 分析的结果， <code>_Root()</code> 函数相当于 <code>&amp;(this-&gt;_Myhead-&gt;_Parent)</code>。赋值给 <code>_Pnode</code> 后，<code>_Pnode</code> 的值等于 <code>this-&gt;_Myhead-&gt;_Parent</code> 的值。我们需要观察下 <code>this</code> 的值。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-this-content.png" alt="watch-this-content"></p>
+<p>我们发现 <code>_Parent</code> 的值确实是 <code>0</code>。难道也像上次一样，是没初始化导致的？但是其它成员明明有值，跟上次的情况有些不同。我们需要进一步分析 <code>this</code> 值的来源。</p>
+<h2 id="继续深入"><a href="#继续深入" class="headerlink" title="继续深入"></a>继续深入</h2><p>查看调用栈，我们发现，<code>this</code> 来自 <code>CTest2</code> 的构造函数里调用的 <code>CObjectManager::GetMap()</code>，这个函数是 <code>Base.dll</code> 的导出函数，返回了一个 <code>GetMap()</code> 中定义的静态变量 <code>s_manager</code>，应该不是初始化顺序的问题了，因为当我们第一次调用 <code>GetMap()</code> 的时候，其内部定义的静态变量会被初始化。那还会是什么问题呢？</p>
+<p>想在 <code>vs</code> 中观察下 <code>s_manager</code> 的值，试了几种方式，都不行。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-s_manager_type_in_vs.png" alt="watch-s_manager_type_in_vs"></p>
+<p>无奈，继续请 <code>windbg</code> 出场。</p>
+<h2 id="windbg-出场"><a href="#windbg-出场" class="headerlink" title="windbg 出场"></a>windbg 出场</h2><p>打开 <code>windbg</code>，附加到进程，注意一定要勾选 <code>Noninvasive</code> 选项，因为目标进程正在被 <code>vs</code> 调试。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/attach-noninvasive.png" alt="attach-noninvasive"></p>
+<p>如果没勾选 <code>Noninvasive</code> 选项，会报下图中的错误。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/attach-already-being-debugged-process-failed-tip.png" alt="attach-already-being-debugged-process-failed-tip"></p>
+<p>成功附加后，我们先通过 <code>x Base!*GetMap*</code> 查找到 <code>GetMap</code> 的地址，然后使用 <code>u 004B5830 L20</code> 查看对应的反汇编并查找 <code>s_manager</code> 的地址，发现对应的地址是 <code>004c431c</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/find_s_manager_address_by_windbg.png" alt="find_s_manager_address_by_windbg"></p>
+<p>我们不能直接 <code>dt s_manager</code>，但是可以 <code>dt 004c431c</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-s_manager_in_windbg.png" alt="watch-s_manager_in_windbg"></p>
+<p>观察出问题的 <code>map</code> 对象。对比看下两者有什么不同，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/compare-two-map.png" alt="compare-two-map"></p>
+<p>注意看上图红色高亮部分，在 <code>Base.dll</code> 中的定义是带 <code>_Myproxy</code> 的，<code>_Myhead</code> 的偏移是 <code>4</code>，而在 <code>Extension2.dll</code> 中，并没有 <code>_Myproxy</code>，自然而然的，<code>_Myhead</code> 的偏移是 <code>0</code>。这是两个不同的 <code>map</code> 类型！</p>
+<p>至此，问题已经明确了，<code>s_manager</code> 在两个模块眼中不一样，注意观察上图中地址（黄色高亮部分）都是 <code>0x004c431c</code>。接下来的工作就是找出为什么 <code>s_manager</code>  在 <code>Base.dll</code> 和 <code>Extension2.dll</code> 中不一样。</p>
+<h2 id="追本溯源"><a href="#追本溯源" class="headerlink" title="追本溯源"></a>追本溯源</h2><p>在 <code>vs</code> 中观察继承关系，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/watch-inherit.png" alt="watch-inherit"></p>
+<p>从上图可知：<code>_Tree</code> 继承自 <code>_Tree_comp</code>，<code>Tree_comp</code> 继承自 <code>_Tree_buy</code>， <code>_Tree_buy</code> 继承自 <code>_Tree_alloc</code>，<code>_Tree_alloc</code> 又继承自 <code>_Tree_val</code>， <code>_Tree_val</code> 又继承自 <code>_Container_base</code>。而 <code>map</code> 继承自 <code>_Tree</code>。</p>
+<p>这里我们只需要关注 <code>_Tree_val</code> 和 <code>_Container_base</code>。</p>
+<p> <code>_Tree_val</code> 定义如下（删除了无关信息）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="class"><span class="keyword">class</span> _<span class="title">Val_types</span>&gt;</span></span><br><span class="line"><span class="class"><span class="title">class</span> _<span class="title">Tree_val</span> :</span> <span class="keyword">public</span> _Container_base</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">typedef</span> <span class="keyword">typename</span> _Val_types::_Nodeptr _Nodeptr;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// remove unrelated typedefs and member functions</span></span><br><span class="line"></span><br><span class="line">  _Nodeptr _Myhead;	<span class="comment">// pointer to head node</span></span><br><span class="line">  size_type _Mysize;	<span class="comment">// number of elements</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>_Container_base</code> 的定义如下（删除了无关信息）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">if</span> _ITERATOR_DEBUG_LEVEL == 0</span></span><br><span class="line"><span class="keyword">typedef</span> _Container_base0 _Container_base;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line"><span class="keyword">typedef</span> _Container_base12 _Container_base;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<p>可以发现，如果 <code>_ITERATOR_DEBUG_LEVEL</code> 是 <code>0</code>，<code>_Container_base</code> 就等价于 <code>_Container_base0</code>。否则 <code>_Container_base</code>  等价于 <code>_Container_base12</code>。</p>
+<p>继续观察<code>_Container_base0</code>  和 <code>_Container_base12</code> 的定义。</p>
+<p><code>_Container_base0</code> 的定义如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">CRTIMP2_PURE</span> _<span class="title">Container_base0</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="keyword">void</span> _Orphan_all() &#123;&#125;</span><br><span class="line">  <span class="keyword">void</span> _Swap_all(_Container_base0&amp;) &#123;&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>_Container_base12</code> 的定义如下（删除了无关的成员函数）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">CRTIMP2_PURE</span> _<span class="title">Container_base12</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="comment">// remove unrelated member functions</span></span><br><span class="line">  _Container_proxy *_Myproxy;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>也就是说，<code>_ITERATOR_DEBUG_LEVEL</code> 不同的时候，<code>map</code> 占用的内存是不一样的。我在项目中遇到的正是这个问题。</p>
+<h2 id="水落石出"><a href="#水落石出" class="headerlink" title="水落石出"></a>水落石出</h2><p>知道 <code>_ITERATOR_DEBUG_LEVEL</code> 会导致 <code>map</code> 的内存结构不一样，我们还需要进一步查找是哪里导致了 <code>_ITERATOR_DEBUG_LEVEL</code> 的值不一样。在整个解决方案搜索 <code>_ITERATOR_DEBUG_LEVEL</code>。</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/find-the-culprit.png" alt="find-the-culprit"></p>
+<p>发现，<code>Extension2.vcxproj</code> 中的 <code>stdafx.h</code> 中定义了 <code>#define _ITERATOR_DEBUG_LEVEL 0</code>。如果没有显式定义，该宏的值受 <code>_HAS_ITERATOR_DEBUGGING</code> 影响。一般在 <code>Debug</code> 下，<code>_ITERATOR_DEBUG_LEVEL</code> 的值是 <code>2</code>。可以参考<code>yvals.h</code> 中的定义，截图如下：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-dll-load-failure-caused-by-mixed-configuration/iterator_debug_level.png" alt="iterator_debug_level"></p>
+<p>至此，我们搞清了整个事情的来龙去脉。总结一下：</p>
+<p>由于两个工程的 <code>_ITERATOR_DEBUG_LEVEL</code> 不一样，导致 <code>map</code> 的根基类（ <code>_Container_base</code> ）不一样，从而导致了两个工程眼中的 <code>map</code> 不一样，尤其是 <code>_Myhead</code> 的偏移不一样。间接导致了全局变量 <code>g_t2</code> 在初始化时崩溃，进而导致了对应的 <code>dll</code> 加载失败。</p>
+<h2 id="动手实战"><a href="#动手实战" class="headerlink" title="动手实战"></a>动手实战</h2><p>强烈建议你也动手实战一番，毕竟纸上来的终觉浅。如果你也想动手实战，可以直接下载我保存好的转储文件和对应的调试符号，直接使用 <code>windbg</code> 分析。</p>
+<p><code>dump</code> 文件和对应的符号文件下载链接：</p>
+<p>百度云链接: <a href="https://pan.baidu.com/s/1EkOVoevZWTHCQOBxZxmJ4w" target="_blank" rel="noopener">https://pan.baidu.com/s/1EkOVoevZWTHCQOBxZxmJ4w</a> 提取码: xui4</p>
+<p>CSDN：<a href="https://download.csdn.net/download/xiaoyanilw/12502717" target="_blank" rel="noopener">https://download.csdn.net/download/xiaoyanilw/12502717</a></p>
+<p>也可以下载完整的工程文件，使用 <code>vs2013</code> 编译运行即可。如果没装 <code>vs2013</code>，也可以手动改成其它版本的 <code>vs</code>。</p>
+<p>完整的测试工程下载链接：</p>
+<p>百度云链接: <a href="https://pan.baidu.com/s/1swaTU-7GiVHzdeWroWma6g" target="_blank" rel="noopener">https://pan.baidu.com/s/1swaTU-7GiVHzdeWroWma6g</a> 提取码: iwkj</p>
+<p>CSDN：<a href="https://download.csdn.net/download/xiaoyanilw/12502953" target="_blank" rel="noopener">https://download.csdn.net/download/xiaoyanilw/12502953</a></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>不要混用 <code>Debug</code> 和 <code>Release</code> 生成的 <code>Dll</code>。</p>
+</li>
+<li><p><code>map</code> 的基类会根据 <code>_HAS_ITERATOR_DEBUGGING</code> 的不同而不同。</p>
+</li>
+<li><p>如果一个进程已经被调试了，我们可以通过 <code>Noninvasive</code> 的方式附加到被调试的进程中，执行一些观察操作。</p>
+</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><code>vs2013</code> 自带的 <code>stl</code> 源码</li>
+<li><a href="https://docs.microsoft.com/en-us/cpp/c-runtime-library/crt-initialization?redirectedfrom=MSDN&amp;view=vs-2019" target="_blank" rel="noopener">https://docs.microsoft.com/en-us/cpp/c-runtime-library/crt-initialization?redirectedfrom=MSDN&amp;view=vs-2019</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">https://bianchengnan.github.io/articles/debugging-dll-load-failure-caused-by-mixed-configuration/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/dll/" rel="tag"><i class="fa fa-tag"></i> dll</a>
+          
+            <a href="/tags/全局变量/" rel="tag"><i class="fa fa-tag"></i> 全局变量</a>
+          
+            <a href="/tags/crash/" rel="tag"><i class="fa fa-tag"></i> crash</a>
+          
+            <a href="/tags/崩溃/" rel="tag"><i class="fa fa-tag"></i> 崩溃</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/global-variable-initialization-order-investigation/" rel="next" title="调试实战 | 全局变量初始化顺序探究">
+                <i class="fa fa-chevron-left"></i> 调试实战 | 全局变量初始化顺序探究
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/where-does-the-unset-_DEBUG-macro-come-from/" rel="prev" title="排错实战 | 神秘的 _DEBUG 宏从何处来？">
+                排错实战 | 神秘的 _DEBUG 宏从何处来？ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">调试技巧 | 你很可能需要知道这个调试小技巧</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">调试实战 | 从转储文件找出抛出的异常 —— 理论</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">1.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#背景介绍"><span class="nav-number">2.</span> <span class="nav-text">背景介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#上调试器"><span class="nav-number">3.</span> <span class="nav-text">上调试器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继续深入"><span class="nav-number">4.</span> <span class="nav-text">继续深入</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#windbg-出场"><span class="nav-number">5.</span> <span class="nav-text">windbg 出场</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#追本溯源"><span class="nav-number">6.</span> <span class="nav-text">追本溯源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#水落石出"><span class="nav-number">7.</span> <span class="nav-text">水落石出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#动手实战"><span class="nav-number">8.</span> <span class="nav-text">动手实战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">9.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">10.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>
