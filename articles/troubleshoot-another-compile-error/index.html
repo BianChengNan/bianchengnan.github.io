@@ -102,7 +102,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-another-compile-error/search-previous-function-and-find-target-function-missing.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-another-compile-error/macro-defined-in-utils-h.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-another-compile-error/macro-HAS_ADDRESS_SANITIZER-definition.png">
-<meta property="og:updated_time" content="2025-12-13T05:48:33.738Z">
+<meta property="og:updated_time" content="2025-12-23T13:51:14.948Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="排错实战 | 当编译器&quot;吃掉&quot;函数声明：一次由宏冲突引发的离奇编译错误">
 <meta name="twitter:description" content="摘要在编译 .NET Runtime 源码研究 GC 机制时，我遇到了一个离奇的编译错误：函数 __asan_handle_no_return 的声明被编译器报错为”类函数宏的调用”。通过将源文件预处理输出到中间文件，我发现这个函数声明竟然变成了 void ;——它被”吃掉”了！追踪发现，在 utils.h 中定义了一个同名宏，当 __SANITIZE_ADDRESS__ 宏未定义时，该宏被展开为">
@@ -359,8 +359,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
-                2025-12-13
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:14+08:00">
+                2025-12-23
               </time>
             
           </span>
@@ -960,6 +960,16 @@
   
     
   
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-mfc-pdb-mismatch-by-chkmatch-and-procmon/" title="排错实战 | 使用 chkmatch 和 procmon 速解 MFC 调试符号加载失败">排错实战 | 使用 chkmatch 和 procmon 速解 MFC 调试符号加载失败</a></li>
+    
+  
+    
+  
 </div>
 
         </div>
@@ -1048,7 +1058,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-count">143</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1070,7 +1080,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-count">230</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

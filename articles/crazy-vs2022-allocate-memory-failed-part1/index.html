@@ -109,7 +109,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/allocate-memory-commit-3.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/view-AllocationType-param.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/crazy-vs2022-allocate-memory-failed-part1/show-system-and-process-running-time.png">
-<meta property="og:updated_time" content="2025-12-13T05:48:33.538Z">
+<meta property="og:updated_time" content="2025-12-23T13:51:13.725Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">
 <meta name="twitter:description" content="前言之前一直以为 64 位进程很难出现内存分配异常，因为 64 位进程的虚拟内存空间非常大（总共 64 位，目前只用了 48 位，也就是 256TB，用户态可以使用一半，也就是 128TB）。没想到，前一阵子居然遇到了 vs2022（ vs 终于有了 64 位的版本）分配内存失败的情况。分析到最后是因为分配 MEM_COMMIT 类型的内存失败导致的异常。一起来看看吧。  说明： 本文很早就写了草">
@@ -366,8 +366,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
-                2025-12-13
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:13+08:00">
+                2025-12-23
               </time>
             
           </span>
@@ -1140,6 +1140,20 @@
     
   
     
+      
+
+      <li><a href="/articles/two-interesting-mfc-dialog-bugs/" title="MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我">MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-disable-ASLR/" title="如何关闭 ASLR">如何关闭 ASLR</a></li>
+    
+  
+    
+  
+    
   
 </div>
 
@@ -1229,7 +1243,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-count">143</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1251,7 +1265,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-count">230</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

@@ -101,7 +101,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-and-never-ignore-compiling-warnings/disassembly-code-of-geterrorstr.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-and-never-ignore-compiling-warnings/disassembly-code-of-main.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-and-never-ignore-compiling-warnings/compile-warning.png">
-<meta property="og:updated_time" content="2025-12-13T05:48:33.550Z">
+<meta property="og:updated_time" content="2025-12-23T13:51:13.781Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">
 <meta name="twitter:description" content="摘要本文记录并剖析了一次由看似低级的代码错误引发的、令人意想不到的程序崩溃。问题的根源在于 GetErrorStr 函数中一个容易被忽略的重复 switch语句。这个错误导致函数返回的 std::wstring 对象未被正确初始化，最终在构造 CResult 对象时引发了空指针访问异常 。 本文通过深入分析崩溃调用栈和反汇编代码，清晰地总结了从函数异常返回（未初始化字符串）到调用端使用无效数据（触">
@@ -358,8 +358,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
-                2025-12-13
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:13+08:00">
+                2025-12-23
               </time>
             
           </span>
@@ -1078,6 +1078,20 @@
     
   
     
+      
+
+      <li><a href="/articles/two-interesting-mfc-dialog-bugs/" title="MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我">MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-disable-ASLR/" title="如何关闭 ASLR">如何关闭 ASLR</a></li>
+    
+  
+    
+  
+    
   
 </div>
 
@@ -1167,7 +1181,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-count">143</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1189,7 +1203,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-count">230</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

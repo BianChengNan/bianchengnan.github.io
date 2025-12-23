@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,总结,调试,windbg,pdb,chkmatch,mfc,">
+  <meta name="keywords" content="原,总结,调试,pdb,windbg,chkmatch,mfc,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="缘起实际项目中，resource.h 文件中的控件太多太乱了，合并代码的时候非常痛苦。为了解决这个问题，需要对 resource.h 中的 ID 进行整理。根据之前整理的成果，很快把控件 ID 按对话框分类整理好了。没想到测试的时候遇到了各种崩溃，废了好大劲儿才解决。究其原因，是对 MFC 资源管理机制认识不够深刻。尝试创建某个模块内的对话框的时候，意外地找到了其它模块中的对话框资源。MFC 到底">
-<meta name="keywords" content="原,总结,调试,windbg,pdb,chkmatch,mfc">
+<meta name="keywords" content="原,总结,调试,pdb,windbg,chkmatch,mfc">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 记一次有教益的 MFC 程序崩溃分析">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/troubleshoot-crash-after-tidy-dialog-control-id/index.html">
@@ -104,7 +104,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-crash-after-tidy-dialog-control-id/createwindow-return-0-last-error-1407.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-crash-after-tidy-dialog-control-id/dialog-custom-control-MFCGridCtrl.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-crash-after-tidy-dialog-control-id/mfc140u.amd64.pdb.png">
-<meta property="og:updated_time" content="2025-12-13T05:48:33.745Z">
+<meta property="og:updated_time" content="2025-12-23T13:51:15.006Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 记一次有教益的 MFC 程序崩溃分析">
 <meta name="twitter:description" content="缘起实际项目中，resource.h 文件中的控件太多太乱了，合并代码的时候非常痛苦。为了解决这个问题，需要对 resource.h 中的 ID 进行整理。根据之前整理的成果，很快把控件 ID 按对话框分类整理好了。没想到测试的时候遇到了各种崩溃，废了好大劲儿才解决。究其原因，是对 MFC 资源管理机制认识不够深刻。尝试创建某个模块内的对话框的时候，意外地找到了其它模块中的对话框资源。MFC 到底">
@@ -361,8 +361,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
-                2025-12-13
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:15+08:00">
+                2025-12-23
               </time>
             
           </span>
@@ -610,9 +610,9 @@
           
             <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
-          
             <a href="/tags/pdb/" rel="tag"><i class="fa fa-tag"></i> pdb</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/chkmatch/" rel="tag"><i class="fa fa-tag"></i> chkmatch</a>
           
@@ -1150,6 +1150,20 @@
     
   
     
+      
+
+      <li><a href="/articles/two-interesting-mfc-dialog-bugs/" title="MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我">MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-disable-ASLR/" title="如何关闭 ASLR">如何关闭 ASLR</a></li>
+    
+  
+    
+  
+    
   
 </div>
 
@@ -1239,7 +1253,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-count">143</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1261,7 +1275,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-count">230</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

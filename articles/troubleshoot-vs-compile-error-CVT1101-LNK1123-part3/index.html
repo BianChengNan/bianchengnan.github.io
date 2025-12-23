@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,总结,调试,vs,windbg,IDA,排错,process monitor,rc,CVT1101,LNK1123,">
+  <meta name="keywords" content="原,总结,调试,vs,IDA,排错,process monitor,windbg,rc,CVT1101,LNK1123,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="前言在前面两篇文章中（这里，这里）总结了使用 windbg 和 IDA 找出 cvtres.exe 报错的根本原因，并把一些细节问题弄清楚了。但是还剩下一个小细节没有深究 —— 如果启动 cvtres.exe 的时候没有指定全路径，windbg 会报系统找不到指定的文件的错误。当时只是根据经验判断需要使用完整路径，但是为什么只使用文件名不行呢？今天就把这个问题也格尽。   说明： 写完本文，我犹豫">
-<meta name="keywords" content="原,总结,调试,vs,windbg,IDA,排错,process monitor,rc,CVT1101,LNK1123">
+<meta name="keywords" content="原,总结,调试,vs,IDA,排错,process monitor,windbg,rc,CVT1101,LNK1123">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/index.html">
@@ -106,7 +106,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/view-cvtres-in-process-monitor.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/interesting-file-access-pattern.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/auto-display-param-and-callstack.png">
-<meta property="og:updated_time" content="2025-12-13T05:48:33.765Z">
+<meta property="og:updated_time" content="2025-12-23T13:51:15.206Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">
 <meta name="twitter:description" content="前言在前面两篇文章中（这里，这里）总结了使用 windbg 和 IDA 找出 cvtres.exe 报错的根本原因，并把一些细节问题弄清楚了。但是还剩下一个小细节没有深究 —— 如果启动 cvtres.exe 的时候没有指定全路径，windbg 会报系统找不到指定的文件的错误。当时只是根据经验判断需要使用完整路径，但是为什么只使用文件名不行呢？今天就把这个问题也格尽。   说明： 写完本文，我犹豫">
@@ -363,8 +363,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
-                2025-12-13
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:15+08:00">
+                2025-12-23
               </time>
             
           </span>
@@ -607,13 +607,13 @@
           
             <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
           
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
-          
             <a href="/tags/IDA/" rel="tag"><i class="fa fa-tag"></i> IDA</a>
           
             <a href="/tags/排错/" rel="tag"><i class="fa fa-tag"></i> 排错</a>
           
             <a href="/tags/process-monitor/" rel="tag"><i class="fa fa-tag"></i> process monitor</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/rc/" rel="tag"><i class="fa fa-tag"></i> rc</a>
           
@@ -1153,6 +1153,20 @@
     
   
     
+      
+
+      <li><a href="/articles/two-interesting-mfc-dialog-bugs/" title="MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我">MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-disable-ASLR/" title="如何关闭 ASLR">如何关闭 ASLR</a></li>
+    
+  
+    
+  
+    
   
 </div>
 
@@ -1242,7 +1256,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-count">143</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1264,7 +1278,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-count">230</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

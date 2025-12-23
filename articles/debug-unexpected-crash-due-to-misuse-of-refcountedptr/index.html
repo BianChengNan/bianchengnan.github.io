@@ -101,7 +101,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-due-to-misuse-of-refcountedptr/view-values-in-hex.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-due-to-misuse-of-refcountedptr/delete-self-in-constructor.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-due-to-misuse-of-refcountedptr/check-exception-in-windbg.png">
-<meta property="og:updated_time" content="2025-12-13T05:48:33.555Z">
+<meta property="og:updated_time" content="2025-12-23T13:51:13.793Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">
 <meta name="twitter:description" content="摘要在最近的项目开发中，我遇到了一个由智能指针误用导致的程序崩溃问题。问题的根源在于 SheetDataHandler 类的构造函数中，将 this 指针传递给了一个接收 SheetDataHandlerPtr（智能指针类型）参数的静态函数 HandleMissingColumn。这个看似简单的操作，却导致了对象在构造函数执行期间被意外释放，最终引发空指针访问异常。 通过深入调试和反汇编分析，我发">
@@ -358,8 +358,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-13T13:48:33+08:00">
-                2025-12-13
+              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:13+08:00">
+                2025-12-23
               </time>
             
           </span>
@@ -1108,6 +1108,20 @@
     
   
     
+      
+
+      <li><a href="/articles/two-interesting-mfc-dialog-bugs/" title="MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我">MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-disable-ASLR/" title="如何关闭 ASLR">如何关闭 ASLR</a></li>
+    
+  
+    
+  
+    
   
 </div>
 
@@ -1197,7 +1211,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">140</span>
+                  <span class="site-state-item-count">143</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1219,7 +1233,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">227</span>
+                  <span class="site-state-item-count">230</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
