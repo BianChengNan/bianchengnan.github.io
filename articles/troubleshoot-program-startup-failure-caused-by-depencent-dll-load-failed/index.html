@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,总结,调试,debug,排错,troubleshoot,windbg,dependency walker,dumpbin,gflags,">
+  <meta name="keywords" content="原,总结,调试,debug,windbg,排错,troubleshoot,dependency walker,dumpbin,gflags,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="缘起前一阵子，更新完依赖库后，启动程序报错了。这已经不是第一次报错了。so…… let&amp;#39;s dig in!">
-<meta name="keywords" content="原,总结,调试,debug,排错,troubleshoot,windbg,dependency walker,dumpbin,gflags">
+<meta name="keywords" content="原,总结,调试,debug,windbg,排错,troubleshoot,dependency walker,dumpbin,gflags">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/index.html">
@@ -102,7 +102,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/locating-export-error.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/search-PK_POINT_create-in-result-file.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/dependency-result.png">
-<meta property="og:updated_time" content="2025-12-23T13:51:15.100Z">
+<meta property="og:updated_time" content="2026-02-16T10:40:27.547Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">
 <meta name="twitter:description" content="缘起前一阵子，更新完依赖库后，启动程序报错了。这已经不是第一次报错了。so…… let&amp;#39;s dig in!">
@@ -359,8 +359,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:15+08:00">
-                2025-12-23
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
+                2026-02-16
               </time>
             
           </span>
@@ -566,11 +566,11 @@
           
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
           
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
             <a href="/tags/排错/" rel="tag"><i class="fa fa-tag"></i> 排错</a>
           
             <a href="/tags/troubleshoot/" rel="tag"><i class="fa fa-tag"></i> troubleshoot</a>
-          
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/dependency-walker/" rel="tag"><i class="fa fa-tag"></i> dependency walker</a>
           
@@ -1124,6 +1124,30 @@
     
   
     
+      
+
+      <li><a href="/articles/how-to-view-dll-ref-count/" title="调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略">调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-continue/" title="调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱">调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-on-win10/" title="调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁">调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-spacesniffer-deadlock/" title="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅</a></li>
+    
+  
+    
   
 </div>
 
@@ -1213,7 +1237,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">143</span>
+                  <span class="site-state-item-count">147</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1235,7 +1259,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">230</span>
+                  <span class="site-state-item-count">238</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1317,7 +1341,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2026</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

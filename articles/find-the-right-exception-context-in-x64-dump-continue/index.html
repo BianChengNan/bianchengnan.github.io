@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="调试,异常,debug,dump,windbg,wow64,32,EXCEPTION_RECORD,">
+  <meta name="keywords" content="调试,debug,dump,异常,windbg,wow64,32,EXCEPTION_RECORD,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="前言在上一篇文章中介绍了如何在 64 位进程的转储文件中查找异常上下文的方法 —— KiUserExceptionDispatcher() 函数对应栈帧的 Child-SP 的值保存了异常发生时的线程上下文。 本文将介绍如何在 32 位进程及 wow64 进程的转储文件中查找异常上下文的方法，并且会先介绍几个跟异常分发相关的函数和结构体。如果忘记了结论，可以根据函数参数手动逆向查找验证。">
-<meta name="keywords" content="调试,异常,debug,dump,windbg,wow64,32,EXCEPTION_RECORD">
+<meta name="keywords" content="调试,debug,dump,异常,windbg,wow64,32,EXCEPTION_RECORD">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何快速从 32 位转储文件中找到异常发生时的线程上下文">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/find-the-right-exception-context-in-x64-dump-continue/index.html">
@@ -100,7 +100,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump-continue/verify-exception-info-32.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump-continue/view-exception-callstack-wow64.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump-continue/verify-exception-info-wow64.png">
-<meta property="og:updated_time" content="2025-12-23T13:51:13.977Z">
+<meta property="og:updated_time" content="2026-02-16T10:40:27.360Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="如何快速从 32 位转储文件中找到异常发生时的线程上下文">
 <meta name="twitter:description" content="前言在上一篇文章中介绍了如何在 64 位进程的转储文件中查找异常上下文的方法 —— KiUserExceptionDispatcher() 函数对应栈帧的 Child-SP 的值保存了异常发生时的线程上下文。 本文将介绍如何在 32 位进程及 wow64 进程的转储文件中查找异常上下文的方法，并且会先介绍几个跟异常分发相关的函数和结构体。如果忘记了结论，可以根据函数参数手动逆向查找验证。">
@@ -357,8 +357,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:13+08:00">
-                2025-12-23
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
+                2026-02-16
               </time>
             
           </span>
@@ -556,11 +556,11 @@
           
             <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
-            <a href="/tags/异常/" rel="tag"><i class="fa fa-tag"></i> 异常</a>
-          
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
           
             <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
+          
+            <a href="/tags/异常/" rel="tag"><i class="fa fa-tag"></i> 异常</a>
           
             <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
@@ -1116,6 +1116,30 @@
     
   
     
+      
+
+      <li><a href="/articles/how-to-view-dll-ref-count/" title="调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略">调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-continue/" title="调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱">调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-on-win10/" title="调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁">调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-spacesniffer-deadlock/" title="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅</a></li>
+    
+  
+    
   
 </div>
 
@@ -1205,7 +1229,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">143</span>
+                  <span class="site-state-item-count">147</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1227,7 +1251,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">230</span>
+                  <span class="site-state-item-count">238</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1309,7 +1333,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2026</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

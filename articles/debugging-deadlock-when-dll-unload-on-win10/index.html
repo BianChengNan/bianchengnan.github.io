@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,调试,debug,windbg,IDA,dll,死锁,win10,引用计数,Parallel Loader,并行加载,LdrpLoadCompleteEvent,WaitForSingleObject,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="摘要这篇文章分析了在 Win10 系统上 DLL 卸载时发生死锁的根本原因。通过调试发现，死锁是由于 Win10 引入了并行加载器机制，导致线程在退出时等待全局事件 LdrpLoadCompleteEvent，而该事件又因 DllMain() 在处理 DLL_PROCESS_DETACH 时调用 WaitForSingleObject() 无限等待工作线程结束而无法被触发。">
+<meta name="keywords" content="原,调试,debug,windbg,IDA,dll,死锁,win10,引用计数,Parallel Loader,并行加载,LdrpLoadCompleteEvent,WaitForSingleObject">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-on-win10/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="摘要这篇文章分析了在 Win10 系统上 DLL 卸载时发生死锁的根本原因。通过调试发现，死锁是由于 Win10 引入了并行加载器机制，导致线程在退出时等待全局事件 LdrpLoadCompleteEvent，而该事件又因 DllMain() 在处理 DLL_PROCESS_DETACH 时调用 WaitForSingleObject() 无限等待工作线程结束而无法被触发。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/switch-t0-thread-no6.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/view-loadcompleteevent-reference-in-ida.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/view-droplastinprogresscount-reference-in-ida.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/setevent-called-in-LdrUnloadDll.png">
+<meta property="og:updated_time" content="2026-02-16T10:40:27.335Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁">
+<meta name="twitter:description" content="摘要这篇文章分析了在 Win10 系统上 DLL 卸载时发生死锁的根本原因。通过调试发现，死锁是由于 Win10 引入了并行加载器机制，导致线程在退出时等待全局事件 LdrpLoadCompleteEvent，而该事件又因 DllMain() 在处理 DLL_PROCESS_DETACH 时调用 WaitForSingleObject() 无限等待工作线程结束而无法被触发。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/switch-t0-thread-no6.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-on-win10/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-on-win10/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-02-08T12:36:45+08:00">
+                2026-02-08
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
+                2026-02-16
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>这篇文章分析了在 <code>Win10</code> 系统上 <code>DLL</code> 卸载时发生死锁的根本原因。通过调试发现，死锁是由于 <code>Win10</code> 引入了并行加载器机制，导致线程在退出时等待全局事件 <code>LdrpLoadCompleteEvent</code>，而该事件又因 <code>DllMain()</code> 在处理 <code>DLL_PROCESS_DETACH</code> 时调用 <code>WaitForSingleObject()</code> 无限等待工作线程结束而无法被触发。</p>
+<a id="more"></a>
+
+
+
+<h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>我在上一篇文章 <a href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-continue">《调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱》</a>中弄清楚了为什么之前卡死的程序不卡死的原因—— <code>crt</code> 调整了 <code>_beginthreadex()</code> 的逻辑，在其内部会增加 <code>dll</code> 引用计数，导致 <code>FreeLibrary()</code> 的时候没有正常卸载 <code>dll</code>，进而导致卡死的现象未重现。调整为 <code>vs2010</code> 后，就可以重现了。虽然重现了卡死的现象，但是在 <code>win10</code> 系统上卡死时的调用栈跟 <code>win7</code> 系统不太一样。通过 <code>!cs -l</code> 命令并不能看任何结果。本着打破砂锅问到底的原则，便有了今天的这篇总结。</p>
+<h2 id="测试代码"><a href="#测试代码" class="headerlink" title="测试代码"></a>测试代码</h2><p>这里再简单贴一下关键代码，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//WaitDllUnloadExe.cpp</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"windows.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    HMODULE <span class="keyword">module</span> = LoadLibraryA(<span class="string">".\\DllUnload.dll"</span>);</span><br><span class="line">    Sleep(<span class="number">1000</span>);</span><br><span class="line">    FreeLibrary(<span class="keyword">module</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//dllmain.cpp</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"pch.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"process.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">HANDLE g_hThread;</span><br><span class="line"></span><br><span class="line"><span class="keyword">volatile</span> <span class="keyword">bool</span> g_quit = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">unsigned</span> __<span class="function">stdcall <span class="title">procThread</span><span class="params">(<span class="keyword">void</span>*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (!g_quit)</span><br><span class="line">    &#123;</span><br><span class="line">        OutputDebugStringA(<span class="string">"====procThread running.\n"</span>);</span><br><span class="line">        Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    OutputDebugStringA(<span class="string">"====procThread quitting.\n"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">unsigned</span> __<span class="function">stdcall <span class="title">quitDemoProc</span><span class="params">(<span class="keyword">void</span>*)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> idx = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (idx++ &lt; <span class="number">5</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        OutputDebugStringA(<span class="string">"====quitDemoProc running!!!!!!!!\n"</span>);</span><br><span class="line">        Sleep(<span class="number">10</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    OutputDebugStringA(<span class="string">"====quitDemoProc quitting!!!\n"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">BOOL APIENTRY <span class="title">DllMain</span><span class="params">(HMODULE hModule,</span></span></span><br><span class="line"><span class="function"><span class="params">    DWORD  ul_reason_for_call,</span></span></span><br><span class="line"><span class="function"><span class="params">    LPVOID lpReserved</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">switch</span> (ul_reason_for_call)</span><br><span class="line">    &#123;</span><br><span class="line">    <span class="keyword">case</span> DLL_PROCESS_ATTACH:</span><br><span class="line">    &#123;</span><br><span class="line">        g_hThread = (HANDLE)_beginthreadex(<span class="literal">NULL</span>, <span class="number">0</span>, &amp;procThread, <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line">        CloseHandle((HANDLE)_beginthreadex(<span class="literal">NULL</span>, <span class="number">0</span>, &amp;quitDemoProc, <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> DLL_THREAD_ATTACH:</span><br><span class="line">    &#123;</span><br><span class="line">        OutputDebugStringA(<span class="string">"====DLL_THREAD_ATTACH called.\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> DLL_THREAD_DETACH:</span><br><span class="line">    &#123;</span><br><span class="line">        OutputDebugStringA(<span class="string">"====DLL_THREAD_DETACH called.\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> DLL_PROCESS_DETACH:</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">char</span> buffer[<span class="number">256</span>] = <span class="string">""</span>;</span><br><span class="line">        sprintf_s(buffer, <span class="string">"====DLL_PROCESS_DETACH begin wait for thread=%x\n"</span>, (<span class="keyword">int</span>)g_hThread);</span><br><span class="line">        OutputDebugStringA(buffer);</span><br><span class="line">        g_quit = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// change INFINITE to some other value (e.g. 5000) to exit normally</span></span><br><span class="line">        DWORD waitResult = WaitForSingleObject(g_hThread, INFINITE);</span><br><span class="line"></span><br><span class="line">        sprintf_s(buffer, <span class="string">"====DLL_PROCESS_DETACH end wait for thread=%x, result=%x\n"</span>, (<span class="keyword">int</span>)g_hThread, waitResult);</span><br><span class="line">        OutputDebugStringA(buffer);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="初步调查"><a href="#初步调查" class="headerlink" title="初步调查"></a>初步调查</h2><p>待程序卡死后，使用 <code>windbg</code> 附加。使用 <code>~* kn</code> 命令查看所有线程的调用栈，可以发现 <code>0</code> 号线程和 <code>6</code> 号线程是我们需要关注的线程，而且这两个线程都在等待。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; ~*kn</span><br><span class="line"></span><br><span class="line">.  0  Id: 5680.3434 Suspend: 1 Teb: 00000000`00d90000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`00eff388 00007ffc`745cb6ae     ntdll!NtWaitForSingleObject+0x14</span><br><span class="line">01 00000000`00eff390 00007ffc`4cbd1289     KERNELBASE!WaitForSingleObjectEx+0x8e</span><br><span class="line">02 00000000`00eff430 00007ffc`4cbd1d4e     DllUnload!DllMain+0x159 [d:\myblogstuff\debugging-deadlock-when-dll-unload-win10\dllunload\dllmain.cpp @ 66] </span><br><span class="line">03 00000000`00eff5a0 00007ffc`4cbd1c91     DllUnload!__DllMainCRTStartup+0xae [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crtdll.c @ 512] </span><br><span class="line">04 00000000`00eff5f0 00007ffc`76d09a1d     DllUnload!_DllMainCRTStartup+0x31 [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crtdll.c @ 477] </span><br><span class="line">05 00000000`00eff620 00007ffc`76d5badb     ntdll!LdrpCallInitRoutine+0x61</span><br><span class="line">06 00000000`00eff690 00007ffc`76d5b537     ntdll!LdrpProcessDetachNode+0x107</span><br><span class="line">07 00000000`00eff760 00007ffc`76cffd0a     ntdll!LdrpUnloadNode+0x3f</span><br><span class="line">08 00000000`00eff7b0 00007ffc`76cffc84     ntdll!LdrpDecrementModuleLoadCountEx+0x72</span><br><span class="line">09 00000000`00eff7e0 00007ffc`745d32de     ntdll!LdrUnloadDll+0x94</span><br><span class="line">0a 00000000`00eff810 00007ff7`536b1059     KERNELBASE!FreeLibrary+0x1e</span><br><span class="line">0b 00000000`00eff840 00007ff7`536b13cc     WaitDllUnloadExe!main+0x49 [d:\myblogstuff\debugging-deadlock-when-dll-unload-win10\waitdllunloadexe\waitdllunloadexe.cpp @ 8] </span><br><span class="line">0c 00000000`00eff880 00007ff7`536b121e     WaitDllUnloadExe!__tmainCRTStartup+0x19c [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crtexe.c @ 555] </span><br><span class="line">0d 00000000`00eff8f0 00007ffc`74f77374     WaitDllUnloadExe!mainCRTStartup+0xe [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\crtexe.c @ 371] </span><br><span class="line">0e 00000000`00eff920 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">0f 00000000`00eff950 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">   1  Id: 5680.5acc Suspend: 1 Teb: 00000000`00d92000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`0128f4b8 00007ffc`76d3d407     ntdll!NtWaitForWorkViaWorkerFactory+0x14</span><br><span class="line">01 00000000`0128f4c0 00007ffc`74f77374     ntdll!TppWorkerThread+0x2f7</span><br><span class="line">02 00000000`0128f7c0 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">03 00000000`0128f7f0 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">   2  Id: 5680.9d0 Suspend: 1 Teb: 00000000`00d94000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`0138f598 00007ffc`76d3d407     ntdll!NtWaitForWorkViaWorkerFactory+0x14</span><br><span class="line">01 00000000`0138f5a0 00007ffc`74f77374     ntdll!TppWorkerThread+0x2f7</span><br><span class="line">02 00000000`0138f8a0 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">03 00000000`0138f8d0 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">   3  Id: 5680.53ac Suspend: 1 Teb: 00000000`00d96000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`0148f978 00007ffc`76d3d407     ntdll!NtWaitForWorkViaWorkerFactory+0x14</span><br><span class="line">01 00000000`0148f980 00007ffc`74f77374     ntdll!TppWorkerThread+0x2f7</span><br><span class="line">02 00000000`0148fc80 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">03 00000000`0148fcb0 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">   4  Id: 5680.23a4 Suspend: 1 Teb: 00000000`00d98000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`03a0fbc8 00007ffc`745f62ce     ntdll!NtDelayExecution+0x14</span><br><span class="line">01 00000000`03a0fbd0 00007ffc`60e798ab     KERNELBASE!SleepEx+0x9e</span><br><span class="line">02 00000000`03a0fc70 00007ffc`74f77374     ObjectVirtualizeDll_x64!ProxyHttpApiHook+0x52cdb</span><br><span class="line">03 00000000`03a0fca0 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">04 00000000`03a0fcd0 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">   5  Id: 5680.4914 Suspend: 1 Teb: 00000000`00d9a000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`03b0ee48 00007ffc`74600d00     ntdll!NtWaitForMultipleObjects+0x14</span><br><span class="line">01 00000000`03b0ee50 00007ffc`74600bfe     KERNELBASE!WaitForMultipleObjectsEx+0xf0</span><br><span class="line">02 00000000`03b0f140 00007ffc`5e5754fb     KERNELBASE!WaitForMultipleObjects+0xe</span><br><span class="line">03 00000000`03b0f180 00007ffc`5e5827ba     cpbgrd64+0x154fb</span><br><span class="line">04 00000000`03b0f710 00007ffc`74f77374     cpbgrd64+0x227ba</span><br><span class="line">05 00000000`03b0fc70 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">06 00000000`03b0fca0 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">   6  Id: 5680.4474 Suspend: 1 Teb: 00000000`00d9c000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`0406f8b8 00007ffc`76d50022     ntdll!NtWaitForSingleObject+0x14</span><br><span class="line">01 00000000`0406f8c0 00007ffc`76d074ed     ntdll!LdrpDrainWorkQueue+0x15e</span><br><span class="line">02 00000000`0406f900 00007ffc`76d3ec6e     ntdll!LdrShutdownThread+0x9d</span><br><span class="line">03 00000000`0406fa00 00000000`6c8c733e     ntdll!RtlExitUserThread+0x3e</span><br><span class="line">04 00000000`0406fa40 00000000`6c8c72ec     MSVCR100D!_endthreadex+0x2e [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\threadex.c @ 367] </span><br><span class="line">05 00000000`0406fa80 00000000`6c8c72a4     MSVCR100D!_callthreadstartex+0x2c [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\threadex.c @ 315] </span><br><span class="line">06 00000000`0406fad0 00007ffc`74f77374     MSVCR100D!_threadstartex+0xb4 [f:\dd\vctools\crt_bld\self_64_amd64\crt\src\threadex.c @ 297] </span><br><span class="line">07 00000000`0406fb10 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">08 00000000`0406fb40 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">   7  Id: 5680.4194 Suspend: 1 Teb: 00000000`00da0000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`0426f778 00007ffc`745cb6ae     ntdll!NtWaitForSingleObject+0x14</span><br><span class="line">01 00000000`0426f780 00007ffc`5e577e80     KERNELBASE!WaitForSingleObjectEx+0x8e</span><br><span class="line">02 00000000`0426f820 00007ffc`74f77374     cpbgrd64+0x17e80</span><br><span class="line">03 00000000`0426f850 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">04 00000000`0426f880 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">#  8  Id: 5680.3e34 Suspend: 1 Teb: 00000000`00da2000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`0416f738 00007ffc`76dbcb3e     ntdll!DbgBreakPoint</span><br><span class="line">01 00000000`0416f740 00007ffc`74f77374     ntdll!DbgUiRemoteBreakin+0x4e</span><br><span class="line">02 00000000`0416f770 00007ffc`76d3cc91     kernel32!BaseThreadInitThunk+0x14</span><br><span class="line">03 00000000`0416f7a0 00000000`00000000     ntdll!RtlUserThreadStart+0x21</span><br><span class="line"></span><br><span class="line">   9  Id: 5680.50bc Suspend: 0 Teb: 00000000`00da4000 Unfrozen</span><br><span class="line"> # Child-SP          RetAddr               Call Site</span><br><span class="line">00 00000000`0436fcf8 00000000`00000000     ntdll!RtlUserThreadStart</span><br></pre></td></tr></table></figure>
+
+<p>先看一下  <code>0</code> 号线程在等待什么？函数 <code>ntdll!NtWaitForSingleObject()</code> 的第一个参数是等待的句柄，在 <code>64</code> 位程序中函数的第一个参数一般是通过 <code>rcx</code> 传递的。一般寄存器的值是在调用过程中发生变化的，不能直接查看。但是 <code>ntdll!NtWaitForSingleObject()</code>  会直接进内核，用户态的寄存器会被保存起来，不会发生变化，因此可以直接通过 <code>r</code> 命令查看。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span>:<span class="number">000</span>&gt; uf ntdll!NtWaitForSingleObject</span><br><span class="line">ntdll!NtWaitForSingleObject:</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d8d610 <span class="number">4</span>c8bd1          mov     r10,rcx</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d8d613 b804000000      mov     eax,<span class="number">4</span></span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d8d618 f604250803fe7f01 test    byte ptr [SharedUserData+<span class="number">0x308</span> (<span class="number">00000000</span>`<span class="number">7f</span>fe0308)],<span class="number">1</span></span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d8d620 <span class="number">7503</span>            jne     ntdll!NtWaitForSingleObject+<span class="number">0x15</span> (<span class="number">00007f</span>fc`<span class="number">76</span>d8d625)  Branch</span><br><span class="line"></span><br><span class="line">ntdll!NtWaitForSingleObject+<span class="number">0x12</span>:</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d8d622 <span class="number">0f</span>05            syscall  <span class="comment">//&lt;----</span></span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d8d624 c3              ret</span><br><span class="line"></span><br><span class="line">ntdll!NtWaitForSingleObject+<span class="number">0x15</span>:</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d8d625 cd2e            <span class="keyword">int</span>     <span class="number">2</span>Eh</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d8d627 c3              ret</span><br></pre></td></tr></table></figure>
+
+<p>执行 <code>r rcx</code> 命令查看 <code>rcx</code> 寄存器的值，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; r rcx</span><br><span class="line">rcx=00000000000002b8</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>说明：</strong> 执行 <code>r</code> 命令时需要确保当前线程是我们关注的线程，<code>0:000</code> 冒号后面的 <code>000</code> 是 <code>windbg</code> 中的线程编号，不是操作系统中的线程 <code>ID</code>。</p>
+</blockquote>
+<p>我们可以进一步通过 <code>!handle</code> 命令验证 <code>0x2b8</code> 是否是合法的句柄值。在 <code>windbg</code> 中执行 <code>!handle 0x2b8 f</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; !handle 0x2b8 f</span><br><span class="line">Handle 00000000000002b8</span><br><span class="line">  Type         	Thread  //&lt;----</span><br><span class="line">  Attributes   	0</span><br><span class="line">  GrantedAccess	0x1fffff:</span><br><span class="line">         Delete,ReadControl,WriteDac,WriteOwner,Synch</span><br><span class="line">         Terminate,Suspend,Alert,GetContext,SetContext,SetInfo,QueryInfo,SetToken,Impersonate,DirectImpersonate</span><br><span class="line">  HandleCount  	4</span><br><span class="line">  PointerCount 	163744</span><br><span class="line">  Name         	&lt;none&gt;</span><br><span class="line">  Object specific information</span><br><span class="line">    Thread Id   5680.4474  //&lt;----</span><br><span class="line">    Priority    10</span><br><span class="line">    Base Priority 0</span><br></pre></td></tr></table></figure>
+
+<p>可以发现 <code>0x2b8</code> 是线程句柄，对应的线程 <code>ID</code> 是 <code>4474</code>，进程 <code>ID</code> 是 <code>5680</code>。使用 <code>~~[4474]s</code> 切换线程，可以发现这个线程正是 <code>6</code> 号线程。（可以通过底部命令行左侧的 <code>0:006</code> 确认）</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/switch-t0-thread-no6.png" alt="switch-t0-thread-no6"></p>
+<p>这与我们的代码完全匹配，我们的代码在 <code>DllMain()</code> 中会无限等待创建的线程结束，对应的关键代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DWORD waitResult = WaitForSingleObject(g_hThread, INFINITE);</span><br></pre></td></tr></table></figure>
+
+<p>知道 <code>0</code> 号线程在等待什么，接下来使用同样的方法查看 <code>6</code> 号线程在等待什么。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span>:<span class="number">006</span>&gt; r rcx</span><br><span class="line">rcx=<span class="number">0000000000000038</span></span><br><span class="line"><span class="number">0</span>:<span class="number">006</span>&gt; !handle <span class="number">0x38</span> f</span><br><span class="line">Handle <span class="number">0000000000000038</span></span><br><span class="line">  Type         	Event    <span class="comment">//&lt;----</span></span><br><span class="line">  Attributes   	<span class="number">0</span></span><br><span class="line">  GrantedAccess	<span class="number">0x1f0003</span>:</span><br><span class="line">         Delete,ReadControl,WriteDac,WriteOwner,Synch</span><br><span class="line">         QueryState,ModifyState</span><br><span class="line">  HandleCount  	<span class="number">2</span></span><br><span class="line">  PointerCount 	<span class="number">65519</span></span><br><span class="line">  Name         	&lt;none&gt;</span><br><span class="line">  Object specific information</span><br><span class="line">    Event Type Auto Reset</span><br><span class="line">    Event is Waiting</span><br></pre></td></tr></table></figure>
+
+<p>可以发现 <code>6</code> 号线程在等待一个事件，句柄值是 <code>0x38</code>。通过调用栈可知，<code>6</code> 号线程正在退出，在退出过程中调用了 <code>LdrpDrainWorkQueue()</code> ，进而导致了等待。至此已经从调用栈上看不出更多的信息了。为什么 <code>6</code> 号线程会陷入等待呢？谁又会触发这个事件呢？</p>
+<h2 id="查看反汇编"><a href="#查看反汇编" class="headerlink" title="查看反汇编"></a>查看反汇编</h2><p>在 <code>windbg</code> 中执行 <code>ub 00007ffc76d50022 L50</code>，查看 <code>ntdll!LdrpDrainWorkQueue()</code> 调用 <code>ntdll!NtWaitForSingleObject()</code> 的相关代码，输出结果如下（输出结果有省略）</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span>:<span class="number">006</span>&gt; ub <span class="number">00007f</span>fc`<span class="number">76</span>d50022 L50</span><br><span class="line"><span class="comment">//...</span></span><br><span class="line">ntdll!LdrpDrainWorkQueue:</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fec4 <span class="number">48895</span>c2408      mov     qword ptr [rsp+<span class="number">8</span>],rbx</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fec9 <span class="number">48896</span>c2410      mov     qword ptr [rsp+<span class="number">10</span>h],rbp</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fece <span class="number">4889742418</span>      mov     qword ptr [rsp+<span class="number">18</span>h],rsi</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fed3 <span class="number">57</span>              push    rdi</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fed4 <span class="number">4154</span>            push    r12</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fed6 <span class="number">4156</span>            push    r14</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fed8 <span class="number">4883</span>ec20        sub     rsp,<span class="number">20</span>h</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fedc <span class="number">4</span>c8b35cdc41000  mov     r14,qword ptr [ntdll!LdrpWorkCompleteEvent (<span class="number">00007f</span>fc`<span class="number">76e5</span>c3b0)] <span class="comment">//&lt;---</span></span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fee3 <span class="number">4</span>c8d2506c51000  lea     r12,[ntdll!LdrpWorkQueue (<span class="number">00007f</span>fc`<span class="number">76e5</span>c3f0)]</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4feea <span class="number">4032f</span>6          xor     sil,sil</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4feed <span class="number">8b</span>f9            mov     edi,ecx</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4feef <span class="number">85</span>c9            test    ecx,ecx</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fef1 <span class="number">4</span>c0f443587c41000 cmove   r14,qword ptr [ntdll!LdrpLoadCompleteEvent (<span class="number">00007f</span>fc`<span class="number">76e5</span>c380)] <span class="comment">//&lt;---</span></span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4fef9 <span class="number">488</span>d0dc0c41000  lea     rcx,[ntdll!LdrpWorkQueueLock (<span class="number">00007f</span>fc`<span class="number">76e5</span>c3c0)]</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d4ff00 e89bfbfcff      call    ntdll!RtlEnterCriticalSection (<span class="number">00007f</span>fc`<span class="number">76</span>d1faa0)</span><br><span class="line"><span class="comment">//...</span></span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d50015 <span class="number">4533</span>c0          xor     r8d,r8d</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d50018 <span class="number">33</span>d2            xor     edx,edx</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d5001a <span class="number">498b</span>ce          mov     rcx,r14  <span class="comment">//&lt;----</span></span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d5001d e8eed50300      call    ntdll!NtWaitForSingleObject (<span class="number">00007f</span>fc`<span class="number">76</span>d8d610)</span><br></pre></td></tr></table></figure>
+
+<p>注意查看 <code>//&lt;----</code> 对应的汇编代码，<code>ntdll!NtWaitForSingleObject()</code> 的参数来源自 <code>r14</code>，而 <code>r14</code> 的值可能来源于两个地方，一个是 <code>ntdll!LdrpWorkCompleteEvent</code>，一个是 <code>ntdll!LdrpLoadCompleteEvent</code>。大概逻辑如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">r14 = ntdll!LdrpWorkCompleteEvent;</span><br><span class="line"><span class="keyword">if</span> (param == <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    r14 = ntdll!LdrpLoadCompleteEvent;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再看一下调用 <code>ntdll!LdrpDrainWorkQueue()</code> 的反汇编代码，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span>:<span class="number">006</span>&gt; ub <span class="number">00007f</span>fc`<span class="number">76</span>d074ed </span><br><span class="line">ntdll!LdrShutdownThread+<span class="number">0x70</span>:</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d074c0 <span class="number">65488b</span>042530000000 mov   rax,qword ptr gs:[<span class="number">30</span>h]</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d074c9 b900100000      mov     ecx,<span class="number">1000</span>h</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d074ce <span class="number">668588</span>ee170000  test    word ptr [rax+<span class="number">17</span>EEh],cx</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d074d5 <span class="number">0f</span>85e0690900    jne     ntdll!LdrShutdownThread+<span class="number">0x96a6b</span> (<span class="number">00007f</span>fc`<span class="number">76</span>d9debb)</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d074db <span class="number">418</span>af4          mov     sil,r12b</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d074de <span class="number">4488</span>a42400010000 mov     byte ptr [rsp+<span class="number">100</span>h],r12b</span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d074e6 <span class="number">33</span>c9            xor     ecx,ecx <span class="comment">//&lt;----</span></span><br><span class="line"><span class="number">00007f</span>fc`<span class="number">76</span>d074e8 e8d7890400      call    ntdll!LdrpDrainWorkQueue (<span class="number">00007f</span>fc`<span class="number">76</span>d4fec4)</span><br></pre></td></tr></table></figure>
+
+<p>可以发现，<code>ntdll!LdrShutdownThread()</code> 调用 <code>ntdll!LdrpDrainWorkQueue()</code> 时的参数是 <code>0</code>。所以最终等待的句柄是 <code>ntdll!LdrpLoadCompleteEvent</code>。</p>
+<p>使用 <code>dd ntdll!LdrpLoadCompleteEvent L1</code> 查看其值，果然是 <code>0x38</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">0:006&gt; dd ntdll!LdrpLoadCompleteEvent L1</span><br><span class="line">00007ffc`76e5c380  00000038</span><br></pre></td></tr></table></figure>
+
+<p>看来 <code>6</code> 号线程在等待 <code>ntdll!LdrpLoadCompleteEvent</code>。那谁会触发这个事件呢？</p>
+<h2 id="继续查看反汇编"><a href="#继续查看反汇编" class="headerlink" title="继续查看反汇编"></a>继续查看反汇编</h2><p>如果能有办法找到 <code>ntdll!LdrpLoadCompleteEvent</code> 所有的引用，就可以进一步查看相关代码。是时候请出 <code>IDA</code> 了，因为 <code>IDA</code> 的静态分析能力简直太香了。用 <code>64</code> 位的 <code>IDA</code> 打开 <code>ntdll.dll</code>，找到所有引用 <code>ntdll!LdrpLoadCompleteEvent</code> 的地方，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/view-loadcompleteevent-reference-in-ida.png" alt="view-loadcompleteevent-reference-in-ida"></p>
+<p>可以发现，一共就三个地方：<code>LdrpDropLastInProgressCount+38↑r</code>、<code>LdrpDrainWorkQueue+2D↑r</code> 和<code>LdrpCreateLoaderEvents+12↑o</code>。</p>
+<blockquote>
+<p><strong>小提示：</strong> 还可以在 <code>windbg</code> 中使用 <code>#</code> 命令查找所有用到 <code>LdrpLoadCompleteEvent</code> 的代码。<code>#</code> 命令的大概语法是 <code># [Pattern] [Address [ L Size ]]</code>。可以在 <code>windbg</code> 中输入 <code>.hh #</code> 查看该命令的详细解释。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&gt; 0:006&gt; lmm ntdll</span><br><span class="line">&gt; Browse full module list</span><br><span class="line">&gt; start             end                 module name</span><br><span class="line">&gt; 00007ffc`76cf0000 00007ffc`76ee8000   ntdll      (pdb symbols)          d:\mssyms\ntdll.pdb\180BF1B90AA75697D0EFEA5E5630AC7E1\ntdll.pdb</span><br><span class="line">&gt; 0:006&gt; # &quot;ntdll!LdrpLoadCompleteEvent&quot; 00007ffc`76cf0000 L99999</span><br><span class="line">&gt; ntdll!LdrpDropLastInProgressCount+0x38:</span><br><span class="line">&gt; 00007ffc`76d4eeb4 488b0dc5d41000  mov     rcx,qword ptr [ntdll!LdrpLoadCompleteEvent (00007ffc`76e5c380)]</span><br><span class="line">&gt; ntdll!LdrpDrainWorkQueue+0x2d:</span><br><span class="line">&gt; 00007ffc`76d4fef1 4c0f443587c41000 cmove   r14,qword ptr [ntdll!LdrpLoadCompleteEvent (00007ffc`76e5c380)]</span><br><span class="line">&gt; ntdll!LdrpCreateLoaderEvents+0x12:</span><br><span class="line">&gt; 00007ffc`76d6eb22 488d0d57d80e00  lea     rcx,[ntdll!LdrpLoadCompleteEvent (00007ffc`76e5c380)]</span><br><span class="line">&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>在 <code>IDA</code> 中查看另外两个函数的反汇编，<code>F5</code> 结果如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">__<span class="function">int64 <span class="title">LdrpCreateLoaderEvents</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  __int64 result; <span class="comment">// rax</span></span><br><span class="line">  <span class="keyword">char</span> v1; <span class="comment">// [rsp+20h] [rbp-18h]</span></span><br><span class="line">  <span class="keyword">int</span> v2; <span class="comment">// [rsp+20h] [rbp-18h]</span></span><br><span class="line"></span><br><span class="line">  v1 = <span class="number">0</span>;</span><br><span class="line">  result = ZwCreateEvent(&amp;LdrpLoadCompleteEvent, <span class="number">2031619</span>i64, <span class="number">0</span>i64, <span class="number">1</span>i64, v1);</span><br><span class="line">  <span class="keyword">if</span> ( (<span class="keyword">int</span>)result &gt;= <span class="number">0</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    LOBYTE(v2) = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> ZwCreateEvent(&amp;LdrpWorkCompleteEvent, <span class="number">2031619</span>i64, <span class="number">0</span>i64, <span class="number">1</span>i64, v2);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__<span class="function">int64 <span class="title">LdrpDropLastInProgressCount</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="class"><span class="keyword">struct</span> _<span class="title">TEB</span> *<span class="title">v0</span>;</span> <span class="comment">// rax</span></span><br><span class="line"></span><br><span class="line">  v0 = NtCurrentTeb();</span><br><span class="line">  v0-&gt;SameTebFlags &amp;= ~<span class="number">0x1000</span>u;</span><br><span class="line">  RtlEnterCriticalSection(&amp;LdrpWorkQueueLock);</span><br><span class="line">  LdrpWorkInProgress = <span class="number">0</span>;</span><br><span class="line">  RtlLeaveCriticalSection(&amp;LdrpWorkQueueLock);</span><br><span class="line">  <span class="keyword">return</span> ZwSetEvent(LdrpLoadCompleteEvent, <span class="number">0</span>i64);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从伪代码可知，函数 <code>LdrpCreateLoaderEvents()</code> 会创建对应的事件，而函数  <code>LdrpDropLastInProgressCount()</code> 会触发事件。那谁会调用 <code>LdrpDropLastInProgressCount()</code> 呢？继续在 <code>IDA</code> 中查找引用，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/view-droplastinprogresscount-reference-in-ida.png" alt="view-droplastinprogresscount-reference-in-ida"></p>
+<p>从图中可知，有很多函数都引用了 <code>LdrpDropLastInProgressCount()</code>，静态分析有点太费事了，如果能动态调试就再好不过了。</p>
+<h2 id="继续调试"><a href="#继续调试" class="headerlink" title="继续调试"></a>继续调试</h2><p>我们之前在 <code>DllMain()</code> 中是无限等待的，如果只等待几秒，程序是可以正常退出的，也就是说 <code>DllMain()</code> 执行后应该是有人调用了 <code>SetEvent()</code> 的。修改代码为只等待 <code>5</code> 秒，等待结束后在 <code>ntdll!NtSetEvent()</code> 函数上设置断点，应该可以看到是谁触发了事件。整个过程比较简单，就省略了，直接给出结果，如下图：</p>
+<p><img src="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-on-win10/setevent-called-in-LdrUnloadDll.png" alt="setevent-called-in-LdrUnloadDll"></p>
+<p>看来，<code>LdrUnloadDll()</code> 函数会先调用 <code>DllMain()</code>，<code>DllMain()</code> 执行完成后，<code>LdrUnloadDll()</code> 会继续调用  <code>LdrpDropLastInProgressCount()</code> ，进而触发事件。如果我们在 <code>DllMain()</code> 中一直等待，<code>LdrUnloadDll()</code> 就没机会调用 <code>LdrpDropLastInProgressCount()</code> ，也就不会触发事件，最终就会导致死锁。</p>
+<p>函数 <code>LdrUnloadDll()</code> 对应的伪代码如下（来自 <code>IDA</code> 的 <code>F5</code>，有删减）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">__int64 __<span class="function">fastcall <span class="title">LdrUnloadDll</span><span class="params">(__int64 a1)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  LoadedDllByHandle = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">if</span> ( !byte_7FFC76E5C508 )</span><br><span class="line">  &#123;</span><br><span class="line">    LoadedDllByHandle = LdrpFindLoadedDllByHandle(a1, &amp;v6, &amp;v5);</span><br><span class="line">    <span class="keyword">if</span> ( LoadedDllByHandle &gt;= <span class="number">0</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      v2 = v6;      </span><br><span class="line">      LoadedDllByHandle = LdrpDecrementModuleLoadCountEx(v6, <span class="number">1u</span>);</span><br><span class="line">      <span class="keyword">if</span> ( LoadedDllByHandle == <span class="number">0xC000022D</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        loadOwnerFlag = NtCurrentTeb()-&gt;SameTebFlags &amp; <span class="number">0x1000</span>;</span><br><span class="line">        <span class="keyword">if</span> ( !loadOwnerFlag )</span><br><span class="line">          LdrpDrainWorkQueue(<span class="number">0</span>); <span class="comment">//&lt;----</span></span><br><span class="line">        v2 = v6;</span><br><span class="line">          </span><br><span class="line">        <span class="comment">// 内部会调用 DllMain()</span></span><br><span class="line">        LdrpDecrementModuleLoadCountEx(v6, <span class="number">0</span>);</span><br><span class="line">          </span><br><span class="line">        <span class="keyword">if</span> ( !loadOwnerFlag )</span><br><span class="line">          LdrpDropLastInProgressCount(); <span class="comment">//&lt;----</span></span><br><span class="line">          </span><br><span class="line">        LoadedDllByHandle = <span class="number">0</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      LdrpDereferenceModule(v2);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> (<span class="keyword">unsigned</span> <span class="keyword">int</span>)LoadedDllByHandle;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>函数 <code>LdrUnloadDll()</code> 会先调用 <code>LdrpDrainWorkQueue()</code>，然后调用 <code>LdrpDecrementModuleLoadCountEx()</code>（其内部会调用 <code>DllMain()</code>），最后调用 <code>LdrpDropLastInProgressCount()</code>。</p>
+<p>死锁的原因找到了，但是为什么第一个线程可以顺利退出呢？难道第一个线程没有等待吗？</p>
+<h2 id="继续深挖"><a href="#继续深挖" class="headerlink" title="继续深挖"></a>继续深挖</h2><p>在继续深挖之前，非常有必要对相关代码有个了解，以下是 <code>LdrShutdownThread()</code> 和 <code>LdrpDrainWorkQueue()</code> 的伪代码。</p>
+<ul>
+<li><code>LdrShutdownThread()</code> 的伪代码如下（来自 <code>IDA</code> 的 <code>F5</code>，有删减）：</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">__int64 __<span class="function">fastcall <span class="title">LdrShutdownThread</span><span class="params">(struct _RTLP_FLS_CONTEXT *a1)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="comment">// 省略若干代码</span></span><br><span class="line">  <span class="keyword">if</span> ( ((NtCurrentTeb()-&gt;SameTebFlags &amp; <span class="number">8</span>) == <span class="number">0</span> || (NtCurrentTeb()-&gt;SameTebFlags &amp; <span class="number">0x20</span>) != <span class="number">0</span>)</span><br><span class="line">    &amp;&amp; (v1-&gt;SameTebFlags &amp; <span class="number">0x2000</span>) == <span class="number">0</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( (NtCurrentTeb()-&gt;SameTebFlags &amp; <span class="number">0x1000</span>) != <span class="number">0</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      loadOwner = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      loadOwner = <span class="number">0</span>;</span><br><span class="line">      LdrpDrainWorkQueue(<span class="number">0</span>); <span class="comment">//&lt;----</span></span><br><span class="line">    &#125;</span><br><span class="line">    LdrpAcquireLoaderLock();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 循环调用 LdrpCallInitRoutine()，内部会调用 DllMain()</span></span><br><span class="line">    <span class="comment">// 省略若干代码</span></span><br><span class="line">      </span><br><span class="line">    LdrpReleaseLoaderLock(v5, <span class="number">19</span>i64);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ( !loadOwner )</span><br><span class="line">      LdrpDropLastInProgressCount(); <span class="comment">//&lt;----</span></span><br><span class="line"></span><br><span class="line">    LdrpFreeTls(v9);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 省略若干代码</span></span><br><span class="line">  </span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据以上伪代码可知，函数 <code>LdrShutdownThread()</code> 调用 <code>LdrpDrainWorkQueue()</code> 时传递的 <code>tastType</code> 参数的值是 <code>0</code>。</p>
+<ul>
+<li><code>LdrpDrainWorkQueue()</code> 的伪代码如下（来自 <code>IDA</code> 的 <code>F5</code>，有删减）：</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> _<span class="title">TEB</span> *__<span class="title">fastcall</span> <span class="title">LdrpDrainWorkQueue</span>(<span class="title">int</span> <span class="title">taskType</span>)</span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  HANDLE hEvent; <span class="comment">// r14</span></span><br><span class="line">  hEvent = (HANDLE)LdrpWorkCompleteEvent;</span><br><span class="line">  <span class="keyword">if</span> ( !taskType )</span><br><span class="line">    hEvent = LdrpLoadCompleteEvent;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> ( <span class="number">1</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">while</span> ( <span class="number">1</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      RtlEnterCriticalSection(&amp;LdrpWorkQueueLock);</span><br><span class="line">      v4 = LdrpDetourExist;</span><br><span class="line">      <span class="comment">// 我机器上有 hook，LdrpDetourExist 的值是 1，</span></span><br><span class="line">      <span class="comment">// 而且 LdrShutdownThread 调用此函数的时候传递的是 0，</span></span><br><span class="line">      <span class="comment">// 也就是 taskType 的值是 0，我机器上永远会走 else</span></span><br><span class="line">      <span class="keyword">if</span> ( !LdrpDetourExist || taskType == <span class="number">1</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        v5 = (__int64 *)LdrpWorkQueue;</span><br><span class="line">        <span class="keyword">if</span> ( *(__int64 **)(LdrpWorkQueue + <span class="number">8</span>) != &amp;LdrpWorkQueue</span><br><span class="line">          || (v6 = *(_QWORD *)LdrpWorkQueue, *(_QWORD *)(*(_QWORD *)LdrpWorkQueue + <span class="number">8</span>i64) != LdrpWorkQueue) )</span><br><span class="line">        &#123;</span><br><span class="line">          __fastfail(<span class="number">3u</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        LdrpWorkQueue = *(_QWORD *)LdrpWorkQueue;</span><br><span class="line">        *(_QWORD *)(v6 + <span class="number">8</span>) = &amp;LdrpWorkQueue;</span><br><span class="line">        <span class="keyword">if</span> ( &amp;LdrpWorkQueue == v5 )</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="keyword">if</span> ( LdrpWorkInProgress == taskType )</span><br><span class="line">          &#123;</span><br><span class="line">            LdrpWorkInProgress = <span class="number">1</span>;</span><br><span class="line">            v2 = <span class="number">1</span>;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">          <span class="keyword">if</span> ( !v4 )</span><br><span class="line">            ++LdrpWorkInProgress;</span><br><span class="line">          LdrpUpdateStatistics();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="comment">// LdrpWorkInProgress 如果是 0（表明没有工作在进行中），</span></span><br><span class="line">        <span class="comment">// 那么 v2 会被设置成 1 (因为 taskType 的值是 0)</span></span><br><span class="line">        <span class="keyword">if</span> ( LdrpWorkInProgress == taskType )</span><br><span class="line">        &#123;</span><br><span class="line">          LdrpWorkInProgress = <span class="number">1</span>;</span><br><span class="line">          v2 = <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        v5 = &amp;LdrpWorkQueue;</span><br><span class="line">      &#125;</span><br><span class="line">      RtlLeaveCriticalSection(&amp;LdrpWorkQueueLock);</span><br><span class="line">       </span><br><span class="line">      <span class="comment">// 关键判断，如果 v2 不是 0，则跳出内层循环，不会等待</span></span><br><span class="line">      <span class="keyword">if</span> ( v2 ) <span class="comment">//&lt;----</span></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">       </span><br><span class="line">      <span class="comment">// 如果队列中无需要处理的项，则等待，否则处理</span></span><br><span class="line">      <span class="keyword">if</span> ( &amp;LdrpWorkQueue == v5 )</span><br><span class="line">        NtWaitForSingleObject(hEvent, <span class="number">0</span>, <span class="number">0</span>i64); <span class="comment">//&lt;----</span></span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">        LdrpProcessWork((__int64)(v5 - <span class="number">8</span>), v4);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果 taskType 是 0，跳出外层循环</span></span><br><span class="line">    <span class="keyword">if</span> ( !taskType || (__int64 *)LdrpRetryQueue == &amp;LdrpRetryQueue )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 外层循环，处理 retry 逻辑，省略相关代码</span></span><br><span class="line">    v2 = <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 设置 LoadOwner 标记，后续调用 LdrpDropLastInProgressCount() 的时候会清除</span></span><br><span class="line">  result = NtCurrentTeb();</span><br><span class="line">  result-&gt;SameTebFlags |= <span class="number">0x1000</span>u;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果 <code>LdrpWorkInProgress</code> 的值是 <code>0</code>，则  <code>LdrpWorkInProgress</code> 会被设置成 <code>1</code>。在执行等待代码的上方会跳出循环，因此不会执行等待逻辑。这也就解释了为什么第一个线程退出的时候为什么可以正常退出。</p>
+<blockquote>
+<p><strong>说明：</strong> 仔细阅读这个变量的名字，<code>LdrpWorkInProgress</code> 表示正在处理的工作数量，如果没有工作，则是 <code>0</code>，有工作则非零。</p>
+</blockquote>
+<p>那 <code>LdrpWorkInProgress</code> 什么时候会被改变呢？</p>
+<h2 id="LdrpWorkInProgress"><a href="#LdrpWorkInProgress" class="headerlink" title="LdrpWorkInProgress"></a>LdrpWorkInProgress</h2><p>可以在 <code>windbg</code> 中使用 <code># &quot;LdrpWorkInProgress&quot; 00007ffc76cf0000 L99999</code> 查看 <code>LdrpWorkInProgress</code> 的使用情况，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">0:007&gt; # &quot;LdrpWorkInProgress&quot; 00007ffc`76cf0000 L99999</span><br><span class="line">ntdll!LdrpDropLastInProgressCount+0x25:</span><br><span class="line">00007ffc`76d4eea1 832540d5100000  and     dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)],0</span><br><span class="line">ntdll!LdrpDrainWorkQueue+0x83:</span><br><span class="line">00007ffc`76d4ff47 393d9bc41000    cmp     dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)],edi</span><br><span class="line">ntdll!LdrpDrainWorkQueue+0x8b:</span><br><span class="line">00007ffc`76d4ff4f c7058fc4100001000000 mov dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)],1</span><br><span class="line">ntdll!LdrpDrainWorkQueue+0x168:</span><br><span class="line">00007ffc`76d5002c ff05b6c31000    inc     dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)]</span><br><span class="line">ntdll!LdrpWorkCallback+0x4c:</span><br><span class="line">00007ffc`76d500ac ff0536c31000    inc     dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)]</span><br><span class="line">ntdll!LdrpProcessWork+0x1a0:</span><br><span class="line">00007ffc`76d5028c 8b0556c11000    mov     eax,dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)]</span><br><span class="line">ntdll!LdrpProcessWork+0x1a8:</span><br><span class="line">00007ffc`76d50294 89054ec11000    mov     dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)],eax</span><br><span class="line">ntdll!LdrpUpdateStatistics+0x6:</span><br><span class="line">00007ffc`76d502ea 3b0df8c01000    cmp     ecx,dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)]</span><br><span class="line">ntdll!LdrpUpdateStatistics+0x15:</span><br><span class="line">00007ffc`76d502f9 0f420de8c01000  cmovb   ecx,dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)]</span><br><span class="line">ntdll!LdrpProcessWork$fin$0+0x41:</span><br><span class="line">00007ffc`76d96085 8b055d630c00    mov     eax,dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)]</span><br><span class="line">ntdll!LdrpProcessWork$fin$0+0x49:</span><br><span class="line">00007ffc`76d9608d 890555630c00    mov     dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)],eax</span><br><span class="line">ntdll!LdrpDrainWorkQueue+0x5d3bd:</span><br><span class="line">00007ffc`76dad281 393d61f10a00    cmp     dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)],edi</span><br><span class="line">ntdll!LdrpDrainWorkQueue+0x5d3c5:</span><br><span class="line">00007ffc`76dad289 c70555f10a0001000000 mov dword ptr [ntdll!LdrpWorkInProgress (00007ffc`76e5c3e8)],1</span><br></pre></td></tr></table></figure>
+
+<p>可以发现在 <code>LdrpDrainWorkQueue()</code>、<code>LdrpProcessWork()</code>、<code>LdrpDropLastInProgressCount()</code>、<code>LdrpWorkCallback()</code> 中会修改它的值。</p>
+<p>结合 <code>LdrUnloadDll()</code>、<code>LdrpDrainWorkQueue()</code> 和 <code>LdrpDropLastInProgressCount()</code> 的代码可知，其在调用 <code>DllMain()</code> 之前会通过 <code>LdrpDrainWorkQueue()</code> 设置 <code>LdrpWorkInProgress</code> 标志，在调用完 <code>DllMain()</code> 之后，又会通过调用 <code>LdrpDropLastInProgressCount()</code> 把这个值设置为 <code>0</code>。</p>
+<p>其实，<code>LdrShutdownThread()</code> 也有类似的逻辑，也是会先调用 <code>LdrpDrainWorkQueue()</code> ，然后执行一些业务代码，最后会调用 <code>LdrpDropLastInProgressCount()</code> 。我们再看观察其它几个会调用 <code>LdrpDropLastInProgressCount()</code> 的函数，注意观察以下代码中的 <code>//&lt;----</code> 标记。</p>
+<h2 id="相关函数"><a href="#相关函数" class="headerlink" title="相关函数"></a>相关函数</h2><ul>
+<li><code>LdrpLoadDllInternal()</code> 的伪代码如下（来自 <code>IDA</code> 的 <code>F5</code>，有删减）：</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">__int64 __<span class="function">fastcall <span class="title">LdrpLoadDllInternal</span><span class="params">(__int64 a1, <span class="keyword">int</span> a2, <span class="keyword">unsigned</span> <span class="keyword">int</span> a3, <span class="keyword">int</span> a4, __int64 a5, __int64 a6, __int64 *a7, <span class="keyword">int</span> *a8)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  result = LdrpFastpthReloadedDll(a1, a3, a6, a7);</span><br><span class="line">  <span class="keyword">if</span> ( (<span class="keyword">int</span>)result &lt; <span class="number">0</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span> ( (NtCurrentTeb()-&gt;SameTebFlags &amp; <span class="number">0x1000</span>) != <span class="number">0</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      loadOwnerFlag = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      loadOwnerFlag = <span class="number">0</span>;</span><br><span class="line">      LdrpDrainWorkQueue(<span class="number">0</span>); <span class="comment">//&lt;----</span></span><br><span class="line">    &#125;</span><br><span class="line">      </span><br><span class="line">    <span class="keyword">if</span> ( !a6 || loadOwnerFlag || *(_DWORD *)(*(_QWORD *)(a6 + <span class="number">152</span>) + <span class="number">24</span>i64) )</span><br><span class="line">    &#123;</span><br><span class="line">      LdrpDetectDetour();</span><br><span class="line">      v12 = a8;</span><br><span class="line">      v14 = LdrpFindOrPrepareLoadingModule(a1, a2, a3, a4, a5, (__int64)&amp;v19, (__int64)a8);</span><br><span class="line">      <span class="keyword">if</span> ( v14 == <span class="number">-1073741515</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        LdrpProcessWork(*(_QWORD *)(v19 + <span class="number">176</span>), <span class="number">1</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> ( v14 != <span class="number">-1073741267</span> &amp;&amp; v14 &lt; <span class="number">0</span> )</span><br><span class="line">      &#123;</span><br><span class="line">        *a8 = v14;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      v12 = a8;</span><br><span class="line">      *a8 = <span class="number">-1073741515</span>;</span><br><span class="line">    &#125;</span><br><span class="line">      </span><br><span class="line">    <span class="keyword">if</span> ( !loadOwnerFlag )</span><br><span class="line">      result = LdrpDropLastInProgressCount(); <span class="comment">//&lt;----</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    v12 = a8;</span><br><span class="line">    *a8 = result;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>LdrpInitializeThread()</code> 的伪代码如下（来自 <code>IDA</code> 的 <code>F5</code>，有删减）：</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">__int64 __<span class="function">fastcall <span class="title">LdrpInitializeThread</span><span class="params">(__int64 a1, __int64 a2, __int64 a3)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  RtlpInitializeThreadActivationContextStack(v3, a2, a3, a1);</span><br><span class="line">  <span class="keyword">if</span> ( (NtCurrentTeb()-&gt;SameTebFlags &amp; <span class="number">8</span>) == <span class="number">0</span></span><br><span class="line">    || (result = (__int64)NtCurrentTeb(), (*(_BYTE *)(result + <span class="number">0x17EE</span>) &amp; <span class="number">0x20</span>) != <span class="number">0</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">    result = <span class="number">0x2000</span>i64;</span><br><span class="line">    <span class="keyword">if</span> ( (*(_WORD *)(v5 + <span class="number">6126</span>) &amp; <span class="number">0x2000</span>) == <span class="number">0</span> )</span><br><span class="line">    &#123;</span><br><span class="line">      LdrpDrainWorkQueue(<span class="number">0</span>); <span class="comment">//&lt;----</span></span><br><span class="line">      LdrpAcquireLoaderLock();</span><br><span class="line">      <span class="keyword">for</span> ( i = qword_7FFC76E5C4D0; (__int64 *)i != &amp;qword_7FFC76E5C4D0; i = *(_QWORD *)i )</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">if</span> ( *(<span class="keyword">int</span> *)(*(_QWORD *)(i + <span class="number">152</span>) + <span class="number">56</span>i64) &gt;= <span class="number">9</span></span><br><span class="line">          &amp;&amp; ProcessEnvironmentBlock-&gt;ImageBaseAddress != *(<span class="keyword">void</span> **)(i + <span class="number">48</span>) )</span><br><span class="line">        &#123;</span><br><span class="line">          v11 = *(_DWORD *)(i + <span class="number">104</span>);</span><br><span class="line">          <span class="keyword">if</span> ( (v11 &amp; <span class="number">0x40000</span>) == <span class="number">0</span> )</span><br><span class="line">          &#123;</span><br><span class="line">            v12 = *(__int64 (__fastcall **)(__int64, _QWORD, __int64))(i + <span class="number">56</span>);</span><br><span class="line">            <span class="keyword">if</span> ( v12 )</span><br><span class="line">            &#123;</span><br><span class="line">              <span class="keyword">if</span> ( (v11 &amp; <span class="number">0x80004</span>) == <span class="number">524292</span> )</span><br><span class="line">              &#123;</span><br><span class="line">                <span class="keyword">if</span> ( byte_7FFC76E5C508 )</span><br><span class="line">                  <span class="keyword">goto</span> LABEL_22;</span><br><span class="line">                RtlActivateActivationContextUnsafeFast(&amp;v13, *(_QWORD *)(i + <span class="number">136</span>));</span><br><span class="line">                <span class="keyword">if</span> ( *(_WORD *)(i + <span class="number">110</span>) )</span><br><span class="line">                  LdrpCallTlsInitializers(<span class="number">2</span>i64, i);</span><br><span class="line">                LdrpCallInitRoutine(v12, *(_QWORD *)(i + <span class="number">48</span>), <span class="number">2u</span>, <span class="number">0</span>i64);</span><br><span class="line">                RtlDeactivateActivationContextUnsafeFast((__int64)&amp;v13);</span><br><span class="line">              &#125;</span><br><span class="line">            &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> ( *(_WORD *)(LdrpImageEntry + <span class="number">110</span>) &amp;&amp; !byte_7FFC76E5C508 )</span><br><span class="line">      &#123;</span><br><span class="line">        RtlActivateActivationContextUnsafeFast(&amp;v19, *(_QWORD *)(LdrpImageEntry + <span class="number">136</span>));</span><br><span class="line">        LdrpCallTlsInitializers(<span class="number">2</span>i64, LdrpImageEntry);</span><br><span class="line">        RtlDeactivateActivationContextUnsafeFast((__int64)&amp;v19);</span><br><span class="line">      &#125;</span><br><span class="line">LABEL_22:</span><br><span class="line">      LdrpReleaseLoaderLock(v9, <span class="number">21</span>i64);</span><br><span class="line">      <span class="keyword">return</span> LdrpDropLastInProgressCount(); <span class="comment">//&lt;----</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>LdrEnumerateLoadedModules()</code> 的伪代码如下（来自 <code>IDA</code> 的 <code>F5</code>，有删减）：</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">__int64 __<span class="function">fastcall <span class="title">LdrEnumerateLoadedModules</span><span class="params">(<span class="keyword">int</span> a1, <span class="keyword">void</span> (__fastcall *a2)(__int64 *, __int64, <span class="keyword">char</span> *), __int64 a3)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">if</span> ( (NtCurrentTeb()-&gt;SameTebFlags &amp; <span class="number">0x1000</span>) != <span class="number">0</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    loadOwnerFlag = <span class="number">1</span>;</span><br><span class="line">    v10 = <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    loadOwnerFlag = <span class="number">0</span>;</span><br><span class="line">    v10 = <span class="number">0</span>;</span><br><span class="line">    LdrpDrainWorkQueue(<span class="number">0</span>); <span class="comment">//&lt;----</span></span><br><span class="line">  &#125;</span><br><span class="line">  LdrpAcquireLoaderLock();</span><br><span class="line">  <span class="keyword">for</span> ( i = (__int64 *)qword_7FFC76E5C4D0; i != &amp;qword_7FFC76E5C4D0; i = (__int64 *)*i )</span><br><span class="line">  &#123;</span><br><span class="line">    a2(i, a3, &amp;v9);</span><br><span class="line">    <span class="keyword">if</span> ( v9 )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  LdrpReleaseLoaderLock(v6, <span class="number">15</span>i64);</span><br><span class="line">  <span class="keyword">if</span> ( !loadOwnerFlag )</span><br><span class="line">    LdrpDropLastInProgressCount(); <span class="comment">//&lt;----</span></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>i64;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从以上代码中可以发现一个通用的模式，基本上会分成以下三个部分：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// part 1</span></span><br><span class="line"><span class="keyword">if</span> ( (NtCurrentTeb()-&gt;SameTebFlags &amp; <span class="number">0x1000</span>) == <span class="number">0</span> )</span><br><span class="line">&#123;</span><br><span class="line">    loadOwnerFlag = <span class="number">0</span>;</span><br><span class="line">    LdrpDrainWorkQueue(<span class="number">0</span>); <span class="comment">//&lt;----</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// part 2</span></span><br><span class="line"><span class="comment">// 业务处理代码</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// part 3</span></span><br><span class="line"><span class="keyword">if</span> ( !loadOwnerFlag )</span><br><span class="line">    LdrpDropLastInProgressCount(); <span class="comment">//&lt;----</span></span><br></pre></td></tr></table></figure>
+
+<p>有点类似于用全局变量 <code>LdrpWorkInProgress</code> 做了一个锁。<code>part1</code> 先检查这个全局变量，如果已经设置了标记就等待，否则就设置标记。然后在 <code>part2</code> 执行业务代码，最后在 <code>part3</code> 清除这个标记。如果在 <code>part2</code> 中卡住了，其它线程就要执行等待逻辑。</p>
+<h2 id="问题总结"><a href="#问题总结" class="headerlink" title="问题总结"></a>问题总结</h2><p>至此，整个卡死的前因后果都非常清晰了。</p>
+<p>第一个线程结束的时候，我们没有执行 <code>FreeLibrary()</code>，也就不会执行 <code>LdrUnloadDll()</code>，<code>LdrpWorkInProgress</code> 的值是 <code>0</code>，<code>LdrShutdownThread()</code> 内部调用 <code>LdrpDrainWorkQueue()</code> 的时候，由于 <code>LdrpWorkInProgress</code> 的值是 <code>0</code>，所以不会等待。</p>
+<p>当第二个线程结束的时候，<code>LdrUnloadDll()</code> 正在 <code>DllMain()</code> 中等待其结束，而在此之前 <code>LdrpWorkInProgress</code> 已经被 <code>LdrUnloadDll()</code> 设置成 <code>1</code> 了。所以第二个线程对应的 <code>LdrShutdownThread()</code> 内部调用 <code>LdrpDrainWorkQueue()</code> 的时候，对应的 <code>LdrpWorkInProgress</code> 的值是 <code>1</code>，因此需要等待。而 <code>DllMain()</code> 由于在等待线程结束，但是线程永远不会结束，<code>LdrUnloadDll()</code> 也就没机会调用后面的 <code>LdrpDropLastInProgressCount()</code> 触发事件，于是死锁了。</p>
+<h2 id="TEB-SameTebFlags"><a href="#TEB-SameTebFlags" class="headerlink" title="TEB.SameTebFlags"></a>TEB.SameTebFlags</h2><p>关于 <code>SameTebFlags</code> 可能的标志位信息，我问了一下 <code>AI</code>，看着比较靠谱，未经证实，各位谨慎参考。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 标志位掩码（共 16 位）</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">enum</span> _TEB_SAME_TEB_FLAGS &#123;</span><br><span class="line"></span><br><span class="line">    SafeThunkCall               = <span class="number">0x0001</span>,  <span class="comment">// 0x0001</span></span><br><span class="line">    InDebugPrint                = <span class="number">0x0002</span>,  <span class="comment">// 0x0002</span></span><br><span class="line">    HasFiberData                = <span class="number">0x0004</span>,  <span class="comment">// 0x0004</span></span><br><span class="line">    SkipThreadAttach            = <span class="number">0x0008</span>,  <span class="comment">// 0x0008</span></span><br><span class="line"></span><br><span class="line">    WerInShipAssertCode         = <span class="number">0x0010</span>,  <span class="comment">// 0x0010</span></span><br><span class="line">    RanProcessInit              = <span class="number">0x0020</span>,  <span class="comment">// 0x0020</span></span><br><span class="line">    ClonedThread                = <span class="number">0x0040</span>,  <span class="comment">// 0x0040</span></span><br><span class="line">    SuppressDebugMsg            = <span class="number">0x0080</span>,  <span class="comment">// 0x0080</span></span><br><span class="line">    </span><br><span class="line">    DisableUserStackWalk        = <span class="number">0x0100</span>,  <span class="comment">// 0x0100</span></span><br><span class="line">    RtlExceptionAttached        = <span class="number">0x0200</span>,  <span class="comment">// 0x0200</span></span><br><span class="line">    InitialThread               = <span class="number">0x0400</span>,  <span class="comment">// 0x0400</span></span><br><span class="line">    SessionAware                = <span class="number">0x0800</span>,  <span class="comment">// 0x0800</span></span><br><span class="line">    </span><br><span class="line">    LoadOwner                   = <span class="number">0x1000</span>,  <span class="comment">// 0x1000</span></span><br><span class="line">    LoaderWorker                = <span class="number">0x2000</span>,  <span class="comment">// 0x2000</span></span><br><span class="line">    </span><br><span class="line">    SkipLoaderInit              = <span class="number">0x4000</span>,  <span class="comment">// 0x4000</span></span><br><span class="line">    SkipFileAPIBrokering        = <span class="number">0x8000</span>,  <span class="comment">// 0x8000</span></span><br><span class="line">&#125; TEB_SAME_TEB_FLAGS;</span><br></pre></td></tr></table></figure>
+
+<p>主要关注 <code>LoadOwner</code> 和 <code>LoaderWorker</code> 标志。</p>
+<h2 id="Parallel-Loader"><a href="#Parallel-Loader" class="headerlink" title="Parallel Loader"></a>Parallel Loader</h2><p>在调查整个问题的过程中，查询了各种资料，才对这个问题有了一个粗浅的认识。原来在 <code>win10</code> 之前，所有涉及模块的操作都是串行完成的，通过加载器锁进行保护，如果遇到死锁，基本上可以通过 <code>!cs -l</code> 查看出来。而在 <code>win10</code> 中引入了并行加载器，加载工作改由多个工作线程并行执行。<strong>强烈建议</strong>阅读参考资料中的前两篇文章，以便对并行加载有个更深入的了解。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><code>win10</code> 开启了并行加载，提高了加载速度，但是增大了调试难度。</li>
+<li>永远不要在 <code>DllMain</code> 中做一些复杂操作，尤其是执行等待操作。</li>
+<li><code>!handle handle flag</code> 命令可以查看句柄的信息，具体参考 <code>windbg</code> 帮助文档</li>
+<li>可以在 <code>windbg</code> 中执行 <code># &quot;assembly_string&quot; memory_range</code> 搜索相关指令</li>
+<li>在 <code>win10</code> 下查看加载器相关的逻辑可以关注 <code>ntdll!LdrpLoadCompleteEvent</code>、<code>LdrpWorkInProgress</code> 等全局变量</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="https://github.com/ElliotKillick/operating-system-design-review/blob/main/README.md" target="_blank" rel="noopener">https://github.com/ElliotKillick/operating-system-design-review/blob/main/README.md</a></p>
+</li>
+<li><p><a href="https://stackoverflow.com/questions/42789199/why-there-are-three-unexpected-worker-threads-when-a-win32-console-application-s/42789684#42789684" target="_blank" rel="noopener">https://stackoverflow.com/questions/42789199/why-there-are-three-unexpected-worker-threads-when-a-win32-console-application-s/42789684#42789684</a></p>
+</li>
+<li><p><a href="https://infocon.org/mirrors/vx%20underground%20-%202025%20June/Papers/Windows/Internals%20and%20Analysis/2017-10-03%20-%20Windows%2010%20Parallel%20Loading%20Breakdown.pdf" target="_blank" rel="noopener">https://infocon.org/mirrors/vx%20underground%20-%202025%20June/Papers/Windows/Internals%20and%20Analysis/2017-10-03%20-%20Windows%2010%20Parallel%20Loading%20Breakdown.pdf</a></p>
+</li>
+<li><p><a href="https://github.com/java-native-access/jna/issues/1479" target="_blank" rel="noopener">https://github.com/java-native-access/jna/issues/1479</a></p>
+</li>
+<li><p><a href="https://www.geoffchappell.com/studies/windows/km/ntoskrnl/inc/api/pebteb/teb/sametebflags.htm" target="_blank" rel="noopener">https://www.geoffchappell.com/studies/windows/km/ntoskrnl/inc/api/pebteb/teb/sametebflags.htm</a></p>
+</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-on-win10/" title="调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁">https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-on-win10/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/IDA/" rel="tag"><i class="fa fa-tag"></i> IDA</a>
+          
+            <a href="/tags/dll/" rel="tag"><i class="fa fa-tag"></i> dll</a>
+          
+            <a href="/tags/死锁/" rel="tag"><i class="fa fa-tag"></i> 死锁</a>
+          
+            <a href="/tags/win10/" rel="tag"><i class="fa fa-tag"></i> win10</a>
+          
+            <a href="/tags/引用计数/" rel="tag"><i class="fa fa-tag"></i> 引用计数</a>
+          
+            <a href="/tags/Parallel-Loader/" rel="tag"><i class="fa fa-tag"></i> Parallel Loader</a>
+          
+            <a href="/tags/并行加载/" rel="tag"><i class="fa fa-tag"></i> 并行加载</a>
+          
+            <a href="/tags/LdrpLoadCompleteEvent/" rel="tag"><i class="fa fa-tag"></i> LdrpLoadCompleteEvent</a>
+          
+            <a href="/tags/WaitForSingleObject/" rel="tag"><i class="fa fa-tag"></i> WaitForSingleObject</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/debugging-deadlock-when-dll-unload-continue/" rel="next" title="调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱">
+                <i class="fa fa-chevron-left"></i> 调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/debug-spacesniffer-deadlock/" rel="prev" title="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">
+                调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">调试实战 | dll 加载失败之 Debug Release 争锋篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">调试技巧 | 你很可能需要知道这个调试小技巧</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">调试实战 | 从转储文件找出抛出的异常 —— 理论</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/two-interesting-mfc-dialog-bugs/" title="MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我">MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-disable-ASLR/" title="如何关闭 ASLR">如何关闭 ASLR</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-dll-ref-count/" title="调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略">调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-continue/" title="调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱">调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-spacesniffer-deadlock/" title="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅</a></li>
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">147</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">238</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#摘要"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">2.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试代码"><span class="nav-number">3.</span> <span class="nav-text">测试代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初步调查"><span class="nav-number">4.</span> <span class="nav-text">初步调查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看反汇编"><span class="nav-number">5.</span> <span class="nav-text">查看反汇编</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继续查看反汇编"><span class="nav-number">6.</span> <span class="nav-text">继续查看反汇编</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继续调试"><span class="nav-number">7.</span> <span class="nav-text">继续调试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继续深挖"><span class="nav-number">8.</span> <span class="nav-text">继续深挖</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LdrpWorkInProgress"><span class="nav-number">9.</span> <span class="nav-text">LdrpWorkInProgress</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#相关函数"><span class="nav-number">10.</span> <span class="nav-text">相关函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题总结"><span class="nav-number">11.</span> <span class="nav-text">问题总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TEB-SameTebFlags"><span class="nav-number">12.</span> <span class="nav-text">TEB.SameTebFlags</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Parallel-Loader"><span class="nav-number">13.</span> <span class="nav-text">Parallel Loader</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">14.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">15.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

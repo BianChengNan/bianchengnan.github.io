@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="原,调试,debug,windbg,IDA,死锁,deadlock,spacesniffer,win10,Parallel Loader,并行加载,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="BianChengNan's Blog" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="摘要在一次使用 SpaceSniffer 分析磁盘占用时，我遇到了一个非常容易复现的界面卡死问题。为查明原因，我首先通过 procdump 周期性保存完整转储文件，并使用 WinDbg 对调用栈进行对比分析，确认程序确实陷入阻塞而非假死。逐层追踪后，我最终将问题定位到第三方 Shell 扩展在 COM 激活过程中的异常阻塞，并由此引发死锁。">
+<meta name="keywords" content="原,调试,debug,windbg,IDA,死锁,deadlock,spacesniffer,win10,Parallel Loader,并行加载">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">
+<meta property="og:url" content="https://bianchengnan.github.io/articles/debug-spacesniffer-deadlock/index.html">
+<meta property="og:site_name" content="BianChengNan&#39;s Blog">
+<meta property="og:description" content="摘要在一次使用 SpaceSniffer 分析磁盘占用时，我遇到了一个非常容易复现的界面卡死问题。为查明原因，我首先通过 procdump 周期性保存完整转储文件，并使用 WinDbg 对调用栈进行对比分析，确认程序确实陷入阻塞而非假死。逐层追踪后，我最终将问题定位到第三方 Shell 扩展在 COM 激活过程中的异常阻塞，并由此引发死锁。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debug-spacesniffer-deadlock/save-dump-files-by-procdump.png">
+<meta property="og:image" content="http://resources.bianchengnan.tech/debug-spacesniffer-deadlock/view-callstack-of-thread-1.png">
+<meta property="og:updated_time" content="2026-02-16T10:40:27.309Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">
+<meta name="twitter:description" content="摘要在一次使用 SpaceSniffer 分析磁盘占用时，我遇到了一个非常容易复现的界面卡死问题。为查明原因，我首先通过 procdump 周期性保存完整转储文件，并使用 WinDbg 对调用栈进行对比分析，确认程序确实陷入阻塞而非假死。逐层追踪后，我最终将问题定位到第三方 Shell 扩展在 COM 激活过程中的异常阻塞，并由此引发死锁。">
+<meta name="twitter:image" content="http://resources.bianchengnan.tech/debug-spacesniffer-deadlock/save-dump-files-by-procdump.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":0,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://bianchengnan.github.io/articles/debug-spacesniffer-deadlock/">
+
+
+<link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
+
+
+
+
+  <title>调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅 | BianChengNan's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">BianChengNan's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">Coding is hard, you can make it easy!</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://bianchengnan.github.io/articles/debug-spacesniffer-deadlock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="BianChengNan">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="BianChengNan's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅</h2>
+        
+
+        <div class="post-meta">
+	  
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2026-02-16T18:16:45+08:00">
+                2026-02-16
+              </time>
+            
+
+            
+              <span class="post-meta-divider">|</span>
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-check-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">更新于&#58;</span>
+              
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
+                2026-02-16
+              </time>
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/调试/" itemprop="url" rel="index">
+                    <span itemprop="name">调试</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-eye"></i> 热度：
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>℃
+            </span>
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                   分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>在一次使用 <code>SpaceSniffer</code> 分析磁盘占用时，我遇到了一个非常容易复现的界面卡死问题。为查明原因，我首先通过 <code>procdump</code> 周期性保存完整转储文件，并使用 <code>WinDbg</code> 对调用栈进行对比分析，确认程序确实陷入阻塞而非假死。逐层追踪后，我最终将问题定位到第三方 <code>Shell</code> 扩展在 <code>COM</code> 激活过程中的异常阻塞，并由此引发死锁。</p>
+<a id="more"></a>
+
+
+
+<h2 id="保存现场"><a href="#保存现场" class="headerlink" title="保存现场"></a>保存现场</h2><p>遇到卡死问题，可以先使用 <code>process explorer</code> 观察一下线程运行情况，看看是假死，还是真的卡死了。还可以隔一段时间抓取一个转储文件，如果几次转储文件的调用栈都一样，大概率是真的卡死了。</p>
+<p><code>procdump</code> 有一个非常方便的功能，可以每隔一段时间自动保存转储文件，语法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">procdump.exe -ma -n 3 -s 5 SpaceSniffer.exe</span><br></pre></td></tr></table></figure>
+
+<p>以上命令可以每隔 <code>5</code> 秒（<code>-s 5</code>）为 <code>SpaceSniffer.exe</code> 保存一份<strong>完整</strong>（<code>-ma</code>）转储文件，一共保存 <code>3</code> 次（<code>-n 3</code>）。效果如下：</p>
+<p><img src="http://resources.bianchengnan.tech/debug-spacesniffer-deadlock/save-dump-files-by-procdump.png" alt="save-dump-files-by-procdump"></p>
+<p>简单查看保存的三份转储文件，发现调用栈是一样的，大概率是真卡死了。用 <code>windbg</code> 打开其中一份转储文件，进行分析。</p>
+<h2 id="初步分析"><a href="#初步分析" class="headerlink" title="初步分析"></a>初步分析</h2><p>执行 <code>~* kn</code> 命令查看所有线程的调用栈。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; ~* kvn</span><br><span class="line"></span><br><span class="line">.  0  Id: 2620.5e4 Suspend: 0 Teb: 00383000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 0019bb38 764f2839     00000730 00000000 00000000 ntdll!NtWaitForSingleObject+0xc (FPO: [3,0,0])</span><br><span class="line">01 0019bbac 764f2792     00000730 ffffffff 00000000 KERNELBASE!WaitForSingleObjectEx+0x99 (FPO: [SEH])</span><br><span class="line">02 0019bbc0 76d5a11a     00000730 ffffffff 0019bc7c KERNELBASE!WaitForSingleObject+0x12 (FPO: [Non-Fpo])</span><br><span class="line">03 0019bc28 76d5a008     00000208 756d1cc0 00000000 SHCore!_CreateThreadWorker+0x10e (FPO: [Non-Fpo])</span><br><span class="line">04 0019bc3c 756d20ee     756d2170 0019bc60 00000208 SHCore!SHCreateThread+0x18 (FPO: [Non-Fpo])</span><br><span class="line">05 0019bc68 756d25f4     0019bc7c 752f79f0 00000000 windows_storage!GetItemHandlerCache+0x7e (FPO: [Non-Fpo])</span><br><span class="line">06 0019bc94 756d1fa4     0019bcc0 00000000 00000000 windows_storage!SyncGetItemHandlerThreadProc+0x44 (FPO: [Non-Fpo])</span><br><span class="line">07 0019bce8 75459c0f     00000000 7522d51c 7523651c windows_storage!GetHandlerFromCache+0xe3 (FPO: [Non-Fpo])</span><br><span class="line">08 0019bdb0 752d9374     00000000 7522d5e4 00000000 windows_storage!CFileSysItemString::LoadHandler+0x15dbfe</span><br><span class="line">09 0019c074 752d6a56     00948878 00948882 00000000 windows_storage!CFSFolder::_CreatePerInstanceDefExtIcon+0x96 (FPO: [Non-Fpo])</span><br><span class="line">0a 0019c340 752d696e     00948878 00948882 00000000 windows_storage!CFSFolder::_CreateDefExtIcon+0xe4 (FPO: [Non-Fpo])</span><br><span class="line">0b 0019c35c 752fba08     008b6e10 00000000 00000000 windows_storage!CFSFolder::s_GetExtractIcon+0x1e (FPO: [Non-Fpo])</span><br><span class="line">0c 0019c63c 752d43ac     00000000 00000001 0019c66c windows_storage!CFSFolder::_BindHandler+0xcd8 (FPO: [Non-Fpo])</span><br><span class="line">0d 0019c674 7544e680     008b6e6c 00948878 00000000 windows_storage!CFSFolder::GetThumbnailHandler+0x4c (FPO: [Non-Fpo])</span><br><span class="line">0e 0019c6d4 752b351b     0778b88c 00948878 00000000 windows_storage!CRegFolder::GetThumbnailHandler+0x17a4b0</span><br><span class="line">0f 0019c764 75344f04     078a63fc 00000000 752365ac windows_storage!_CreateThumbnailHandler+0x9b (FPO: [Non-Fpo])</span><br><span class="line">10 0019ca34 752d5831     078a63fc 00000000 752365ac windows_storage!CShellItem::BindToHandler+0x864 (FPO: [Non-Fpo])</span><br><span class="line">11 0019ca88 752d577f     00000002 0019caa8 0019cbb8 windows_storage!GetExtractIconW+0x73 (FPO: [Non-Fpo])</span><br><span class="line">12 0019cad0 75291084     00000000 0019cb20 7fb7eb65 windows_storage!_GetILIndexFromItem+0x5d (FPO: [Non-Fpo])</span><br><span class="line">13 0019cb70 752db5de     20000004 00000000 0019cbb8 windows_storage!CShellItem::_GetIcon+0x72 (FPO: [Non-Fpo])</span><br><span class="line">14 0019cbec 7529427b     078a5800 00000000 00000000 windows_storage!CShellItem::GetSharedBitmap+0xfe (FPO: [Non-Fpo])</span><br><span class="line">15 0019cc3c 76b0ea6a     078a5800 00000000 00000000 windows_storage!CShellItem::GetImage+0x6b (FPO: [Non-Fpo])</span><br><span class="line">16 0019ccf8 76b0dbed     0093a1c8 00000007 76b0dba0 shell32!CIncludeInLibraryContextMenuHelper::_PopulateSubMenu+0x15e (FPO: [2,37,4])</span><br><span class="line">17 0019cd1c 7673417b     07877568 008bbd70 00000002 shell32!CIncludeInLibraryContextMenuHelper::OnSetChanged+0x4d (FPO: [Non-Fpo])</span><br><span class="line">18 0019cd74 76141c0b     000208d6 00000402 00000000 shell32!CShellFolderSet::s_WndProc+0x8b (FPO: [Non-Fpo])</span><br><span class="line">19 0019cda0 761382ca     767340f0 000208d6 00000402 user32!_InternalCallWinProc+0x2b</span><br><span class="line">1a 0019ce88 76137ee0     767340f0 00000000 00000402 user32!UserCallWinProcCheckWow+0x33a (FPO: [SEH])</span><br><span class="line">1b 0019ceec 7613c3af     0112fe40 00000000 00000402 user32!DispatchClientMessage+0x190 (FPO: [Non-Fpo])</span><br><span class="line">1c 0019cf28 77c356cd     0019cf44 00000020 0019d530 user32!__fnDWORD+0x3f (FPO: [Non-Fpo])</span><br><span class="line">1d 0019cf60 7630174c     76130ae4 00000000 0000c2da ntdll!KiUserCallbackDispatcher+0x4d (FPO: [0,0,0])</span><br><span class="line">1e 0019cf64 76130ae4     00000000 0000c2da 0000c2da win32u!NtUserCreateWindowEx+0xc (FPO: [17,0,0])</span><br><span class="line">1f 0019d244 761303f7     00000000 56000000 80000000 user32!VerNtUserCreateWindowEx+0x229 (FPO: [Non-Fpo])</span><br><span class="line">20 0019d32c 761302c8     00000000 56000000 80000000 user32!CreateWindowInternal+0x12b (FPO: [Non-Fpo])</span><br><span class="line">21 0019d36c 69d2e92a     00000000 0000c2da 00000000 user32!CreateWindowExW+0x38 (FPO: [Non-Fpo])</span><br><span class="line">WARNING: Stack unwind information not available. Following frames may be wrong.</span><br><span class="line">22 0019d3ac 69d5dc8e     fffffffd 69dd583c 00000000 YunShellExtV1+0xae92a</span><br><span class="line">23 0019d4f4 69d62663     00000001 0019d540 69d6766f YunShellExtV1+0xddc8e</span><br><span class="line">24 0019d500 69d6766f     69c80000 00000001 00000000 YunShellExtV1!DllGetClassObject+0x63</span><br><span class="line">25 0019d540 69d67741     69c80000 00000001 00000000 YunShellExtV1!DllUnregisterServer+0x4faf</span><br><span class="line">26 0019d554 77c331a6     69c80000 00000001 00000000 YunShellExtV1!DllUnregisterServer+0x5081</span><br><span class="line">27 0019d574 77c0e012     69d67725 69c80000 00000001 ntdll!LdrxCallInitRoutine+0x16</span><br><span class="line">28 0019d5c0 77c11d43     00000001 00000000 eb259821 ntdll!LdrpCallInitRoutine+0x51 (FPO: [Non-Fpo])</span><br><span class="line">29 0019d650 77c11eb1     0783d7f8 00000000 0019d70c ntdll!LdrpInitializeNode+0x135 (FPO: [Non-Fpo])</span><br><span class="line">2a 0019d674 77c12785     0019d68f 0019d718 0019d70c ntdll!LdrpInitializeGraphRecurse+0x5d (FPO: [Non-Fpo])</span><br><span class="line">2b 0019d690 77c0e542     eb2598a9 00002009 0019d8b0 ntdll!LdrpPrepareModuleForExecution+0x8f (FPO: [Non-Fpo])</span><br><span class="line">2c 0019d6d8 77c0e186     00000600 00000004 00000000 ntdll!LdrpLoadDllInternal+0x11e (FPO: [SEH])</span><br><span class="line">2d 0019d878 764f1de6     00002009 0019d8a0 0019d8b0 ntdll!LdrLoadDll+0xf6 (FPO: [Non-Fpo])</span><br><span class="line">2e 0019d8bc 75efd18f     0019d990 00000000 00002008 KERNELBASE!LoadLibraryExW+0x156 (FPO: [Non-Fpo])</span><br><span class="line">2f 0019d8e0 75efd118     00002008 0019d958 0019d990 combase!LoadLibraryWithLogging+0x1b (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\common\internal\loadfree.cxx @ 160] </span><br><span class="line">30 0019d904 75efcf2d     0019d950 0019d954 0019d958 combase!CClassCache::CDllPathEntry::LoadDll+0x45 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\dllcache.cxx @ 2341] </span><br><span class="line">31 0019d964 75efdf8a     0019d988 07792c10 00000000 combase!CClassCache::CDllPathEntry::Create+0x32 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\dllcache.cxx @ 2170] </span><br><span class="line">32 0019dbbc 75eda06e     00000001 0019df90 0019dbfc combase!CClassCache::CClassEntry::CreateDllClassEntry+0xf3 (FPO: [Non-Fpo]) (CONV: thiscall) [onecore\com\combase\objact\dllcache.cxx @ 1103] </span><br><span class="line">33 0019df14 75eab44c     0019df3c 75ee0cb0 0019e684 combase!CClassCache::GetClassObjectActivator+0x73e (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\dllcache.cxx @ 5398] </span><br><span class="line">34 0019df48 75ea8c65     0019e684 75ea8b00 00000000 combase!CClassCache::GetClassObject+0x30 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\dllcache.cxx @ 5155] </span><br><span class="line">35 (Inline) --------     -------- -------- -------- combase!CCGetClassObject+0x42 (Inline Function @ 75ea8c65) (CONV: stdcall) [onecore\com\combase\objact\dllcache.cxx @ 8366] </span><br><span class="line">36 0019e038 75eb23b5     7605f168 00000000 0019e684 combase!CServerContextActivator::CreateInstance+0x165 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\actvator.cxx @ 856] </span><br><span class="line">37 0019e084 75ea832f     0019e684 00000000 0019ed14 combase!ActivationPropertiesIn::DelegateCreateInstance+0xf5 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\actprops\actprops.cxx @ 1931] </span><br><span class="line">38 0019e0e4 75ea7aba     7605f16c 00000000 0019e684 combase!CApartmentActivator::CreateInstance+0xbf (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\actvator.cxx @ 2189] </span><br><span class="line">39 0019e110 75f40c55     7605f164 00000001 00000000 combase!CProcessActivator::CCICallback+0x5a (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\actvator.cxx @ 1645] </span><br><span class="line">3a 0019e130 75f40b0d     7605f164 0019e4b0 00000000 combase!CProcessActivator::AttemptActivation+0x35 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\actvator.cxx @ 1527] </span><br><span class="line">3b 0019e170 75f40a91     7605f164 0019e4b0 00000000 combase!CProcessActivator::ActivateByContext+0x6d (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\actvator.cxx @ 1393] </span><br><span class="line">3c 0019e1a0 75eb237d     7605f164 00000000 0019e684 combase!CProcessActivator::CreateInstance+0x61 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\actvator.cxx @ 1271] </span><br><span class="line">3d 0019e1ec 75eb2b5d     0019e684 00000000 0019ed14 combase!ActivationPropertiesIn::DelegateCreateInstance+0xbd (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\actprops\actprops.cxx @ 1931] </span><br><span class="line">3e 0019e450 75eb2384     7605f160 00000000 0019e684 combase!CClientContextActivator::CreateInstance+0xfd (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\actvator.cxx @ 570] </span><br><span class="line">3f 0019e49c 75edbde2     0019e684 00000000 0019ed14 combase!ActivationPropertiesIn::DelegateCreateInstance+0xc4 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\actprops\actprops.cxx @ 1983] </span><br><span class="line">40 0019efe0 75edb051     00000401 00000000 00000001 combase!ICoCreateInstanceEx+0xc12 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\objact.cxx @ 2032] </span><br><span class="line">41 0019f0d4 75edadbe     00000401 00000000 00000001 combase!CComActivator::DoCreateInstance+0x231 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\immact.hxx @ 401] </span><br><span class="line">42 (Inline) --------     -------- -------- -------- combase!CoCreateInstanceEx+0xa2 (Inline Function @ 75edadbe) (CONV: stdcall) [onecore\com\combase\objact\actapi.cxx @ 177] </span><br><span class="line">43 0019f110 767730f0     07835f60 00000000 00000401 combase!CoCreateInstance+0xbe (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\objact\actapi.cxx @ 121] </span><br><span class="line">44 0019f3b8 7677ebce     00000401 00000001 00000002 shell32!_SHCoCreateInstance+0x15e (FPO: [Non-Fpo])</span><br><span class="line">45 0019f598 767a0f77     00000003 0787bcc4 0787bdc4 shell32!HDXA_QueryContextMenu+0x251 (FPO: [Non-Fpo])</span><br><span class="line">46 0019f64c 00432b6e     0787bc38 07e108b7 00000000 shell32!CDefFolderMenu::QueryContextMenu+0x487 (FPO: [Non-Fpo])</span><br><span class="line">47 0019f6b4 0043305f     03294260 00886b48 0c8b281c SpaceSniffer!Ntfs_sourceFinalize+0x262</span><br><span class="line">48 0019f718 0042636b     03294260 074d8bfc 0c8b281c SpaceSniffer!Ntfs_sourceFinalize+0x753</span><br><span class="line">49 0019f778 00423d62     031c8f50 0056b58c 031c8f50 SpaceSniffer!Frmstart_sourceFinalize+0x3953</span><br><span class="line">4a 0019f7cc 004bd382     00000081 000002ae 00000010 SpaceSniffer!Frmstart_sourceFinalize+0x134a</span><br><span class="line">4b 0019f7e8 0056b5d2     00000081 000002ae 0019f9f0 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x74ac6</span><br><span class="line">4c 0019f808 004bd419     00000081 000002ae 00000204 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x122d16</span><br><span class="line">4d 0019f82c 004bd5a2     00000000 031c8f50 0019f9f0 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x74b5d</span><br><span class="line">4e 0019f96c 004c1685     000706c4 031c8f50 0091dd18 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x74ce6</span><br><span class="line">4f 0019f9b8 004c0d23     0019f9cc 004c0d3b 0019f9e8 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x78dc9</span><br><span class="line">50 0019f9e8 0051a9aa     00000204 00000002 008102ae SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x78467</span><br><span class="line">51 0019fa00 76141c0b     000706c4 00000204 00000002 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0xd20ee</span><br><span class="line">52 0019fa2c 761382ca     02cb097c 000706c4 00000204 user32!_InternalCallWinProc+0x2b</span><br><span class="line">53 0019fb14 76136b70     02cb097c 00000000 00000204 user32!UserCallWinProcCheckWow+0x33a (FPO: [SEH])</span><br><span class="line">54 0019fb90 761366a0     00000104 000706c4 0049e8c8 user32!DispatchMessageWorker+0x4c0 (FPO: [Non-Fpo])</span><br><span class="line">55 0019fb9c 0049e8c8     0019fbc0 00190100 0019fc0c user32!DispatchMessageW+0x10 (FPO: [Non-Fpo])</span><br><span class="line">56 0019fbb8 0049e90b     000706c4 00000204 00000002 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x5600c</span><br><span class="line">57 0019fbdc 0049ec36     0019fbf0 0049ec40 0019fc0c SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x5604f</span><br><span class="line">58 0019fc0c 0043ce2b     00000000 005ba048 00884354 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x5637a</span><br><span class="line">59 0019ff38 005b4443     00400000 00000000 00884354 SpaceSniffer!showCommandLineHelp$qv+0x268b</span><br><span class="line">5a 0019ff70 76fcfcc9     00380000 76fcfcb0 0019ffdc SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x16bb87</span><br><span class="line">5b 0019ff80 77c282ae     00380000 eb25b1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">5c 0019ffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">5d 0019ffec 00000000     0040187c 00380000 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   1  Id: 2620.13cc Suspend: 0 Teb: 0038f000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 02c6f38c 7650bc33     00000002 02c6f560 00000001 ntdll!NtWaitForMultipleObjects+0xc (FPO: [5,0,0])</span><br><span class="line">01 02c6f520 7650bb18     00000002 02c6f560 00000000 KERNELBASE!WaitForMultipleObjectsEx+0x103 (FPO: [SEH])</span><br><span class="line">02 02c6f53c 73f9266e     00000002 02c6f560 00000000 KERNELBASE!WaitForMultipleObjects+0x18 (FPO: [Non-Fpo])</span><br><span class="line">WARNING: Stack unwind information not available. Following frames may be wrong.</span><br><span class="line">03 02c6fa9c 73fa002a     fb52e036 73f9fa10 73f9fa10 cpbgrd+0x1266e</span><br><span class="line">04 02c6ff68 76fcfcc9     000002b0 76fcfcc9 000002b0 cpbgrd!X64Call+0xd79a</span><br><span class="line">05 02c6ff80 77c282ae     000002b0 e9fab1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">06 02c6ffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">07 02c6ffec 00000000     73f9fa10 000002b0 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   2  Id: 2620.1044 Suspend: 0 Teb: 00392000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 041afecc 764f2839     000002b0 00000000 041aff14 ntdll!NtWaitForSingleObject+0xc (FPO: [3,0,0])</span><br><span class="line">01 041aff40 764f2792     000002b0 000003e8 00000000 KERNELBASE!WaitForSingleObjectEx+0x99 (FPO: [SEH])</span><br><span class="line">02 041aff54 73f95bd8     000002b0 000003e8 73f95b80 KERNELBASE!WaitForSingleObject+0x12 (FPO: [Non-Fpo])</span><br><span class="line">WARNING: Stack unwind information not available. Following frames may be wrong.</span><br><span class="line">03 041aff70 76fcfcc9     000002b0 76fcfcb0 041affdc cpbgrd!X64Call+0x3348</span><br><span class="line">04 041aff80 77c282ae     000002b0 ef26b1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">05 041affdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">06 041affec 00000000     73f95b80 000002b0 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   3  Id: 2620.2bdc Suspend: 0 Teb: 00395000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 06d5fd94 77c1204e     0000007c 00000000 00000000 ntdll!NtWaitForSingleObject+0xc (FPO: [3,0,0])</span><br><span class="line">01 06d5fdb8 77c0f9ae     ede9b029 00000000 00000000 ntdll!LdrpDrainWorkQueue+0x14f (FPO: [Non-Fpo])</span><br><span class="line">02 06d5fe58 77c2bd0c     0055a428 00000000 00000000 ntdll!LdrShutdownThread+0x7e (FPO: [SEH])</span><br><span class="line">03 06d5ff34 0055a4f6     00000000 00000000 00518378 ntdll!RtlExitUserThread+0x4c (FPO: [Non-Fpo])</span><br><span class="line">WARNING: Stack unwind information not available. Following frames may be wrong.</span><br><span class="line">04 06d5ff5c 0055a452     06d5ffcc 00559f28 06d5ff70 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x111c3a</span><br><span class="line">05 06d5ff70 76fcfcc9     03294250 76fcfcb0 06d5ffdc SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x111b96</span><br><span class="line">06 06d5ff80 77c282ae     03294250 ede9b1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">07 06d5ffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">08 06d5ffec 00000000     0055a428 03294250 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   4  Id: 2620.3a34 Suspend: 0 Teb: 00398000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 06e9fe2c 76558b20     000003d4 00000000 00000000 ntdll!NtNotifyChangeDirectoryFileEx+0xc (FPO: [10,0,0])</span><br><span class="line">01 06e9fe7c 76558b84     000003d4 0427eb80 00007fff KERNELBASE!ReadDirectoryChangesExW+0x100 (FPO: [Non-Fpo])</span><br><span class="line">02 06e9fea8 0043dda8     000003d4 0427eb80 00007fff KERNELBASE!ReadDirectoryChangesW+0x24 (FPO: [Non-Fpo])</span><br><span class="line">WARNING: Stack unwind information not available. Following frames may be wrong.</span><br><span class="line">03 06e9ff2c 00518319     06e9ff40 00518323 06e9ff5c SpaceSniffer!Snifthread_sourceFinalize+0x198</span><br><span class="line">04 06e9ff5c 0055a452     06e9ffcc 00559f28 06e9ff70 SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0xcfa5d</span><br><span class="line">05 06e9ff70 76fcfcc9     03294260 76fcfcb0 06e9ffdc SpaceSniffer!Unknownspacetreemapnode_sourceFinalize+0x111b96</span><br><span class="line">06 06e9ff80 77c282ae     03294260 edd5b1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">07 06e9ffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">08 06e9ffec 00000000     0055a428 03294260 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   5  Id: 2620.2900 Suspend: 0 Teb: 003ad000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 0f29fb3c 7613934a     000208d6 00000402 00000000 win32u!NtUserMessageCall+0xc (FPO: [7,0,0])</span><br><span class="line">01 0f29fba0 7613653f     0112fe40 00000000 0353c320 user32!SendMessageWorker+0x97a (FPO: [4,13,4])</span><br><span class="line">02 0f29fc00 766fd52f     000208d6 00000402 00000000 user32!SendMessageW+0x6f (FPO: [Non-Fpo])</span><br><span class="line">03 0f29fc74 767867d4     078a7f48 0789fa90 767866b0 shell32!CShellFolderSetEnumTask::InternalResumeRT+0xdf (FPO: [Non-Fpo])</span><br><span class="line">04 0f29fc9c 752de338     078a7f48 00000000 008bd1d0 shell32!CRunnableTask::Run+0x124 (FPO: [Non-Fpo])</span><br><span class="line">05 0f29fcb4 752ddf5c     0f29fcd0 00cedc98 008bd1d0 windows_storage!CShellTask::TT_Run+0x3d (FPO: [Non-Fpo])</span><br><span class="line">06 0f29fcf8 752ddd1e     752ddce0 0789fb28 003adf60 windows_storage!CShellTaskThread::ThreadProc+0x9b (FPO: [Non-Fpo])</span><br><span class="line">07 0f29fd20 76d5c4f9     008bd1d0 76d5c4e0 7ffe0386 windows_storage!CShellTaskThread::s_ThreadProc+0x3e (FPO: [Non-Fpo])</span><br><span class="line">08 0f29fd34 77c29cc0     00cedc98 e415b3cd 008807c0 SHCore!ExecuteWorkItemThreadProc+0x19 (FPO: [Non-Fpo])</span><br><span class="line">09 0f29fdbc 77bf612a     0f29fe9c 0789fb28 e415b101 ntdll!RtlpTpWorkCallback+0x120 (FPO: [SEH])</span><br><span class="line">0a 0f29ff70 76fcfcc9     008807c0 76fcfcb0 0f29ffdc ntdll!TppWorkerThread+0x6ea (FPO: [SEH])</span><br><span class="line">0b 0f29ff80 77c282ae     008807c0 e415b1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">0c 0f29ffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">0d 0f29ffec 00000000     77bf5a40 008807c0 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   6  Id: 2620.3840 Suspend: 0 Teb: 003b0000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 0f39fdb0 77bf5ce0     00000058 07840048 00000010 ntdll!NtWaitForWorkViaWorkerFactory+0xc (FPO: [5,0,0])</span><br><span class="line">01 0f39ff70 76fcfcc9     008807c0 76fcfcb0 0f39ffdc ntdll!TppWorkerThread+0x2a0 (FPO: [Non-Fpo])</span><br><span class="line">02 0f39ff80 77c282ae     008807c0 e405b1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">03 0f39ffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">04 0f39ffec 00000000     77bf5a40 008807c0 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   7  Id: 2620.584 Suspend: 0 Teb: 003b3000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 0f49ee98 7613d01a     00000001 0f49efe8 ffffffff win32u!NtUserMsgWaitForMultipleObjectsEx+0xc (FPO: [5,0,0])</span><br><span class="line">01 0f49ef0c 7613cf4c     00000001 0f49efe8 ffffffff user32!RealMsgWaitForMultipleObjectsEx+0x7a (FPO: [Non-Fpo])</span><br><span class="line">02 0f49ef2c 75eb51c2     00000001 0f49efe8 ffffffff user32!MsgWaitForMultipleObjectsEx+0x4c (FPO: [Non-Fpo])</span><br><span class="line">03 0f49efac 75eb53a0     0f49efe8 00000001 0f49efd0 combase!CCliModalLoop::BlockFn+0x14b (FPO: [Non-Fpo]) (CONV: thiscall) [onecore\com\combase\dcomrem\callctrl.cxx @ 2156] </span><br><span class="line">04 0f49eff4 75eb3718     75eb36d0 07841a98 078a2c00 combase!ModalLoop+0xa1 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\dcomrem\chancont.cxx @ 166] </span><br><span class="line">05 0f49f010 75ecf229     0f49f4e8 0356f8f0 078a2c00 combase!ClassicSTAThreadDispatchCrossApartmentCall+0x48 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\dcomrem\chancont.cxx @ 319] </span><br><span class="line">06 (Inline) --------     -------- -------- -------- combase!CSyncClientCall::SwitchAptAndDispatchCall+0xa5a (Inline Function @ 75ecf229) (CONV: thiscall) [onecore\com\combase\dcomrem\channelb.cxx @ 5856] </span><br><span class="line">07 0f49f1f0 75eb40a8     0f49f4e8 0f49f4c4 0f49f4c4 combase!CSyncClientCall::SendReceive2+0xb49 (FPO: [Non-Fpo]) (CONV: thiscall) [onecore\com\combase\dcomrem\channelb.cxx @ 5459] </span><br><span class="line">08 (Inline) --------     -------- -------- -------- combase!SyncClientCallRetryContext::SendReceiveWithRetry+0x29 (Inline Function @ 75eb40a8) (CONV: thiscall) [onecore\com\combase\dcomrem\callctrl.cxx @ 1542] </span><br><span class="line">09 (Inline) --------     -------- -------- -------- combase!CSyncClientCall::SendReceiveInRetryContext+0x29 (Inline Function @ 75eb40a8) (CONV: thiscall) [onecore\com\combase\dcomrem\callctrl.cxx @ 565] </span><br><span class="line">0a 0f49f2b4 75ed1638     078a2c00 0f49f4e8 0f49f4c4 combase!ClassicSTAThreadSendReceive+0x98 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\dcomrem\callctrl.cxx @ 547] </span><br><span class="line">0b 0f49f4a0 75e9a1f8     0f49f4e8 0f49f4c4 0f49f4e8 combase!CSyncClientCall::SendReceive+0x538 (FPO: [Non-Fpo]) (CONV: thiscall) [onecore\com\combase\dcomrem\ctxchnl.cxx @ 722] </span><br><span class="line">0c (Inline) --------     -------- -------- -------- combase!CClientChannel::SendReceive+0x79 (Inline Function @ 75e9a1f8) (CONV: stdcall) [onecore\com\combase\dcomrem\ctxchnl.cxx @ 655] </span><br><span class="line">0d 0f49f4c8 770a60e3     00933784 0f49f53c f4410821 combase!NdrExtpProxySendReceive+0xc8 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\ndr\ndrole\proxy.cxx @ 1998] </span><br><span class="line">0e 0f49f918 75f6ff80     75e2a860 75e4cad0 0f49f950 rpcrt4!NdrClientCall2+0x9e3 (FPO: [Non-Fpo])</span><br><span class="line">0f 0f49f938 75f67f1f     0f49f950 00000009 0f49f9e4 combase!ObjectStublessClient+0x70 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\ndr\ndrole\i386\stblsclt.cxx @ 227] </span><br><span class="line">10 0f49f948 75f00bb3     00933784 0f49f990 0357d700 combase!ObjectStubless+0xf [onecore\com\combase\ndr\ndrole\i386\stubless.asm @ 171] </span><br><span class="line">11 0f49f9e4 75ea6161     035344c8 75f24e70 00000902 combase!CObjectContext::InternalContextCallback+0x273 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\dcomrem\context.cxx @ 4328] </span><br><span class="line">12 0f49fa54 767a1859     7605f1e8 00000902 7669699c combase!CGIPTable::GetInterfaceFromGlobal+0x371 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\dcomrem\giptbl.cxx @ 1683] </span><br><span class="line">13 0f49fa88 76ae136e     0f49faa0 0091a7f0 0787a3dc shell32!UnMarshalFromGIT+0x76 (FPO: [Non-Fpo])</span><br><span class="line">14 0f49fab4 76ae09da     0787a3dc 00000000 0091a804 shell32!CSendToMenu::_IsDropTarget+0x8a (FPO: [Non-Fpo])</span><br><span class="line">15 0f49fb10 76adff3e     0787a3dc 00000000 76adfef0 shell32!CSendToMenu::_AddSendToItem+0x2e (FPO: [Non-Fpo])</span><br><span class="line">16 0f49fb30 7543e29b     0091a804 0783fe10 07834678 shell32!CSendToMenu::FoundItem+0x4e (FPO: [Non-Fpo])</span><br><span class="line">17 0f49fb5c 752d2905     0783fe10 07834678 70e7db81 windows_storage!CNamespaceWalk::_AddItem+0x186471</span><br><span class="line">18 0f49fb94 7566f0a2     0783fe10 00000000 00000000 windows_storage!CNamespaceWalk::_WalkFolder+0x8c (FPO: [Non-Fpo])</span><br><span class="line">19 0f49fde8 7566f1a7     0783fbf0 07831410 00000000 windows_storage!CNamespaceWalk::_WalkFolderItem+0x180 (FPO: [4,141,4])</span><br><span class="line">1a 0f49fe1c 7566f245     0783fbf0 07831410 00000000 windows_storage!CNamespaceWalk::_WalkIDList+0xa2 (FPO: [Non-Fpo])</span><br><span class="line">1b 0f49fe4c 75447b54     0787a45c 00000001 70e7deb1 windows_storage!CNamespaceWalk::_WalkShellItem+0x76 (FPO: [Non-Fpo])</span><br><span class="line">1c 0f49fea4 7566f660     0090f858 03570e8c 00000404 windows_storage!CNamespaceWalk::Walk+0x1755d4</span><br><span class="line">1d 0f49feec 76d58e10     07835a28 76d58d50 76d58d50 windows_storage!CNamespaceWalk::s_AsyncWalkThreadProc+0xa0 (FPO: [Non-Fpo])</span><br><span class="line">1e 0f49ff70 76fcfcc9     0019f198 76fcfcb0 0f49ffdc SHCore!_WrapperThreadProc+0xc0 (FPO: [Non-Fpo])</span><br><span class="line">1f 0f49ff80 77c282ae     0019f198 e475b1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">20 0f49ffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">21 0f49ffec 00000000     76d58d50 0019f198 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   8  Id: 2620.2bd0 Suspend: 0 Teb: 003b6000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 0f5dfc54 7650bc33     00000002 0f5dfe20 00000001 ntdll!NtWaitForMultipleObjects+0xc (FPO: [5,0,0])</span><br><span class="line">01 0f5dfde8 75eb3543     00000002 0f5dfe20 00000000 KERNELBASE!WaitForMultipleObjectsEx+0x103 (FPO: [SEH])</span><br><span class="line">02 0f5dff24 75eb33c7     0090fad8 00007530 00007530 combase!WaitCoalesced+0xb5 (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\published\comutils\coalescedwait.cxx @ 72] </span><br><span class="line">03 0f5dff60 75ea33bf     75ea33a0 75ea33a0 0f5dff80 combase!CRpcThread::WorkerLoop+0xd6 (FPO: [Non-Fpo]) (CONV: thiscall) [onecore\com\combase\dcomrem\threads.cxx @ 329] </span><br><span class="line">04 0f5dff70 76fcfcc9     0090fad8 76fcfcb0 0f5dffdc combase!CRpcThreadCache::RpcWorkerThreadEntry+0x1f (FPO: [Non-Fpo]) (CONV: stdcall) [onecore\com\combase\dcomrem\threads.cxx @ 77] </span><br><span class="line">05 0f5dff80 77c282ae     0090fad8 e461b1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">06 0f5dffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">07 0f5dffec 00000000     75ea33a0 0090fad8 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">   9  Id: 2620.1f14 Suspend: 0 Teb: 003b9000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 0f80fdac 77c1204e     0000007c 00000000 00000000 ntdll!NtWaitForSingleObject+0xc (FPO: [3,0,0])</span><br><span class="line">01 0f80fdd0 77c0f9ae     e4bcb001 00000000 76d3c650 ntdll!LdrpDrainWorkQueue+0x14f (FPO: [Non-Fpo])</span><br><span class="line">02 0f80fe70 77c2bd0c     76d3c650 76d3c650 76d20000 ntdll!LdrShutdownThread+0x7e (FPO: [SEH])</span><br><span class="line">03 0f80ff48 7651b694     00000000 76d3c650 00cedf18 ntdll!RtlExitUserThread+0x4c (FPO: [Non-Fpo])</span><br><span class="line">04 0f80ff5c 76d3c66c     76d20000 00000000 76d20000 KERNELBASE!FreeLibraryAndExitThread+0x34 (FPO: [Non-Fpo])</span><br><span class="line">05 0f80ff70 76fcfcc9     00cedf18 76fcfcb0 0f80ffdc SHCore!&lt;lambda_19624ae0f12adae645db6df842454482&gt;::&lt;lambda_invoker_stdcall&gt;+0x1c (FPO: [Non-Fpo])</span><br><span class="line">06 0f80ff80 77c282ae     00cedf18 e4bcb1ad 00000000 kernel32!BaseThreadInitThunk+0x19 (FPO: [Non-Fpo])</span><br><span class="line">07 0f80ffdc 77c2827e     ffffffff 77c493c6 00000000 ntdll!__RtlUserThreadStart+0x2f (FPO: [SEH])</span><br><span class="line">08 0f80ffec 00000000     76d3c650 00cedf18 00000000 ntdll!_RtlUserThreadStart+0x1b (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">  10  Id: 2620.df8 Suspend: 0 Teb: 003bc000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 0ff6fbf4 77c1204e     0000007c 00000000 00000000 ntdll!NtWaitForSingleObject+0xc (FPO: [3,0,0])</span><br><span class="line">01 0ff6fc18 77c0ddc1     e4cab2dd 00380000 00000000 ntdll!LdrpDrainWorkQueue+0x14f (FPO: [Non-Fpo])</span><br><span class="line">02 0ff6fcac 77c26c0b     e4cab375 00000000 00000000 ntdll!LdrpInitializeThread+0x78 (FPO: [SEH])</span><br><span class="line">03 0ff6fd04 77c26b31     00000000 00000000 00000000 ntdll!_LdrpInitialize+0x84 (FPO: [Non-Fpo])</span><br><span class="line">04 0ff6fd10 00000000     0ff6fd24 77bc0000 00000000 ntdll!LdrInitializeThunk+0x11 (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">  11  Id: 2620.393c Suspend: 0 Teb: 003bf000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 10cefbf4 77c1204e     0000007c 00000000 00000000 ntdll!NtWaitForSingleObject+0xc (FPO: [3,0,0])</span><br><span class="line">01 10cefc18 77c0ddc1     fbf2b2dd 00380000 00000000 ntdll!LdrpDrainWorkQueue+0x14f (FPO: [Non-Fpo])</span><br><span class="line">02 10cefcac 77c26c0b     fbf2b375 00000000 00000000 ntdll!LdrpInitializeThread+0x78 (FPO: [SEH])</span><br><span class="line">03 10cefd04 77c26b31     00000000 00000000 00000000 ntdll!_LdrpInitialize+0x84 (FPO: [Non-Fpo])</span><br><span class="line">04 10cefd10 00000000     10cefd24 77bc0000 00000000 ntdll!LdrInitializeThunk+0x11 (FPO: [Non-Fpo])</span><br><span class="line"></span><br><span class="line">  12  Id: 2620.1894 Suspend: 0 Teb: 003c2000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 137cfbf4 77c1204e     0000007c 00000000 00000000 ntdll!NtWaitForSingleObject+0xc (FPO: [3,0,0])</span><br><span class="line">01 137cfc18 77c0ddc1     f840b2dd 00380000 00000000 ntdll!LdrpDrainWorkQueue+0x14f (FPO: [Non-Fpo])</span><br><span class="line">02 137cfcac 77c26c0b     f840b375 00000000 00000000 ntdll!LdrpInitializeThread+0x78 (FPO: [SEH])</span><br><span class="line">03 137cfd04 77c26b31     00000000 00000000 00000000 ntdll!_LdrpInitialize+0x84 (FPO: [Non-Fpo])</span><br><span class="line">04 137cfd10 00000000     137cfd24 77bc0000 00000000 ntdll!LdrInitializeThunk+0x11 (FPO: [Non-Fpo])</span><br></pre></td></tr></table></figure>
+
+<p>可以看到底部的几个线程都在等待同一个句柄 <code>0x7c</code>，而且都是由 <code>LdrpDrainWorkQueue()</code> 发起的。由上篇文章——<a href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-on-win10">《调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁》</a>可知，这个句柄大概率是 <code>ntdll!LdrpLoadCompleteEvent</code>。在 <code>windbg</code> 中输入 <code>dd ntdll!LdrpLoadCompleteEvent L1</code> 可以查看其值，果然是 <code>0x7c</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; dd ntdll!LdrpLoadCompleteEvent L1</span><br><span class="line">77ce5cc8  0000007c</span><br></pre></td></tr></table></figure>
+
+<p>大概率又是一个加载器相关的死锁！这些线程中，<code>1</code> 号线程和 <code>7</code> 号线程的调用栈比较值得怀疑，尤其是 <code>1</code> 号线程。先来看看 <code>1</code> 号线程在等待什么？由以上输出可知，<code>1</code> 号线程调用 <code>ntdll!NtWaitForSingleObject()</code> 时的参数是 <code>0x730</code>。执行 <code>!handle 00000730 f</code> 查看句柄信息，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; !handle 00000730 f</span><br><span class="line">Handle 00000730</span><br><span class="line">  Type         	Event</span><br><span class="line">  Attributes   	0</span><br><span class="line">  GrantedAccess	0x1f0003:</span><br><span class="line">         Delete,ReadControl,WriteDac,WriteOwner,Synch</span><br><span class="line">         QueryState,ModifyState</span><br><span class="line">  HandleCount  	2</span><br><span class="line">  PointerCount 	65538</span><br><span class="line">  Name         	&lt;none&gt;</span><br><span class="line">  Object specific information</span><br><span class="line">    Event Type Auto Reset</span><br><span class="line">    Event is Waiting</span><br></pre></td></tr></table></figure>
+
+<p>看来 <code>1</code> 号线程在等待一个 <code>Event</code>，接着看一下 <code>7</code> 号线程在等待什么？<code>7</code> 号线程调用 <code>win32u!NtUserMsgWaitForMultipleObjectsEx()</code> 进入的等待.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">7  Id: 2620.584 Suspend: 0 Teb: 003b3000 Unfrozen</span><br><span class="line"> # ChildEBP RetAddr      Args to Child              </span><br><span class="line">00 0f49ee98 7613d01a     00000001 0f49efe8 ffffffff win32u!NtUserMsgWaitForMultipleObjectsEx+0xc (FPO: [5,0,0])</span><br></pre></td></tr></table></figure>
+
+<p>第一个参数是句柄数组数量，第二个参数是句柄数组。执行 <code>dd 0f49efe8 L1</code> 查看句柄值，然后再使用 <code>!handle</code> 命令查看句柄信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; dd 0f49efe8 L1</span><br><span class="line">0f49efe8  000005c4</span><br><span class="line">0:000&gt; !handle 000005c4 f</span><br><span class="line">Handle 000005c4</span><br><span class="line">  Type         	Event</span><br><span class="line">  Attributes   	0</span><br><span class="line">  GrantedAccess	0x1f0003:</span><br><span class="line">         Delete,ReadControl,WriteDac,WriteOwner,Synch</span><br><span class="line">         QueryState,ModifyState</span><br><span class="line">  HandleCount  	2</span><br><span class="line">  PointerCount 	65536</span><br><span class="line">  Name         	&lt;none&gt;</span><br><span class="line">  Object specific information</span><br><span class="line">    Event Type Auto Reset</span><br><span class="line">    Event is Waiting</span><br></pre></td></tr></table></figure>
+
+<p>也在等待一个 <code>Event</code>，但是由于 <code>7</code> 号线程调用的是 <code>NtUserMsgWaitForMultipleObjectsEx()</code>，所以有消息的时候也会被唤醒，重点关注 <code>1</code> 号线程。</p>
+<h2 id="细看调用栈"><a href="#细看调用栈" class="headerlink" title="细看调用栈"></a>细看调用栈</h2><p>如果仔细查看 <code>1</code> 号线程的调用栈，可以发现 <code>1</code> 号线程的等待是在 <code>ntdll!LdrpCallInitRoutine()</code> 内部，我们知道 <code>LdrpCallInitRoutine()</code> 内部会调用每个模块的 <code>DllMain()</code>，在执行到 <code>YunShellExtV1.dll</code> 对应的 <code>DllMain()</code>（由于没有对应的调试符号，所以不能直接从调用栈看出来在调用 <code>DllMain()</code> 函数）时，其内部调用了 <code>user32!CreateWindowExW()</code> 创建窗口，又间接调用到了 <code>SHCore!_CreateThreadWorker()</code>，而 <code>SHCore!_CreateThreadWorker()</code> 内部又会调用 <code>KernalBase!WaitForSingleObject()</code> 来永久等待一个事件。相当于间接的在 <code>DllMain()</code> 中执行了等待操作！这是一个<strong>非常危险</strong>的信号。关键调用栈帧可以参考下图红色高亮部分。</p>
+<p><img src="http://resources.bianchengnan.tech/debug-spacesniffer-deadlock/view-callstack-of-thread-1.png" alt="view-callstack-of-thread-1"></p>
+<p>那 <code>SHCore!_CreateThreadWorker()</code> 内部在等待什么事件呢？只能从反汇编代码中找答案了。</p>
+<h2 id="查看反汇编"><a href="#查看反汇编" class="headerlink" title="查看反汇编"></a>查看反汇编</h2><p>打开 <code>32</code> 位的 <code>IDA</code>，加载 <code>32</code> 位的 <code>SHCore.dll</code>，找到 <code>CreateThreadWorker()</code>，使用 <code>F5</code> 查看伪代码，如下（有删减）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">BOOL __<span class="function">fastcall <span class="title">CreateThreadWorker</span><span class="params">(LPCWSTR lpModuleName, <span class="keyword">int</span> a2, <span class="keyword">int</span> a3, <span class="keyword">int</span> a4, _DWORD *a5)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> Parameter[<span class="number">12</span>]; <span class="comment">// [esp+28h] [ebp-30h] BYREF</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> ( (a3 &amp; <span class="number">2</span>) == <span class="number">0</span> || (v11 = (<span class="keyword">void</span> *)SHGetThreadRef((IUnknown **)&amp;Parameter[<span class="number">5</span>]), (<span class="keyword">int</span>)v11 &gt;= <span class="number">0</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">    Parameter[<span class="number">2</span>] = (<span class="keyword">int</span>)CreateEventW(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>); <span class="comment">//&lt;----</span></span><br><span class="line">    <span class="keyword">if</span> ( Parameter[<span class="number">2</span>] )</span><br><span class="line">    &#123;</span><br><span class="line">      v7 = CreateThread(<span class="number">0</span>, <span class="number">0</span>, WrapperThreadProc, Parameter, <span class="number">0</span>, &amp;ThreadId); <span class="comment">//&lt;----</span></span><br><span class="line">      <span class="keyword">if</span> ( v7 )</span><br><span class="line">      &#123;</span><br><span class="line">        v24 = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">if</span> ( !Parameter[<span class="number">1</span>] || (v6 &amp; <span class="number">0x200</span>) != <span class="number">0</span> )</span><br><span class="line">        &#123;</span><br><span class="line">          WaitForSingleObject((HANDLE)Parameter[<span class="number">2</span>], <span class="number">0xFFFFFFFF</span>); <span class="comment">//&lt;----</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ( (v6 &amp; <span class="number">0x40</span>) != <span class="number">0</span> )</span><br><span class="line">        &#123;</span><br><span class="line">          pHandles = (HANDLE)Parameter[<span class="number">2</span>];</span><br><span class="line">          CoWaitForMultipleHandles(<span class="number">8u</span>, <span class="number">0xFFFFFFFF</span>, <span class="number">1u</span>, &amp;pHandles, &amp;dwindex);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">          SHWaitForThreadWithWakeMask((HANDLE)Parameter[<span class="number">2</span>], <span class="number">0xFFFFFFFF</span>, <span class="number">0x40</span>u);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> v8 &gt;= <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以很明显的看到关键代码（带有 <code>//&lt;----</code> 注释的行）。先创建一个 <code>Event</code>，然后创建线程，把带 <code>Event</code> 的参数传递给新线程，最后再<strong>无限</strong>等待 <code>Event</code>。猜测新线程执行完必要的操作后，会触发事件。</p>
+<p>看到这段逻辑，我立刻就知道了原因：当前可是在 <code>DllMain()</code> 里啊，如果执行不完，新线程没有机会得到执行，也就没办法触发事件，<code>DllMain()</code> 也就会永远的等下去。</p>
+<p>没想到这么容易就破案了！捡了个大漏！</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>在 <code>DllMain()</code> 中不要做危险操作！尤其不要做等待操作！</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="https://github.com/ElliotKillick/operating-system-design-review/blob/main/README.md" target="_blank" rel="noopener">https://github.com/ElliotKillick/operating-system-design-review/blob/main/README.md</a></p>
+</li>
+<li><p><a href="https://stackoverflow.com/questions/42789199/why-there-are-three-unexpected-worker-threads-when-a-win32-console-application-s/42789684#42789684、" target="_blank" rel="noopener">https://stackoverflow.com/questions/42789199/why-there-are-three-unexpected-worker-threads-when-a-win32-console-application-s/42789684#42789684、</a></p>
+</li>
+<li><p><a href="https://msdn.microsoft.com/en-us/library/windows/desktop/dn633971(v=vs.85).aspx" target="_blank" rel="noopener">https://msdn.microsoft.com/en-us/library/windows/desktop/dn633971(v=vs.85).aspx</a></p>
+</li>
+<li><p><a href="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-on-win10/">https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-on-win10/</a></p>
+</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/wechat-qcode.png" alt="BianChengNan wechat" style="width: 400px; max-width: 100%;">
+    <div>扫描左侧二维码关注公众号，扫描右侧二维码加我个人微信:)</div>
+</div>
+
+      </div>
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    BianChengNan
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://bianchengnan.github.io/articles/debug-spacesniffer-deadlock/" title="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">https://bianchengnan.github.io/articles/debug-spacesniffer-deadlock/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+  <li class="post-copyright-itellyou">
+    <strong>作者寄语： </strong>
+    文章的结束只是思考的开始，您宝贵的意见和建议将是我继续前行的动力，点击右侧分享按钮即可携友同行！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
+          
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
+            <a href="/tags/IDA/" rel="tag"><i class="fa fa-tag"></i> IDA</a>
+          
+            <a href="/tags/死锁/" rel="tag"><i class="fa fa-tag"></i> 死锁</a>
+          
+            <a href="/tags/deadlock/" rel="tag"><i class="fa fa-tag"></i> deadlock</a>
+          
+            <a href="/tags/spacesniffer/" rel="tag"><i class="fa fa-tag"></i> spacesniffer</a>
+          
+            <a href="/tags/win10/" rel="tag"><i class="fa fa-tag"></i> win10</a>
+          
+            <a href="/tags/Parallel-Loader/" rel="tag"><i class="fa fa-tag"></i> Parallel Loader</a>
+          
+            <a href="/tags/并行加载/" rel="tag"><i class="fa fa-tag"></i> 并行加载</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+          <div class="wp_rating">
+            <div id="wpac-rating"></div>
+          </div>
+        
+
+        
+
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/articles/debugging-deadlock-when-dll-unload-on-win10/" rel="next" title="调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁">
+                <i class="fa fa-chevron-left"></i> 调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/articles/top-most-announcement/" rel="prev" title="置顶声明">
+                置顶声明 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+        <div>
+          <div class="related-posts">
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+        <a class="related-posts-header"> 推荐阅读 </a>
+        
+      
+
+      <li><a href="/articles/pinvoke-lead-to-memory-corruption/" title="调试实战 | 调试 PInvoke 导致栈破坏">调试实战 | 调试 PInvoke 导致栈破坏</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-during-excel-startup/" title="调试实战 | 使用 windbg 调试 excel 启动时死锁">调试实战 | 使用 windbg 调试 excel 启动时死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-caused-by-TerminateThread/" title="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload/" title="调试实战 | 使用 windbg 调试 DLL 卸载时的死锁">调试实战 | 使用 windbg 调试 DLL 卸载时的死锁</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-ComFriendlyWaitMtaThreadProc-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc">调试实战 | 使用 windbg 调试崩溃在 ComFriendlyWaitMtaThreadProc</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-DisconnectSrvIPIDs-crash/" title="调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs">调试实战 | 使用 windbg 调试崩溃在 ole32!CStdMarshal::DisconnectSrvIPIDs</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-CPU-100/" title="调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？">调试实战 | 程序 CPU 占用率飙升，你知道如何快速定位吗？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/local-kernel-debug-with-livekd/" title="本地内核调试神器 —— livekd 使用总结">本地内核调试神器 —— livekd 使用总结</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-global-variable-initialize-dependency/" title="调试实战 | dll 加载失败之全局变量初始化篇">调试实战 | dll 加载失败之全局变量初始化篇</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/global-variable-initialization-order-investigation/" title="调试实战 | 全局变量初始化顺序探究">调试实战 | 全局变量初始化顺序探究</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-dll-load-failure-caused-by-mixed-configuration/" title="调试实战 | dll 加载失败之 Debug Release 争锋篇">调试实战 | dll 加载失败之 Debug Release 争锋篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/view-variables-in-your-own-way-using-natvis-in-visual-studio/" title="调试技巧 | 你很可能需要知道这个调试小技巧">调试技巧 | 你很可能需要知道这个调试小技巧</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-program-startup-failure-caused-by-depencent-dll-load-failed/" title="调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误">调试实战 | 使用 windbg gflags dumpbin 排查应用程序启动错误</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd/" title="有趣的异常">有趣的异常</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/another-interesting-stackoverflow/" title="栈又溢出了">栈又溢出了</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/stack-variable-usage-optimization-investigation/" title="栈局部变量优化探究，意外发现了 vs 的一个 bug ？">栈局部变量优化探究，意外发现了 vs 的一个 bug ？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-memory-leak/" title="有趣的" 内存泄漏"">有趣的"内存泄漏"</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/interesting-exception-0xc00000fd-continue-how-to-increase-stack-size/" title="栈大小可以怎么改？">栈大小可以怎么改？</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/investigate-a-pkpm-deadlock-with-the-help-of-windbg-and-ida/" title="调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇">调试实战 | 通过转储文件分析程序无响应之使用 windbg + IDA 逆向篇</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/use-const-if-possible/" title="调试实战 | 缺少 const 导致的 bug">调试实战 | 缺少 const 导致的 bug</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-chinese-string-from-pe-file/" title="调试实战 | 代码丢了？用搜索找出真相">调试实战 | 代码丢了？用搜索找出真相</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-check-a-dot-net-program-is-32-or-64/" title="如何判断一个 Dot Net 程序是 32 位还是 64 位？">如何判断一个 Dot Net 程序是 32 位还是 64 位？</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-dotnet-equal-compare/" title="dotnet 中的判等">dotnet 中的判等</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part1/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part3/" title="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）">调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/analyze-a-crash-dump-and-find-the-root-cause-memory-fragmentation/" title="调试实战 | 记一次有教益的内存碎片转储文件分析">调试实战 | 记一次有教益的内存碎片转储文件分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/unexpected-crash/" title="这个崩溃，有点意思">这个崩溃，有点意思</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/can-not-view-symbols-in-ida-or-windbg-even-with-pdb-loaded/" title="加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼">加载了对应的调试符号文件也看不了函数名？也许是 fastlink 搞的鬼</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-vs-compile-error-cs1583/" title="快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件">快速搞定 vs 编译错误之 cs1583 —— xxx 不是有效的 win32 资源文件</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-slimxml-load-error/" title="slimxml 编码错误">slimxml 编码错误</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump/" title="如何快速从 64 位转储文件中找到异常发生时的线程上下文">如何快速从 64 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/find-the-right-exception-context-in-x64-dump-continue/" title="如何快速从 32 位转储文件中找到异常发生时的线程上下文">如何快速从 32 位转储文件中找到异常发生时的线程上下文</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-tell-a-process-dump-was-generated-on-x64-or-x86-machine/" title="如何判断转储文件是在 32 位系统还是 64 位系统下生成的？">如何判断转储文件是在 32 位系统还是 64 位系统下生成的？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part1/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/crazy-vs2022-allocate-memory-failed-part2/" title="调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）">调试实战 | 记一次有教益的 vs2022 内存分配失败崩溃分析（续）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-memory-allocation-failed-crash/" title="调试实战 | 调试一个由内存分配失败导致的崩溃">调试实战 | 调试一个由内存分配失败导致的崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-many-virtual-memory-a-32bit-program-can-use/" title="一个 32 位程序的用户空间区域可以有多大？">一个 32 位程序的用户空间区域可以有多大？</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-LNK2001-unresovled-external-symbol-error/" title="调试实战 | 解决另外一个链接错误">调试实战 | 解决另外一个链接错误</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-find-registered-message-name/" title="如何查找已注册消息的名称?">如何查找已注册消息的名称?</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/troubleshoot-crash-after-tidy-dialog-control-id/" title="调试实战 | 记一次有教益的 MFC 程序崩溃分析">调试实战 | 记一次有教益的 MFC 程序崩溃分析</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part1/" title="调试实战 | 从转储文件找出抛出的异常 —— 理论">调试实战 | 从转储文件找出抛出的异常 —— 理论</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/search-throwing-exception-from-dump-file-part2/" title="调试实战 | 从转储文件找出抛出的异常 —— 实战">调试实战 | 从转储文件找出抛出的异常 —— 实战</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack/" title="调试实战 | 记一次有教益的递归栈查看">调试实战 | 记一次有教益的递归栈查看</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-startup-function-from-a-deep-recursive-stack-continue/" title="调试实战 | 记一次有教益的递归栈查看（续）">调试实战 | 记一次有教益的递归栈查看（续）</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part1/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（上）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part2/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（中）</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-another-dll-load-failure-caused-by-global-variable-initialize-dependency-part3/" title="调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）">调试实战 | 调试另外一个由于全局变量初始化顺序导致的 dll 加载失败问题（下）</a></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-and-never-ignore-compiling-warnings/" title="调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃">调试实战 | 永远不要忽略编译警告：记一次由重复switch语句导致的诡异崩溃</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/" title="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-vs2022-double-free-crash-with-gflags-windbg/" title="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/" title="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/two-interesting-mfc-dialog-bugs/" title="MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我">MFC对话框的“双胞胎”控件：隐藏了一个，还有一个在看我</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-disable-ASLR/" title="如何关闭 ASLR">如何关闭 ASLR</a></li>
+    
+  
+    
+  
+    
+      
+
+      <li><a href="/articles/how-to-view-dll-ref-count/" title="调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略">调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-continue/" title="调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱">调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-on-win10/" title="调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁">调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁</a></li>
+    
+  
+    
+  
+    
+  
+</div>
+
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+  <script src="https://utteranc.es/client.js" repo="BianChengNan/utterances-comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+	      <a href="/">
+                <img class="site-author-image" itemprop="image" src="/images/avatar.jpg" alt="BianChengNan">
+	      </a>
+            
+              <p class="site-author-name" itemprop="name">BianChengNan</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">147</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">238</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/BianChengNan" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.zhihu.com/people/bianchengnan" target="_blank" title="知乎">
+                      
+                        <i class="fa fa-fw fa-globe"></i>知乎</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.cnblogs.com/bianchengnan" target="_blank" title="博客园">
+                      
+                        <i class="fa fa-fw fa-globe"></i>博客园</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#摘要"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#保存现场"><span class="nav-number">2.</span> <span class="nav-text">保存现场</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初步分析"><span class="nav-number">3.</span> <span class="nav-text">初步分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#细看调用栈"><span class="nav-number">4.</span> <span class="nav-text">细看调用栈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看反汇编"><span class="nav-number">5.</span> <span class="nav-text">查看反汇编</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">BianChengNan</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全博客共</span>
+    
+    <span title="全博客共"> 字</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+          <span id="scrollpercent"><span>0</span>%</span>
+        
+      </div>
+    
+
+    
+      <div id="needsharebutton-float">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+    
+      flOptions = {};
+      
+          flOptions.iconStyle = "default";
+      
+          flOptions.boxForm = "horizontal";
+      
+          flOptions.position = "middleLeft";
+      
+          flOptions.networks = "Weibo,Wechat,Douban,QQZone,Evernote,Twitter,Facebook,Linkedin,Mailto,Reddit,GooglePlus,GoogleBookmarks";
+      
+      new needShareButton('#needsharebutton-float', flOptions);
+    
+  </script>
+
+  
+  <script type="text/javascript">
+  wpac_init = window.wpac_init || [];
+  wpac_init.push({widget: 'Rating', id: 21416,
+    el: 'wpac-rating',
+    color: 'fadb14'
+  });
+  (function() {
+    if ('WIDGETPACK_LOADED' in window) return;
+    WIDGETPACK_LOADED = true;
+    var mc = document.createElement('script');
+    mc.type = 'text/javascript';
+    mc.async = true;
+    mc.src = '//embed.widgetpack.com/widget.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(mc, s.nextSibling);
+  })();
+  </script>
+
+
+  
+
+  
+
+  
+
+  
+
+  <script src="/js/wobblewindow.js"></script>
+  <script>
+    if(window.innerWidth > 768) {
+      $(document).ready(function () {
+        
+          $('#header').wobbleWindow({
+            radius: 50,
+            movementTop: false,
+            movementLeft: false,
+            movementRight: false,
+            debug: false,
+          });
+        
+
+        
+          $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>

@@ -92,7 +92,7 @@
 <meta name="keywords" content="blog,博客,dev,github">
 <meta property="og:type" content="website">
 <meta property="og:title" content="BianChengNan&#39;s Blog">
-<meta property="og:url" content="https://bianchengnan.github.io/tags/dotNET/index.html">
+<meta property="og:url" content="https://bianchengnan.github.io/tags/dotnet/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="Coding is hard, you can make it easy!">
 <meta property="og:locale" content="zh-Hans">
@@ -128,7 +128,7 @@
 
 
 
-  <link rel="canonical" href="https://bianchengnan.github.io/tags/dotNET/">
+  <link rel="canonical" href="https://bianchengnan.github.io/tags/dotnet/">
 
 
 <link href="//cdn.bootcss.com/animate.css/3.5.0/animate.min.css" rel="stylesheet">
@@ -136,7 +136,7 @@
 
 
 
-  <title>标签: dotNET | BianChengNan's Blog</title>
+  <title>标签: dotnet | BianChengNan's Blog</title>
   
 
 
@@ -298,7 +298,7 @@
 
     <div id="posts" class="posts-collapse">
       <div class="collection-title">
-        <h2>dotNET<small>标签</small>
+        <h2>dotnet<small>标签</small>
         </h2>
       </div>
 
@@ -310,69 +310,17 @@
 
       <h3 class="post-title">
         
-            <a class="post-title-link" href="/articles/speedup-my-tfs-parse-tool-part4-download-dot-net-source-code-and-setup-debug-in-vs/" itemprop="url">
+            <a class="post-title-link" href="/articles/findout-who-is-using-my-file-with-the-help-of-perfview-and-process-explorer/" itemprop="url">
               
-                <span itemprop="name">性能优化 | 记一次 .NET 程序的性能优化实战（4）—— .NET 源码查看及使用 vs 调试</span>
-              
-            </a>
-        
-      </h3>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2022-01-16T18:10:33+08:00" content="2022-01-16">
-          01-16
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-      
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h3 class="post-title">
-        
-            <a class="post-title-link" href="/articles/speedup-my-tfs-parse-tool-part3-debug-regex-implementation-using-dot-net-source-code/" itemprop="url">
-              
-                <span itemprop="name">性能优化 | 记一次 .NET 程序的性能优化实战（3）—— 深入 .NET 源码</span>
+                <span itemprop="name">调试实战 | 谁在偷偷占用我的文件？原来是我自己</span>
               
             </a>
         
       </h3>
 
       <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2021-12-26T21:10:33+08:00" content="2021-12-26">
-          12-26
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-      
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h3 class="post-title">
-        
-            <a class="post-title-link" href="/articles/speedup-my-tfs-parse-tool-part2-findout-why-dot-net-regex-so-show/" itemprop="url">
-              
-                <span itemprop="name">性能优化 | 记一次 .NET 程序的性能优化实战（2）—— 使用 perfview 找出 Regex 慢的根本原因</span>
-              
-            </a>
-        
-      </h3>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2021-11-29T20:10:33+08:00" content="2021-11-29">
-          11-29
+        <time class="post-time" itemprop="dateCreated" datetime="2023-12-24T20:14:23+08:00" content="2023-12-24">
+          12-24
         </time>
       </div>
 
@@ -436,7 +384,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">143</span>
+                  <span class="site-state-item-count">147</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -458,7 +406,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">230</span>
+                  <span class="site-state-item-count">238</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -524,7 +472,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2026</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
@@ -1111,6 +1059,45 @@
 
         
           $('#sidebar').wobbleWindow({
+            radius: 50,
+            movementLeft: false,
+            movementTop: false,
+            movementBottom: false,
+            position: 'fixed',
+            debug: false,
+          });
+        
+
+        
+          $('#footer').wobbleWindow({
+            radius: 50,
+            movementBottom: false,
+            movementLeft: false,
+            movementRight: false,
+            offsetX: 50,
+            position: 'absolute',
+            debug: false,
+          });
+        
+      });
+    }
+  </script>
+
+
+
+
+  <script async src="/js/cursor/fireworks.js"></script>
+
+
+
+
+
+  <!-- 代码块复制功能 -->
+  <script type="text/javascript" src="/js/src/clipboard.min.js"></script>
+  <script type="text/javascript" src="/js/src/clipboard-use.js"></script>
+</body>
+</html>
+   $('#sidebar').wobbleWindow({
             radius: 50,
             movementLeft: false,
             movementTop: false,

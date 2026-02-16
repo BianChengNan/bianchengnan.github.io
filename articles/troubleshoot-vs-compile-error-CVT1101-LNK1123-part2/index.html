@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,总结,调试,vs,IDA,排错,process monitor,windbg,rc,CVT1101,LNK1123,">
+  <meta name="keywords" content="原,总结,调试,vs,windbg,IDA,排错,process monitor,rc,CVT1101,LNK1123,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="前言在 上一篇文章 中，我们总结了使用 windbg 和 IDA 找出 cvtres.exe 报错的根本原因，但是留下了几个细节问题。本篇文章就来把这几个细节问题“格”干净。">
-<meta name="keywords" content="原,总结,调试,vs,IDA,排错,process monitor,windbg,rc,CVT1101,LNK1123">
+<meta name="keywords" content="原,总结,调试,vs,windbg,IDA,排错,process monitor,rc,CVT1101,LNK1123">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/index.html">
@@ -102,7 +102,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/view-iob-first-3-items.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/view-iob-init-code.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-vs-compile-error-CVT1101-LNK1123-part2/view-stdin-stdout-stderror.png">
-<meta property="og:updated_time" content="2025-12-23T13:51:15.190Z">
+<meta property="og:updated_time" content="2026-02-16T10:40:27.568Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 使用 IDA 和 windbg 调试 LNK1123 转换到 COFF 期间失败：文件无效或损坏（中）">
 <meta name="twitter:description" content="前言在 上一篇文章 中，我们总结了使用 windbg 和 IDA 找出 cvtres.exe 报错的根本原因，但是留下了几个细节问题。本篇文章就来把这几个细节问题“格”干净。">
@@ -359,8 +359,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2025-12-23T21:51:15+08:00">
-                2025-12-23
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
+                2026-02-16
               </time>
             
           </span>
@@ -569,13 +569,13 @@
           
             <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
           
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+          
             <a href="/tags/IDA/" rel="tag"><i class="fa fa-tag"></i> IDA</a>
           
             <a href="/tags/排错/" rel="tag"><i class="fa fa-tag"></i> 排错</a>
           
             <a href="/tags/process-monitor/" rel="tag"><i class="fa fa-tag"></i> process monitor</a>
-          
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/rc/" rel="tag"><i class="fa fa-tag"></i> rc</a>
           
@@ -1129,6 +1129,30 @@
     
   
     
+      
+
+      <li><a href="/articles/how-to-view-dll-ref-count/" title="调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略">调试技巧 | 从 Win7 到 Win10，DLL引用计数查看全攻略</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-continue/" title="调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱">调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debugging-deadlock-when-dll-unload-on-win10/" title="调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁">调试实战 | DllMain 的陷阱：当 Windows 10 并行加载遇上线程等待引发的死锁</a></li>
+    
+  
+    
+      
+
+      <li><a href="/articles/debug-spacesniffer-deadlock/" title="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅</a></li>
+    
+  
+    
   
 </div>
 
@@ -1218,7 +1242,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">143</span>
+                  <span class="site-state-item-count">147</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1240,7 +1264,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">230</span>
+                  <span class="site-state-item-count">238</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1322,7 +1346,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2025</span>
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2026</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
