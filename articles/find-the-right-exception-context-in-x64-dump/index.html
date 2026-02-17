@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="调试,debug,dump,windbg,x64,">
+  <meta name="keywords" content="debug,调试,dump,windbg,x64,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="前言经常做调试的朋友可能会遇到在 windbg 里通过 k 系列命令得到的调用栈没有太大参考意义。一般是由于线程上下文不对导致的。这时候可以通过 !analyze -v 让 windbg 自动帮我们分析出正确的调用栈及异常发生时的线程上下文。有了上下文信息，就可以执行 .cxr address_to_context 命令切换上下文，这时候再通过 k 命令查看调用栈，一般可以得到一个有意义的调用栈。">
-<meta name="keywords" content="调试,debug,dump,windbg,x64">
+<meta name="keywords" content="debug,调试,dump,windbg,x64">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何快速从 64 位转储文件中找到异常发生时的线程上下文">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/find-the-right-exception-context-in-x64-dump/index.html">
@@ -104,7 +104,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump/change-context-and-view-callstack.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump/view-address-page-information.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/find-the-right-exception-context-in-x64-dump/u-UnhandledExceptionFilter.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.362Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:25.379Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="如何快速从 64 位转储文件中找到异常发生时的线程上下文">
 <meta name="twitter:description" content="前言经常做调试的朋友可能会遇到在 windbg 里通过 k 系列命令得到的调用栈没有太大参考意义。一般是由于线程上下文不对导致的。这时候可以通过 !analyze -v 让 windbg 自动帮我们分析出正确的调用栈及异常发生时的线程上下文。有了上下文信息，就可以执行 .cxr address_to_context 命令切换上下文，这时候再通过 k 命令查看调用栈，一般可以得到一个有意义的调用栈。">
@@ -361,8 +361,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:25+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -578,9 +578,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
-          
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
           

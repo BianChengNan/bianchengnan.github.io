@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,总结,windbg,thread,dll,死锁,引用计数,crt,_beginthreadex,">
+  <meta name="keywords" content="原,总结,thread,windbg,dll,死锁,引用计数,crt,_beginthreadex,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="摘要这篇文章记录了我对 DLL 卸载时死锁问题的进一步探索。多年前，我曾在看雪论坛上发表过一篇关于 DLL 卸载死锁的分析文章，但最近有网友反馈无法复现这个问题。通过深入调试，我发现问题根源在于不同版本的 VS 运行时库对引用计数的处理方式不同。本文详细展示了如何使用 Windbg 追踪 DLL 引用计数的变化，解释了为什么在 VS2022 环境下原问题不再出现，最终定位到不同版本的 _begin">
-<meta name="keywords" content="原,总结,windbg,thread,dll,死锁,引用计数,crt,_beginthreadex">
+<meta name="keywords" content="原,总结,thread,windbg,dll,死锁,引用计数,crt,_beginthreadex">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/debugging-deadlock-when-dll-unload-continue/index.html">
@@ -99,7 +99,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-continue/view-dll-loadcount.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-continue/callstack-of-modify-dll-loadcount-second-time.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-continue/view-beginthread-source.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.333Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:25.228Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 从无法复现到真相大白：DLL卸载死锁背后的版本陷阱">
 <meta name="twitter:description" content="摘要这篇文章记录了我对 DLL 卸载时死锁问题的进一步探索。多年前，我曾在看雪论坛上发表过一篇关于 DLL 卸载死锁的分析文章，但最近有网友反馈无法复现这个问题。通过深入调试，我发现问题根源在于不同版本的 VS 运行时库对引用计数的处理方式不同。本文详细展示了如何使用 Windbg 追踪 DLL 引用计数的变化，解释了为什么在 VS2022 环境下原问题不再出现，最终定位到不同版本的 _begin">
@@ -356,8 +356,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:25+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -448,12 +448,11 @@
       
 
       
-        <h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>这篇文章记录了我对 <code>DLL</code> 卸载时死锁问题的进一步探索。多年前，我曾在看雪论坛上发表过一篇关于 <code>DLL</code> 卸载死锁的<a href="https://bbs.kanxue.com/thread-255547-1.htm" target="_blank" rel="noopener">分析文章</a>，但最近有网友反馈无法复现这个问题。通过深入调试，我发现问题根源在于不同版本的 <code>VS</code> 运行时库对引用计数的处理方式不同。本文详细展示了如何使用 <code>Windbg</code> 追踪 <code>DLL</code> 引用计数的变化，解释了为什么在 <code>VS2022</code> 环境下原问题不再出现，最终定位到不同版本的 <code>_beginthreadex</code> 和 <code>_endthreadex</code> 的内部实现差异是关键所在。</p>
+        <h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>这篇文章记录了我对 <code>DLL</code> 卸载时死锁问题的进一步探索。多年前，我曾在看雪论坛上发表过一篇关于 <code>DLL</code> 卸载死锁的<a href="https://bbs.kanxue.com/thread-255547-1.htm" target="_blank" rel="noopener">分析文章</a>，但最近有网友反馈无法复现这个问题。通过深入调试，我发现问题根源在于不同版本的 <code>VS</code> 运行时库对引用计数的处理方式不同。本文详细展示了如何使用 <code>Windbg</code> 追踪 <code>DLL</code> 引用计数的变化，解释了为什么在 <code>VS2022</code> 环境下原问题不再出现，最终定位到不同版本的 <code>_beginthreadex()</code> 和 <code>_endthreadex()</code> 的内部实现差异是关键所在。</p>
 <a id="more"></a>
 
 
 
-<h2 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h2><p>前一阵子，网友跟我说我之前写的一篇文章有问题，他那里不能重现。文章是很糟之前发在看雪上的一篇关于 <code>dll</code> 卸载时死锁的文章。链接为 <a href="https://bbs.kanxue.com/thread-255547-1.htm。我的第一感觉是是不是操作系统不一致导致的加载/卸载行为发生变化导致的。但是这位网友给出的分析很可信。于是我自己也快速用" target="_blank" rel="noopener">https://bbs.kanxue.com/thread-255547-1.htm。我的第一感觉是是不是操作系统不一致导致的加载/卸载行为发生变化导致的。但是这位网友给出的分析很可信。于是我自己也快速用</a> <code>vs2022</code> 建了一个测试工程，发现没死锁。虽然网友已经给了他的结论，但还是很有必要整体梳理一下。</p>
 <h2 id="测试代码"><a href="#测试代码" class="headerlink" title="测试代码"></a>测试代码</h2><p>这里再简单贴一下关键代码</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//WaitDllUnloadExe.cpp</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"windows.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    HMODULE <span class="keyword">module</span> = LoadLibraryA(<span class="string">".\\DllUnload.dll"</span>);</span><br><span class="line">    Sleep(<span class="number">1000</span>);</span><br><span class="line">    FreeLibrary(<span class="keyword">module</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -461,9 +460,9 @@
 
 <h2 id="初步观察"><a href="#初步观察" class="headerlink" title="初步观察"></a>初步观察</h2><p>运行新编译出来的程序，简单观察了一下程序行为，可以发现执行完 <code>FreeLibrary(module);</code> 后，<code>DllUnload.dll</code> 并没有被卸载，引用计数是 <code>1</code>。</p>
 <p><img src="http://resources.bianchengnan.tech/debugging-deadlock-when-dll-unload-continue/view-dll-loadcount.png" alt="view-dll-loadcount"></p>
-<p>继续执行，<code>main()</code> 函数结束后，如果还有其它线程在运行，这些线程会被自动杀掉。所以并没有出现卡死的现象。</p>
+<p>继续执行，<code>main()</code> 函数结束后，如果还有其它线程在运行，这些线程会被强制杀掉。所以并没有出现卡死的现象。</p>
 <p>那为什么引用计数不是 <code>0</code> 呢？按理说 <code>LoadLibraryA()</code> 和 <code>FreeLibrary()</code> 是成对儿出现的，引用计数应该归零才对。</p>
-<h2 id="追踪引用计数"><a href="#追踪引用计数" class="headerlink" title="追踪引用计数"></a>追踪引用计数</h2><p>从上篇文章中可知，在 <code>win10</code> 系统下，每个模块的信息存储在 <code>Peb.Ldr.InLoadOrderModuleList</code> 中，引用计数存储在 <code>_LDR_DATA_TABLE_ENTRY</code> 的 <code>DdagNode-&gt;LoadCount</code> 中。可以在 <code>LoadCount</code> 上设置一个内存写断点。但是等一下，如果模块信息还没添加到 <code>InLoadOrderModuleList</code> 中，该如何设置断点呢？很简单，从 <code>InLoadOrderModuleList</code> 的名字可知，链表里存储的模块信息是按加载顺序来的。最新加载的模块会放到链表的末尾的位置，也就是 <code>BLink</code> 的位置，可以先对此字段设置内存写断点，有新模块被加载时，会修改此字段的值。</p>
+<h2 id="追踪引用计数"><a href="#追踪引用计数" class="headerlink" title="追踪引用计数"></a>追踪引用计数</h2><p>从<a href="https://bianchengnan.github.io/articles/how-to-view-dll-ref-count">上篇文章</a>中可知，在 <code>win10</code> 系统下，每个模块的信息存储在 <code>Peb.Ldr.InLoadOrderModuleList</code> 中，引用计数存储在 <code>_LDR_DATA_TABLE_ENTRY</code> 的 <code>DdagNode-&gt;LoadCount</code> 中。可以在 <code>LoadCount</code> 上设置一个内存写断点。但是等一下，如果模块信息还没添加到 <code>InLoadOrderModuleList</code> 中，该如何设置断点呢？很简单，从 <code>InLoadOrderModuleList</code> 的名字可知，链表里存储的模块信息是按加载顺序来的。最新加载的模块会放到链表的末尾的位置，也就是 <code>BLink</code> 的位置，可以先对此字段设置内存写断点，有新模块被加载时，会修改此字段的值。</p>
 <h2 id="监视添加模块"><a href="#监视添加模块" class="headerlink" title="监视添加模块"></a>监视添加模块</h2><p>重新运行程序，在调用 <code>LoadLibrary()</code> 的那行代码处设置断点，中断后，对 <code>Peb.Ldr.InLoadOrderModuleList</code> 的 <code>BLink</code> 设置写断点，然后让程序重新运行起来。很快断点便命中了，</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Breakpoint 1 hit</span><br><span class="line">ntdll!LdrpInsertDataTableEntry+0x7f:</span><br><span class="line">00007ffc`e16e469f 488d0d3a7e1500  lea     rcx,[ntdll!PebLdr+0x20 (00007ffc`e183c4e0)]</span><br></pre></td></tr></table></figure>
 
@@ -494,7 +493,7 @@
 
 <h2 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h2><p>原来是，<code>vs2022</code> 编译时使用的运行时库中的 <code>_beginthreadex()</code> 会增加引用计数，<code>_endthreadex()</code> 会减少引用计数。两个线程中的一个会及时退出，而另外一个没有退出，导致引用计数没有归零，进而导致模块没有被卸载。所以就没出现卡死的情况。</p>
 <p>而 <code>vs2010</code> 编译时使用的运行时库中的 <code>_endthreadex()</code> 不会修改引用计数（具体参考 <code>vs2010</code> 目录下的 <code>threadex.c</code> 文件）。当调用 <code>FreeLibrary()</code> 时，会触发模块卸载行为，进而会遇到卡死的情况。</p>
-<h2 id="手动实验"><a href="#手动实验" class="headerlink" title="手动实验"></a>手动实验</h2><p>我已经把相关测试工程上传到了这里 todo，感兴趣的小伙伴可以自行测试验证。</p>
+<h2 id="手动实验"><a href="#手动实验" class="headerlink" title="手动实验"></a>手动实验</h2><p>我已经把相关测试工程上传到了<a href="https://github.com/BianChengNan/MyBlogStuff/tree/master/debugging-deadlock-when-dll-unload-continue" target="_blank" rel="noopener">这里</a>，感兴趣的小伙伴可以自行测试验证。</p>
 <blockquote>
 <p><strong>说明：</strong> 如果想重现卡死问题，只需要修改【平台工具集】属性的值为 <code>Visual Studio 2010 (v100)</code></p>
 </blockquote>
@@ -554,9 +553,9 @@
           
             <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
           
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
-          
             <a href="/tags/thread/" rel="tag"><i class="fa fa-tag"></i> thread</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/dll/" rel="tag"><i class="fa fa-tag"></i> dll</a>
           
@@ -1311,7 +1310,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#摘要"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缘起"><span class="nav-number">2.</span> <span class="nav-text">缘起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试代码"><span class="nav-number">3.</span> <span class="nav-text">测试代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初步观察"><span class="nav-number">4.</span> <span class="nav-text">初步观察</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#追踪引用计数"><span class="nav-number">5.</span> <span class="nav-text">追踪引用计数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#监视添加模块"><span class="nav-number">6.</span> <span class="nav-text">监视添加模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#监视引用计数修改"><span class="nav-number">7.</span> <span class="nav-text">监视引用计数修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解释"><span class="nav-number">8.</span> <span class="nav-text">解释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#手动实验"><span class="nav-number">9.</span> <span class="nav-text">手动实验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">10.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#摘要"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试代码"><span class="nav-number">2.</span> <span class="nav-text">测试代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初步观察"><span class="nav-number">3.</span> <span class="nav-text">初步观察</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#追踪引用计数"><span class="nav-number">4.</span> <span class="nav-text">追踪引用计数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#监视添加模块"><span class="nav-number">5.</span> <span class="nav-text">监视添加模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#监视引用计数修改"><span class="nav-number">6.</span> <span class="nav-text">监视引用计数修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解释"><span class="nav-number">7.</span> <span class="nav-text">解释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#手动实验"><span class="nav-number">8.</span> <span class="nav-text">手动实验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">9.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>

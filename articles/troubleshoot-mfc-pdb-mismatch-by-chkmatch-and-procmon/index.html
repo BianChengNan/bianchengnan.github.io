@@ -99,7 +99,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-mfc-pdb-mismatch-by-chkmatch-and-procmon/mfc140u.pdb-not-loaded-error.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-mfc-pdb-mismatch-by-chkmatch-and-procmon/chkmatch-cannot-find-pdb-file.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-mfc-pdb-mismatch-by-chkmatch-and-procmon/procmon-view-key-event.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.545Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:26.135Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="排错实战 | 使用 chkmatch 和 procmon 速解 MFC 调试符号加载失败">
 <meta name="twitter:description" content="摘要最近在调试的时候想查看 mfc140u.dll 中的函数，发现对应的调试符号没有加载，手动加载了几次都是失败。再三确认调试符号确实存在，而且设置的符号路径都对。难道又是调试符号不匹配？于是打算用 chkmatch 确认一下是否匹配。 最后，发现是调试符号放到了 system32 路径下，chkmatch 是 32 位程序，会自动到 sysWOW64 目录下找。本文简单记录了使用 procmon">
@@ -356,8 +356,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:26+08:00">
+                2026-02-17
               </time>
             
           </span>

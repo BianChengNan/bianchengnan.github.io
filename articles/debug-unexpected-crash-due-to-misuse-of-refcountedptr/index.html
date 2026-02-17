@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="调试,vs,debug,warning,">
+  <meta name="keywords" content="debug,调试,vs,warning,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="摘要在最近的项目开发中，我遇到了一个由智能指针误用导致的程序崩溃问题。问题的根源在于 SheetDataHandler 类的构造函数中，将 this 指针传递给了一个接收 SheetDataHandlerPtr（智能指针类型）参数的静态函数 HandleMissingColumn。这个看似简单的操作，却导致了对象在构造函数执行期间被意外释放，最终引发空指针访问异常。 通过深入调试和反汇编分析，我发">
-<meta name="keywords" content="调试,vs,debug,warning">
+<meta name="keywords" content="debug,调试,vs,warning">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/debug-unexpected-crash-due-to-misuse-of-refcountedptr/index.html">
@@ -101,7 +101,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-due-to-misuse-of-refcountedptr/view-values-in-hex.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-due-to-misuse-of-refcountedptr/delete-self-in-constructor.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-unexpected-crash-due-to-misuse-of-refcountedptr/check-exception-in-windbg.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.315Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:25.184Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 一个隐蔽的崩溃：当 this 指针在构造函数中“杀死”自己">
 <meta name="twitter:description" content="摘要在最近的项目开发中，我遇到了一个由智能指针误用导致的程序崩溃问题。问题的根源在于 SheetDataHandler 类的构造函数中，将 this 指针传递给了一个接收 SheetDataHandlerPtr（智能指针类型）参数的静态函数 HandleMissingColumn。这个看似简单的操作，却导致了对象在构造函数执行期间被意外释放，最终引发空指针访问异常。 通过深入调试和反汇编分析，我发">
@@ -358,8 +358,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:25+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -568,11 +568,11 @@
       
         <div class="post-tags">
           
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
             <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
-          
-            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
           
             <a href="/tags/warning/" rel="tag"><i class="fa fa-tag"></i> warning</a>
           

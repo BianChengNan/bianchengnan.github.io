@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,总结,调试,debug,dump,转储文件,异常,part1,exception,">
+  <meta name="keywords" content="原,总结,debug,调试,dump,转储文件,异常,part1,exception,">
 
 
 
@@ -89,14 +89,14 @@
 
 
 <meta name="description" content="缘起最近在分析转储文件时，遇到了一个由 throw 抛出的异常。尽管在 windbg 中使用 !analyze -v 迅速知道了异常码是 0xe06d7363（对应的 ASCII 码是 .msc），但是根据异常码并不能确定具体抛出来的是哪种异常。针对这种情况，确定具体的异常类型才有意义。 本篇文章会简单介绍与抛出异常相关的内容，包括关键的函数及结构体。下一篇文章会通过实例介绍几种典型情况（有调试符">
-<meta name="keywords" content="原,总结,调试,debug,dump,转储文件,异常,part1,exception">
+<meta name="keywords" content="原,总结,debug,调试,dump,转储文件,异常,part1,exception">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 从转储文件找出抛出的异常 —— 理论">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/search-throwing-exception-from-dump-file-part1/index.html">
 <meta property="og:site_name" content="BianChengNan&#39;s Blog">
 <meta property="og:description" content="缘起最近在分析转储文件时，遇到了一个由 throw 抛出的异常。尽管在 windbg 中使用 !analyze -v 迅速知道了异常码是 0xe06d7363（对应的 ASCII 码是 .msc），但是根据异常码并不能确定具体抛出来的是哪种异常。针对这种情况，确定具体的异常类型才有意义。 本篇文章会简单介绍与抛出异常相关的内容，包括关键的函数及结构体。下一篇文章会通过实例介绍几种典型情况（有调试符">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.453Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:25.850Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 从转储文件找出抛出的异常 —— 理论">
 <meta name="twitter:description" content="缘起最近在分析转储文件时，遇到了一个由 throw 抛出的异常。尽管在 windbg 中使用 !analyze -v 迅速知道了异常码是 0xe06d7363（对应的 ASCII 码是 .msc），但是根据异常码并不能确定具体抛出来的是哪种异常。针对这种情况，确定具体的异常类型才有意义。 本篇文章会简单介绍与抛出异常相关的内容，包括关键的函数及结构体。下一篇文章会通过实例介绍几种典型情况（有调试符">
@@ -352,8 +352,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:25+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -628,9 +628,9 @@
           
             <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
           
-            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
-          
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
           

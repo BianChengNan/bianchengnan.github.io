@@ -102,7 +102,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-another-compile-error/search-previous-function-and-find-target-function-missing.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-another-compile-error/macro-defined-in-utils-h.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/troubleshoot-another-compile-error/macro-HAS_ADDRESS_SANITIZER-definition.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.512Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:26.051Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="排错实战 | 当编译器&quot;吃掉&quot;函数声明：一次由宏冲突引发的离奇编译错误">
 <meta name="twitter:description" content="摘要在编译 .NET Runtime 源码研究 GC 机制时，我遇到了一个离奇的编译错误：函数 __asan_handle_no_return 的声明被编译器报错为”类函数宏的调用”。通过将源文件预处理输出到中间文件，我发现这个函数声明竟然变成了 void ;——它被”吃掉”了！追踪发现，在 utils.h 中定义了一个同名宏，当 __SANITIZE_ADDRESS__ 宏未定义时，该宏被展开为">
@@ -359,8 +359,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:26+08:00">
+                2026-02-17
               </time>
             
           </span>

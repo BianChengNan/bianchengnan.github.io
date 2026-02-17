@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,总结,调试,debug,dump,转储文件,异常,part2,exception,">
+  <meta name="keywords" content="原,总结,debug,调试,dump,转储文件,异常,part2,exception,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="缘起我在上一篇文章中介绍了定位抛出异常的理论知识，本文会通过几个实例介绍各种情况下的定位方法。有调试符号如何定位？没有调试符号如何定位？32 位程序如何定位？64 位程序又该如何定位？ 其实，32 位程序和 64 位程序定位过程大同小异，只不过在解析过程中需要注意，很多关键字段在 64 位程序中是偏移，需要加上模块基址得到虚拟地址后才能使用，而在 32 位程序中对应的字段就是虚拟地址，可以直接使用">
-<meta name="keywords" content="原,总结,调试,debug,dump,转储文件,异常,part2,exception">
+<meta name="keywords" content="原,总结,debug,调试,dump,转储文件,异常,part2,exception">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 从转储文件找出抛出的异常 —— 实战">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/search-throwing-exception-from-dump-file-part2/index.html">
@@ -106,7 +106,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/search-throwing-exception-from-dump-file-part2/view-exception-type-by-dt-r3.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/search-throwing-exception-from-dump-file-part2/view-exception-object-vtable.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/search-throwing-exception-from-dump-file-part2/dps-result-no-symbol.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.462Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:25.858Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 从转储文件找出抛出的异常 —— 实战">
 <meta name="twitter:description" content="缘起我在上一篇文章中介绍了定位抛出异常的理论知识，本文会通过几个实例介绍各种情况下的定位方法。有调试符号如何定位？没有调试符号如何定位？32 位程序如何定位？64 位程序又该如何定位？ 其实，32 位程序和 64 位程序定位过程大同小异，只不过在解析过程中需要注意，很多关键字段在 64 位程序中是偏移，需要加上模块基址得到虚拟地址后才能使用，而在 32 位程序中对应的字段就是虚拟地址，可以直接使用">
@@ -363,8 +363,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:25+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -580,9 +580,9 @@
           
             <a href="/tags/总结/" rel="tag"><i class="fa fa-tag"></i> 总结</a>
           
-            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
-          
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
           

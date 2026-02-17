@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="调试,debug,windbg,vmmap,">
+  <meta name="keywords" content="debug,调试,windbg,vmmap,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="摘要本文记录了一次因  VirtualAlloc 分配失败引发的 OOM 问题排查过程。通过编写测试程序模拟内存分配，发现 32 位进程在未开启 Large Address Aware 时，用户空间仅 2GB 可用，且 VirtualAlloc 实际分配粒度均为 64KB——若申请 4KB，剩余 60KB 将变为不可用空间，导致地址空间碎片化与大量浪费。借助 VMMap 碎片视图与 Windbg">
-<meta name="keywords" content="调试,debug,windbg,vmmap">
+<meta name="keywords" content="debug,调试,windbg,vmmap">
 <meta property="og:type" content="article">
 <meta property="og:title" content="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/index.html">
@@ -104,7 +104,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/enable-large-address-aware.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/allocate-at-address-higher-than-2gb.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/test-virtual-alloc-and-dont-forget-64k-allocation-granularity/vmmap-fragment-view.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.504Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:26.015Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="内存都去哪了？探究 VirtualAlloc 分配背后被“浪费”的 60KB">
 <meta name="twitter:description" content="摘要本文记录了一次因  VirtualAlloc 分配失败引发的 OOM 问题排查过程。通过编写测试程序模拟内存分配，发现 32 位进程在未开启 Large Address Aware 时，用户空间仅 2GB 可用，且 VirtualAlloc 实际分配粒度均为 64KB——若申请 4KB，剩余 60KB 将变为不可用空间，导致地址空间碎片化与大量浪费。借助 VMMap 碎片视图与 Windbg">
@@ -361,8 +361,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:26+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -541,9 +541,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
-          
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           

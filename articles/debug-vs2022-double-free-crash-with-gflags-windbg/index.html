@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="调试,vs,debug,windbg,gflags,vs222,debugger,">
+  <meta name="keywords" content="debug,调试,vs,windbg,gflags,vs222,debugger,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="摘要本文记录了一次独特的调试经历：作为开发利器的 Visual Studio 2022，其在切换调用栈时频繁崩溃。面对这一问题，利用 procdump 自动捕获崩溃转储文件，并通过 WinDbg 初步排查将问题指向堆内存的异常操作，可能是堆损坏或重复释放。为了精准定位，我启用 gflags 工具开启页堆检测，最终成功捕获到首次释放操作的完整调用栈，明确问题根源在于VSDebug!treegrid:">
-<meta name="keywords" content="调试,vs,debug,windbg,gflags,vs222,debugger">
+<meta name="keywords" content="debug,调试,vs,windbg,gflags,vs222,debugger">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/debug-vs2022-double-free-crash-with-gflags-windbg/index.html">
@@ -110,7 +110,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-vs2022-double-free-crash-with-gflags-windbg/heap-p-a-address.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-vs2022-double-free-crash-with-gflags-windbg/fill-pattern-explanation-from-windbg-help-document.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-vs2022-double-free-crash-with-gflags-windbg/view-memory-patttern.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.318Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:25.194Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 使用 GFlags 与 WinDbg 定位 VS2022 “重复释放” 引发的崩溃">
 <meta name="twitter:description" content="摘要本文记录了一次独特的调试经历：作为开发利器的 Visual Studio 2022，其在切换调用栈时频繁崩溃。面对这一问题，利用 procdump 自动捕获崩溃转储文件，并通过 WinDbg 初步排查将问题指向堆内存的异常操作，可能是堆损坏或重复释放。为了精准定位，我启用 gflags 工具开启页堆检测，最终成功捕获到首次释放操作的完整调用栈，明确问题根源在于VSDebug!treegrid:">
@@ -367,8 +367,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:25+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -611,11 +611,11 @@
       
         <div class="post-tags">
           
+            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
             <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/vs/" rel="tag"><i class="fa fa-tag"></i> vs</a>
-          
-            <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
           
             <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           

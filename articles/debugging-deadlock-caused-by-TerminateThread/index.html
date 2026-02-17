@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,调试,debug,windbg,死锁,deadlock,">
+  <meta name="keywords" content="原,debug,调试,windbg,死锁,deadlock,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="前言项目里的一个升级程序偶尔会死锁，查看dump后发现是死在了ShellExecuteExW里。经验少，不知道为什么，于是在高端调试论坛里发帖求助，链接如下http://advdbg.org/forums/6520/ShowPost.aspx 根据张银奎老师的描述可知，应该是拥有关键段的线程意外结束了。仔细检查项目中的代码，发现程序中有使用TerminateThread()来强制杀线程的代码。很可">
-<meta name="keywords" content="原,调试,debug,windbg,死锁,deadlock">
+<meta name="keywords" content="原,debug,调试,windbg,死锁,deadlock">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 使用 windbg 调试 TerminateThread 导致的死锁">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/debugging-deadlock-caused-by-TerminateThread/index.html">
@@ -549,9 +549,9 @@
           
             <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
           
-            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
-          
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           

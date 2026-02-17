@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="原,调试,debug,windbg,IDA,死锁,deadlock,spacesniffer,win10,Parallel Loader,并行加载,">
+  <meta name="keywords" content="原,debug,调试,IDA,windbg,死锁,deadlock,spacesniffer,win10,Parallel Loader,并行加载,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="摘要在一次使用 SpaceSniffer 分析磁盘占用时，我遇到了一个非常容易复现的界面卡死问题。为查明原因，我首先通过 procdump 周期性保存完整转储文件，并使用 WinDbg 对调用栈进行对比分析，确认程序确实陷入阻塞而非假死。逐层追踪后，我最终将问题定位到第三方 Shell 扩展在 COM 激活过程中的异常阻塞，并由此引发死锁。">
-<meta name="keywords" content="原,调试,debug,windbg,IDA,死锁,deadlock,spacesniffer,win10,Parallel Loader,并行加载">
+<meta name="keywords" content="原,debug,调试,IDA,windbg,死锁,deadlock,spacesniffer,win10,Parallel Loader,并行加载">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/debug-spacesniffer-deadlock/index.html">
@@ -98,7 +98,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-spacesniffer-deadlock/save-dump-files-by-procdump.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/debug-spacesniffer-deadlock/view-callstack-of-thread-1.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.309Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:25.163Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 谁“锁”住了我的 SpaceSniffer？一次由 Shell 扩展引发的 Windows 死锁侦探之旅">
 <meta name="twitter:description" content="摘要在一次使用 SpaceSniffer 分析磁盘占用时，我遇到了一个非常容易复现的界面卡死问题。为查明原因，我首先通过 procdump 周期性保存完整转储文件，并使用 WinDbg 对调用栈进行对比分析，确认程序确实陷入阻塞而非假死。逐层追踪后，我最终将问题定位到第三方 Shell 扩展在 COM 激活过程中的异常阻塞，并由此引发死锁。">
@@ -355,8 +355,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:25+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -546,13 +546,13 @@
           
             <a href="/tags/原/" rel="tag"><i class="fa fa-tag"></i> 原</a>
           
-            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
-          
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
           
-            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/IDA/" rel="tag"><i class="fa fa-tag"></i> IDA</a>
+          
+            <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
           
             <a href="/tags/死锁/" rel="tag"><i class="fa fa-tag"></i> 死锁</a>
           

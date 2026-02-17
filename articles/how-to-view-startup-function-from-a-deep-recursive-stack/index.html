@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="调试,debug,dump,windbg,stack,递归,栈,">
+  <meta name="keywords" content="debug,调试,dump,windbg,stack,递归,栈,">
 
 
 
@@ -89,7 +89,7 @@
 
 
 <meta name="description" content="缘起最近，遇到了一个由于递归导致的卡死问题。这个问题非常有意思，值得总结。 你知道什么情况下无限递归会卡死，而不崩溃吗？你知道递归层数过多时，如何找到导致递归调用的函数吗？你知道如何快速找到关键线程吗？你知道如何附加到一个正在被调试的进程吗？你知道如何在 windbg 中显示指定数量的栈帧吗？ 带着这些疑问，一起来看看这个非常有意思的问题吧。  说明： 文章末尾有这些问题的答案，可以直接跳到末尾查">
-<meta name="keywords" content="调试,debug,dump,windbg,stack,递归,栈">
+<meta name="keywords" content="debug,调试,dump,windbg,stack,递归,栈">
 <meta property="og:type" content="article">
 <meta property="og:title" content="调试实战 | 记一次有教益的递归栈查看">
 <meta property="og:url" content="https://bianchengnan.github.io/articles/how-to-view-startup-function-from-a-deep-recursive-stack/index.html">
@@ -108,7 +108,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/how-to-view-startup-function-from-a-deep-recursive-stack/windbg-k-command-help.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/how-to-view-startup-function-from-a-deep-recursive-stack/view-stack-total-size-and-current-used-size.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/how-to-view-startup-function-from-a-deep-recursive-stack/view-pe-header.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.413Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:25.630Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="调试实战 | 记一次有教益的递归栈查看">
 <meta name="twitter:description" content="缘起最近，遇到了一个由于递归导致的卡死问题。这个问题非常有意思，值得总结。 你知道什么情况下无限递归会卡死，而不崩溃吗？你知道递归层数过多时，如何找到导致递归调用的函数吗？你知道如何快速找到关键线程吗？你知道如何附加到一个正在被调试的进程吗？你知道如何在 windbg 中显示指定数量的栈帧吗？ 带着这些疑问，一起来看看这个非常有意思的问题吧。  说明： 文章末尾有这些问题的答案，可以直接跳到末尾查">
@@ -365,8 +365,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:25+08:00">
+                2026-02-17
               </time>
             
           </span>
@@ -570,9 +570,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
-          
             <a href="/tags/debug/" rel="tag"><i class="fa fa-tag"></i> debug</a>
+          
+            <a href="/tags/调试/" rel="tag"><i class="fa fa-tag"></i> 调试</a>
           
             <a href="/tags/dump/" rel="tag"><i class="fa fa-tag"></i> dump</a>
           

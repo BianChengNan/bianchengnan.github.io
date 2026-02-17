@@ -99,7 +99,7 @@
 <meta property="og:image" content="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/oom.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/address-summary.png">
 <meta property="og:image" content="http://resources.bianchengnan.tech/analyze-oom-and-dive-into-dotnet-source/search-keyword.png">
-<meta property="og:updated_time" content="2026-02-16T10:40:27.267Z">
+<meta property="og:updated_time" content="2026-02-17T10:38:24.994Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入.NET Runtime：一次 OOM 异常的分析与源码追踪之旅">
 <meta name="twitter:description" content="摘要本文记录了一次对 .NET 应用程序发生的“内存不足”（OOM）异常进行的深度源码级调查。问题始于一个看似矛盾的现象：诊断工具显示有足够大的空闲内存块（约 50MB），但垃圾回收（GC）过程却在尝试预留较小内存段（约 16MB）时失败。 为了探究根源，笔者逆向追踪了诊断工具（如SOS）输出的数据链路：从高层诊断命令（AnalyzeOOMCommand）入手，逐步深入Microsoft.Diag">
@@ -356,8 +356,8 @@
               
                 <span class="post-meta-item-text">更新于&#58;</span>
               
-              <time title="更新于" itemprop="dateModified" datetime="2026-02-16T18:40:27+08:00">
-                2026-02-16
+              <time title="更新于" itemprop="dateModified" datetime="2026-02-17T18:38:24+08:00">
+                2026-02-17
               </time>
             
           </span>
